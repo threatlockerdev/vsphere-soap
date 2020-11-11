@@ -1,0 +1,33 @@
+{
+  "name": "@hyperqube/vsphere-soap",
+  "version": "0.1.0",
+  "description": "Typescript client for vSphere's SOAP API",
+  "license": "UNLICENSED",
+  "repository": "https://github.com/hyperqube-io/vsphere-soap",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "generate": "ts-node src/generate src/types.ts"
+  },
+  "dependencies": {
+    "cookie": "^0.4.1",
+    "lodash": "^4.17.20",
+    "soap": "^0.34.0"
+  },
+  "devDependencies": {
+    "@types/cookie": "^0.4.0",
+    "@types/lodash": "^4.14.165",
+    "@types/node": "^14.14.7",
+    "@types/request": "^2.48.5",
+    "@types/sax": "^1.2.1",
+    "@types/soap": "^0.21.0",
+    "@typescript-eslint/eslint-plugin": "^4.7.0",
+    "@typescript-eslint/parser": "^4.7.0",
+    "eslint": "^7.13.0",
+    "eslint-plugin-prefer-arrow": "^1.2.2",
+    "eslint-plugin-simple-import-sort": "^5.0.3",
+    "ts-node": "^9.0.0",
+    "typescript": "^4.0.5"
+  }
+}

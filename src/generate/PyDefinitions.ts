@@ -24,6 +24,7 @@ export type PyMethod = [
     type: string,
     officialType: string
   ],
+  /** don't know what this is */
   more?: string,
   faults?: string[]
 ];

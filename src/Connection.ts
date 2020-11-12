@@ -24,21 +24,21 @@ export class Connection {
   get hostname(): string {
     const { hostname } = parseUrl(this.client.lastEndpoint ?? "");
     if (hostname === null) {
-      throw new Error(`Couldn't get hostname from URL "${this.client.lastEndpoint ?? "unknown"}"`);
+      throw new Error(`Couldn't get hostname from URL "${this.client.lastEndpoint ?? "unknown URL"}"`);
     }
     return hostname;
   }
 
+  /**
+   * Executes a SOAP command
+   * @returns result and headers
+   */
   async exec<Params, Result>(command: string, params: Params): Promise<{
     result: Result;
     headers: IncomingHttpHeaders;
   }> {
-    const paramsClone = _.cloneDeep(params) as unknown as Record<string, { connection?: Connection }>;
-    Object.keys(paramsClone).forEach(key => {
-      if (typeof paramsClone[key] === "object" && "connection" in paramsClone[key]) {
-        delete paramsClone[key].connection;
-      }
-    });
+    // remove "connection" members to avoid circular references
+    const paramsClone = this.sanitizeParams(_.cloneDeep(params));
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     const callback = this.client.VimService.VimPort[command] as SoapMethodCallback<Params, Result>;
     const result = await new Promise<Result>((resolve, reject) => {
@@ -63,6 +63,7 @@ export class Connection {
         userName: username,
         password
       });
+      // make sure we use VMWare's session cookie
       const header = res.headers["set-cookie"];
       if (header && header.length > 0) {
         const sessionId = cookie.parse(header[0]).vmware_soap_session;
@@ -76,74 +77,21 @@ export class Connection {
     }
   }
 
+  /** Wrapper to provide easy access to ServiceContent instance */
   getContent(): Promise<dto.ServiceContent> {
     return new dto.ServiceInstance(this).retrieveContent();
   }
 
-  /*
-  async getItem<Item extends { id: string }>(type: string, id: string): Promise<Item | undefined> {
-    const items = await this.getItems<Item>(type, [id]);
-    return items[0];
-  }
-
-  async getItems<Item extends { id: string }>(type: string, ids: string[]): Promise<Item[]> {
-    const items = await this.getAllItems<Item>(type);
-    return items.filter(i => ids.includes(i.id));
-  }
-
-  async getAllItems<Item>(type: string): Promise<Item[]> {
-    const content = await this.getServiceContent();
-    const { result: containerView } = await this.exec<"CreateContainerView", Item>("CreateContainerView", {
-      _this: content.viewManager,
-      container: content.rootFolder,
-      type: [type],
-      recursive: true
-    });
-    const { result } = await this.exec<"RetrievePropertiesEx", Item>("RetrievePropertiesEx", {
-      _this: content.propertyCollector,
-      specSet: [{
-        attributes: {
-          "xsi:type": "PropertyFilterSpec"
-        },
-        propSet: [{
-          attributes: {
-            "xsi:type": "PropertySpec"
-          },
-          type,
-          all: true
-        }],
-        objectSet: [{
-          attributes: {
-            "xsi:type": "ObjectSpec"
-          },
-          obj: containerView,
-          skip: true,
-          selectSet: [{
-            attributes: {
-              "xsi:type": "TraversalSpec"
-            },
-            type: "ContainerView",
-            path: "view",
-            skip: false
-          }]
-        }]
-      }],
-      options: {}
-    });
-    return result.objects.map(obj => VmwareClient.convertResultObject(obj));
-  }
-
-  static convertResultObject<Item>({ obj, propSet }: IResultObject<Item>): Item {
-    return Object.fromEntries(propSet.map(prop => {
-      if ("ManagedObjectReference" in prop.val) {
-        return [prop.name, prop.val.ManagedObjectReference.map(r => r.$value)];
-      } else if ("$value" in prop.val) {
-        return [prop.name, prop.val.$value];
-      } else {
-        return [prop.name, prop.val];
+  /** Recursively remove "connection" properties from an object */
+  private sanitizeParams<Params>(params: Params): Params {
+    (Object.keys(params) as (keyof Params)[]).forEach(key => {
+      if (key === "connection") {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete params[key];
+      } else if (typeof params[key] === "object") {
+        this.sanitizeParams(params[key]);
       }
-    }).concat([["id", obj.$value]])) as Item;
+    });
+    return params;
   }
-
-  */
 }

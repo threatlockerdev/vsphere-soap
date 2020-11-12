@@ -23,6 +23,8 @@ workflows:
           filters:
             tags:
               only: /^v.*/
+            branches:
+              ignore: /.*/
 
 jobs:
   install_dependencies:
@@ -76,7 +78,7 @@ jobs:
           name: Authenticate NPM
           command: |
             npm set registry https://$NPM_REGISTRY
-            echo "//$NPM_REGISTRY/:_authToken=$NPM_TOKEN" > ~/repo/.npmrc
+            echo "//$NPM_REGISTRY/:_authToken=$NPM_TOKEN" > .npmrc
       - run:
           name: Publish
           command: npm publish

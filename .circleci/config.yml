@@ -91,3 +91,9 @@ jobs:
       - run:
           name: Publish
           command: npm publish
+      - run:
+          name: Notify Slack
+          command: |
+            curl -X POST -H 'Content-type: application/json' \
+              -d '{"text":"Published $CIRCLE_PROJECT_REPONAME@$CIRCLE_TAG to registry $NPM_REGISTRY"}' \
+              $SLACK_NOTIFY_WEBHOOK

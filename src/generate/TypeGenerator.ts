@@ -91,7 +91,7 @@ export class ${type.wsdlName}${type.parent ? ` extends ${this.typeMap[type.paren
   private createConstructor(type: PyManagedType): string {
     const classPropCount = type.props?.filter(p => this.isClassProp(p[1]))?.length ?? 0;
     return `constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<${type.wsdlName}>
   ) {
     ${type.parent ? "super(connection, init);" : ""}

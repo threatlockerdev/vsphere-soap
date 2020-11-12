@@ -15993,7 +15993,7 @@ export enum WeekOfMonth {
 export class PropertyCollector extends ManagedObject {
   filter?: PropertyFilter[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<PropertyCollector>
   ) {
     super(connection, init);
@@ -16118,7 +16118,7 @@ export class PropertyFilter extends ManagedObject {
   spec!: PropertyFilterSpec;
   partialUpdates!: boolean;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<PropertyFilter>
   ) {
     super(connection, init);
@@ -16134,7 +16134,7 @@ export class PropertyFilter extends ManagedObject {
 export class CertificateManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CertificateManager>
   ) {
     super(connection, init);
@@ -16174,7 +16174,7 @@ export class CertificateManager extends ManagedObject {
 export class CustomFieldsManager extends ManagedObject {
   field?: CustomFieldDef[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CustomFieldsManager>
   ) {
     super(connection, init);
@@ -16242,7 +16242,7 @@ export class CustomizationSpecManager extends ManagedObject {
   info?: CustomizationSpecInfo[];
   encryptionKey?: number[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CustomizationSpecManager>
   ) {
     super(connection, init);
@@ -16358,7 +16358,7 @@ export class CustomizationSpecManager extends ManagedObject {
 export class DatastoreNamespaceManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<DatastoreNamespaceManager>
   ) {
     super(connection, init);
@@ -16406,7 +16406,7 @@ export class DatastoreNamespaceManager extends ManagedObject {
 export class DiagnosticManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<DiagnosticManager>
   ) {
     super(connection, init);
@@ -16456,7 +16456,7 @@ export class DiagnosticManager extends ManagedObject {
 export class EnvironmentBrowser extends ManagedObject {
   datastoreBrowser?: HostDatastoreBrowser;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<EnvironmentBrowser>
   ) {
     super(connection, init);
@@ -16691,7 +16691,7 @@ export class ExtensibleManagedObject extends ManagedObject {
   value?: CustomFieldValue[];
   availableField?: CustomFieldDef[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ExtensibleManagedObject>
   ) {
     super(connection, init);
@@ -16713,7 +16713,7 @@ export class ExtensibleManagedObject extends ManagedObject {
 export class ExtensionManager extends ManagedObject {
   extensionList?: Extension[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ExtensionManager>
   ) {
     super(connection, init);
@@ -16832,7 +16832,7 @@ export class ExtensionManager extends ManagedObject {
 export class FileManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<FileManager>
   ) {
     super(connection, init);
@@ -16918,7 +16918,7 @@ export class FileManager extends ManagedObject {
 export class HealthUpdateManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HealthUpdateManager>
   ) {
     super(connection, init);
@@ -17154,7 +17154,7 @@ export class HealthUpdateManager extends ManagedObject {
 export class HistoryCollector extends ManagedObject {
   filter!: any;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HistoryCollector>
   ) {
     super(connection, init);
@@ -17198,7 +17198,7 @@ export class HttpNfcLease extends ManagedObject {
   state!: HttpNfcLeaseState;
   error?: MethodFault;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HttpNfcLease>
   ) {
     super(connection, init);
@@ -17260,7 +17260,7 @@ export class HttpNfcLease extends ManagedObject {
 export class IoFilterManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<IoFilterManager>
   ) {
     super(connection, init);
@@ -17367,7 +17367,7 @@ export class IoFilterManager extends ManagedObject {
 export class IpPoolManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<IpPoolManager>
   ) {
     super(connection, init);
@@ -17488,7 +17488,7 @@ export class LicenseManager extends ManagedObject {
   licenseAssignmentManager?: LicenseAssignmentManager;
   evaluation!: LicenseManagerEvaluationInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<LicenseManager>
   ) {
     super(connection, init);
@@ -17691,7 +17691,7 @@ export class LicenseManager extends ManagedObject {
 export class LocalizationManager extends ManagedObject {
   catalog?: LocalizationManagerMessageCatalog[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<LocalizationManager>
   ) {
     super(connection, init);
@@ -17702,7 +17702,7 @@ export class LocalizationManager extends ManagedObject {
 export class OverheadMemoryManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<OverheadMemoryManager>
   ) {
     super(connection, init);
@@ -17725,7 +17725,7 @@ export class OvfManager extends ManagedObject {
   ovfImportOption?: OvfOptionInfo[];
   ovfExportOption?: OvfOptionInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<OvfManager>
   ) {
     super(connection, init);
@@ -17819,7 +17819,7 @@ export class PerformanceManager extends ManagedObject {
   historicalInterval?: PerfInterval[];
   perfCounter?: PerfCounterInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<PerformanceManager>
   ) {
     super(connection, init);
@@ -17949,7 +17949,7 @@ export class PerformanceManager extends ManagedObject {
 export class ResourcePlanningManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ResourcePlanningManager>
   ) {
     super(connection, init);
@@ -17969,7 +17969,7 @@ export class ResourcePlanningManager extends ManagedObject {
 export class SearchIndex extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<SearchIndex>
   ) {
     super(connection, init);
@@ -18101,7 +18101,7 @@ export class SearchIndex extends ManagedObject {
 export class ServiceManager extends ManagedObject {
   service?: ServiceManagerServiceInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ServiceManager>
   ) {
     super(connection, init);
@@ -18128,7 +18128,7 @@ export class SessionManager extends ManagedObject {
   supportedLocaleList?: string[];
   defaultLocale!: string;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<SessionManager>
   ) {
     super(connection, init);
@@ -18368,7 +18368,7 @@ export class SimpleCommand extends ManagedObject {
   encodingType!: SimpleCommandEncoding;
   entity!: ServiceManagerServiceInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<SimpleCommand>
   ) {
     super(connection, init);
@@ -18388,7 +18388,7 @@ export class SimpleCommand extends ManagedObject {
 export class SiteInfoManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<SiteInfoManager>
   ) {
     super(connection, init);
@@ -18404,7 +18404,7 @@ export class SiteInfoManager extends ManagedObject {
 export class StorageQueryManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<StorageQueryManager>
   ) {
     super(connection, init);
@@ -18424,7 +18424,7 @@ export class StorageQueryManager extends ManagedObject {
 export class StorageResourceManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<StorageResourceManager>
   ) {
     super(connection, init);
@@ -18559,7 +18559,7 @@ export class StorageResourceManager extends ManagedObject {
 export class TaskHistoryCollector extends HistoryCollector {
   latestPage?: TaskInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<TaskHistoryCollector>
   ) {
     super(connection, init);
@@ -18591,7 +18591,7 @@ export class TaskManager extends ManagedObject {
   description!: TaskDescription;
   maxCollector!: number;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<TaskManager>
   ) {
     super(connection, init);
@@ -18657,7 +18657,7 @@ export class TaskManager extends ManagedObject {
 export class UserDirectory extends ManagedObject {
   domainList?: string[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<UserDirectory>
   ) {
     super(connection, init);
@@ -18689,7 +18689,7 @@ export class UserDirectory extends ManagedObject {
 export class VirtualizationManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualizationManager>
   ) {
     super(connection, init);
@@ -18700,7 +18700,7 @@ export class VirtualizationManager extends ManagedObject {
 export class VsanUpgradeSystem extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VsanUpgradeSystem>
   ) {
     super(connection, init);
@@ -18755,7 +18755,7 @@ export class VsanUpgradeSystem extends ManagedObject {
 export class Alarm extends ExtensibleManagedObject {
   info!: AlarmInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Alarm>
   ) {
     super(connection, init);
@@ -18782,7 +18782,7 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
   managedCluster!: ClusterComputeResource;
   evcState!: ClusterEVCManagerEVCState;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ClusterEVCManager>
   ) {
     super(connection, init);
@@ -18835,7 +18835,7 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
 export class CryptoManager extends ManagedObject {
   enabled!: boolean;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CryptoManager>
   ) {
     super(connection, init);
@@ -18899,7 +18899,7 @@ export class CryptoManager extends ManagedObject {
 export class CryptoManagerHost extends CryptoManager {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CryptoManagerHost>
   ) {
     super(connection, init);
@@ -18941,7 +18941,7 @@ export class CryptoManagerHost extends CryptoManager {
 export class CryptoManagerHostKMS extends CryptoManagerHost {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CryptoManagerHostKMS>
   ) {
     super(connection, init);
@@ -18952,7 +18952,7 @@ export class CryptoManagerHostKMS extends CryptoManagerHost {
 export class EventHistoryCollector extends HistoryCollector {
   latestPage?: Event[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<EventHistoryCollector>
   ) {
     super(connection, init);
@@ -18984,7 +18984,7 @@ export class EventManager extends ManagedObject {
   latestEvent?: Event;
   maxCollector!: number;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<EventManager>
   ) {
     super(connection, init);
@@ -19049,7 +19049,7 @@ export class HostAssignableHardwareManager extends ManagedObject {
   binding?: HostAssignableHardwareBinding[];
   config!: HostAssignableHardwareConfig;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostAssignableHardwareManager>
   ) {
     super(connection, init);
@@ -19082,7 +19082,7 @@ export class HostAuthenticationManager extends ManagedObject {
   info!: HostAuthenticationManagerInfo;
   supportedStore!: HostAuthenticationStore[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostAuthenticationManager>
   ) {
     super(connection, init);
@@ -19096,7 +19096,7 @@ export class HostAuthenticationManager extends ManagedObject {
 export class HostAuthenticationStore extends ManagedObject {
   info!: HostAuthenticationStoreInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostAuthenticationStore>
   ) {
     super(connection, init);
@@ -19107,7 +19107,7 @@ export class HostAuthenticationStore extends ManagedObject {
 export class HostAutoStartManager extends ManagedObject {
   config!: HostAutoStartManagerConfig;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostAutoStartManager>
   ) {
     super(connection, init);
@@ -19139,7 +19139,7 @@ export class HostAutoStartManager extends ManagedObject {
 export class HostBootDeviceSystem extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostBootDeviceSystem>
   ) {
     super(connection, init);
@@ -19166,7 +19166,7 @@ export class HostBootDeviceSystem extends ManagedObject {
 export class HostCacheConfigurationManager extends ManagedObject {
   cacheConfigurationInfo?: HostCacheConfigurationInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostCacheConfigurationManager>
   ) {
     super(connection, init);
@@ -19186,7 +19186,7 @@ export class HostCacheConfigurationManager extends ManagedObject {
 export class HostCertificateManager extends ManagedObject {
   certificateInfo!: HostCertificateManagerCertificateInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostCertificateManager>
   ) {
     super(connection, init);
@@ -19250,7 +19250,7 @@ export class HostCertificateManager extends ManagedObject {
 export class HostCpuSchedulerSystem extends ExtensibleManagedObject {
   hyperthreadInfo?: HostHyperThreadScheduleInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostCpuSchedulerSystem>
   ) {
     super(connection, init);
@@ -19273,7 +19273,7 @@ export class HostDatastoreBrowser extends ManagedObject {
   datastore?: Datastore[];
   supportedType?: FileQuery[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostDatastoreBrowser>
   ) {
     super(connection, init);
@@ -19320,7 +19320,7 @@ export class HostDatastoreBrowser extends ManagedObject {
 export class HostDateTimeSystem extends ManagedObject {
   dateTimeInfo!: HostDateTimeInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostDateTimeSystem>
   ) {
     super(connection, init);
@@ -19368,7 +19368,7 @@ export class HostDateTimeSystem extends ManagedObject {
 export class HostDirectoryStore extends HostAuthenticationStore {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostDirectoryStore>
   ) {
     super(connection, init);
@@ -19379,7 +19379,7 @@ export class HostDirectoryStore extends HostAuthenticationStore {
 export class HostEsxAgentHostManager extends ManagedObject {
   configInfo!: HostEsxAgentHostManagerConfigInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostEsxAgentHostManager>
   ) {
     super(connection, init);
@@ -19399,7 +19399,7 @@ export class HostEsxAgentHostManager extends ManagedObject {
 export class HostFirmwareSystem extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostFirmwareSystem>
   ) {
     super(connection, init);
@@ -19440,7 +19440,7 @@ export class HostGraphicsManager extends ExtensibleManagedObject {
   sharedPassthruGpuTypes?: string[];
   sharedGpuCapabilities?: HostSharedGpuCapabilities[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostGraphicsManager>
   ) {
     super(connection, init);
@@ -19472,7 +19472,7 @@ export class HostGraphicsManager extends ExtensibleManagedObject {
 export class HostHealthStatusSystem extends ManagedObject {
   runtime!: HealthSystemRuntime;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostHealthStatusSystem>
   ) {
     super(connection, init);
@@ -19506,7 +19506,7 @@ export class HostHealthStatusSystem extends ManagedObject {
 export class HostAccessManager extends ManagedObject {
   lockdownMode!: HostLockdownMode;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostAccessManager>
   ) {
     super(connection, init);
@@ -19578,7 +19578,7 @@ export class HostAccessManager extends ManagedObject {
 export class HostImageConfigManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostImageConfigManager>
   ) {
     super(connection, init);
@@ -19623,7 +19623,7 @@ export class HostImageConfigManager extends ManagedObject {
 export class IscsiManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<IscsiManager>
   ) {
     super(connection, init);
@@ -19711,7 +19711,7 @@ export class IscsiManager extends ManagedObject {
 export class HostKernelModuleSystem extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostKernelModuleSystem>
   ) {
     super(connection, init);
@@ -19749,7 +19749,7 @@ export class HostKernelModuleSystem extends ManagedObject {
 export class HostLocalAccountManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostLocalAccountManager>
   ) {
     super(connection, init);
@@ -19847,7 +19847,7 @@ export class HostLocalAccountManager extends ManagedObject {
 export class HostLocalAuthentication extends HostAuthenticationStore {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostLocalAuthentication>
   ) {
     super(connection, init);
@@ -19859,7 +19859,7 @@ export class HostMemorySystem extends ExtensibleManagedObject {
   consoleReservationInfo?: ServiceConsoleReservationInfo;
   virtualMachineReservationInfo?: VirtualMachineMemoryReservationInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostMemorySystem>
   ) {
     super(connection, init);
@@ -19889,7 +19889,7 @@ export class HostMemorySystem extends ExtensibleManagedObject {
 export class MessageBusProxy extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<MessageBusProxy>
   ) {
     super(connection, init);
@@ -19900,7 +19900,7 @@ export class MessageBusProxy extends ManagedObject {
 export class HostNvdimmSystem extends ManagedObject {
   nvdimmSystemInfo!: NvdimmSystemInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostNvdimmSystem>
   ) {
     super(connection, init);
@@ -19946,7 +19946,7 @@ export class HostNvdimmSystem extends ManagedObject {
 export class HostPatchManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostPatchManager>
   ) {
     super(connection, init);
@@ -20065,7 +20065,7 @@ export class HostPciPassthruSystem extends ExtensibleManagedObject {
   pciPassthruInfo!: HostPciPassthruInfo[];
   sriovDevicePoolInfo?: HostSriovDevicePoolInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostPciPassthruSystem>
   ) {
     super(connection, init);
@@ -20092,7 +20092,7 @@ export class HostPowerSystem extends ManagedObject {
   capability!: PowerSystemCapability;
   info!: PowerSystemInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostPowerSystem>
   ) {
     super(connection, init);
@@ -20112,7 +20112,7 @@ export class HostPowerSystem extends ManagedObject {
 export class HostServiceSystem extends ExtensibleManagedObject {
   serviceInfo!: HostServiceInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostServiceSystem>
   ) {
     super(connection, init);
@@ -20181,7 +20181,7 @@ export class HostSnmpSystem extends ManagedObject {
   configuration!: HostSnmpConfigSpec;
   limits!: HostSnmpSystemAgentLimits;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostSnmpSystem>
   ) {
     super(connection, init);
@@ -20208,7 +20208,7 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
   netConfig?: HostVMotionNetConfig;
   ipConfig?: HostIpConfig;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVMotionSystem>
   ) {
     super(connection, init);
@@ -20244,7 +20244,7 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
 export class HostVirtualNicManager extends ExtensibleManagedObject {
   info!: HostVirtualNicManagerInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVirtualNicManager>
   ) {
     super(connection, init);
@@ -20291,7 +20291,7 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
 export class HostVsanInternalSystem extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVsanInternalSystem>
   ) {
     super(connection, init);
@@ -20465,7 +20465,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 export class HostVsanSystem extends ManagedObject {
   config!: VsanHostConfigInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVsanSystem>
   ) {
     super(connection, init);
@@ -20582,7 +20582,7 @@ export class OptionManager extends ManagedObject {
   supportedOption?: OptionDef[];
   setting?: OptionValue[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<OptionManager>
   ) {
     super(connection, init);
@@ -20612,7 +20612,7 @@ export class OptionManager extends ManagedObject {
 export class ProfileComplianceManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ProfileComplianceManager>
   ) {
     super(connection, init);
@@ -20676,7 +20676,7 @@ export class Profile extends ManagedObject {
   entity?: ManagedEntity[];
   complianceStatus!: string;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Profile>
   ) {
     super(connection, init);
@@ -20742,7 +20742,7 @@ export class Profile extends ManagedObject {
 export class ProfileManager extends ManagedObject {
   profile?: Profile[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ProfileManager>
   ) {
     super(connection, init);
@@ -20786,7 +20786,7 @@ export class ProfileManager extends ManagedObject {
 export class ClusterProfile extends Profile {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ClusterProfile>
   ) {
     super(connection, init);
@@ -20806,7 +20806,7 @@ export class ClusterProfile extends Profile {
 export class ClusterProfileManager extends ProfileManager {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ClusterProfileManager>
   ) {
     super(connection, init);
@@ -20817,7 +20817,7 @@ export class ClusterProfileManager extends ProfileManager {
 export class HostSpecificationManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostSpecificationManager>
   ) {
     super(connection, init);
@@ -20901,7 +20901,7 @@ export class HostSpecificationManager extends ManagedObject {
 export class ScheduledTask extends ExtensibleManagedObject {
   info!: ScheduledTaskInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ScheduledTask>
   ) {
     super(connection, init);
@@ -20934,7 +20934,7 @@ export class ScheduledTaskManager extends ManagedObject {
   scheduledTask?: ScheduledTask[];
   description!: ScheduledTaskDescription;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ScheduledTaskManager>
   ) {
     super(connection, init);
@@ -20991,7 +20991,7 @@ export class ScheduledTaskManager extends ManagedObject {
 export class TenantTenantManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<TenantTenantManager>
   ) {
     super(connection, init);
@@ -21027,7 +21027,7 @@ export class TenantTenantManager extends ManagedObject {
 export class FailoverClusterConfigurator extends ManagedObject {
   disabledConfigureMethod?: string[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<FailoverClusterConfigurator>
   ) {
     super(connection, init);
@@ -21106,7 +21106,7 @@ export class FailoverClusterConfigurator extends ManagedObject {
 export class FailoverClusterManager extends ManagedObject {
   disabledClusterMethod?: string[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<FailoverClusterManager>
   ) {
     super(connection, init);
@@ -21150,7 +21150,7 @@ export class FailoverClusterManager extends ManagedObject {
 export class View extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<View>
   ) {
     super(connection, init);
@@ -21166,7 +21166,7 @@ export class View extends ManagedObject {
 export class ViewManager extends ManagedObject {
   viewList?: View[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ViewManager>
   ) {
     super(connection, init);
@@ -21218,7 +21218,7 @@ export class ViewManager extends ManagedObject {
 export class VirtualMachineGuestCustomizationManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualMachineGuestCustomizationManager>
   ) {
     super(connection, init);
@@ -21270,7 +21270,7 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
   childSnapshot?: VirtualMachineSnapshot[];
   vm!: VirtualMachine;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualMachineSnapshot>
   ) {
     super(connection, init);
@@ -21326,7 +21326,7 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
 export class VirtualMachineCompatibilityChecker extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualMachineCompatibilityChecker>
   ) {
     super(connection, init);
@@ -21386,7 +21386,7 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
 export class GuestAliasManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestAliasManager>
   ) {
     super(connection, init);
@@ -21476,7 +21476,7 @@ export class GuestAliasManager extends ManagedObject {
 export class GuestAuthManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestAuthManager>
   ) {
     super(connection, init);
@@ -21524,7 +21524,7 @@ export class GuestAuthManager extends ManagedObject {
 export class GuestFileManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestFileManager>
   ) {
     super(connection, init);
@@ -21727,7 +21727,7 @@ export class GuestOperationsManager extends ManagedObject {
   guestWindowsRegistryManager?: GuestWindowsRegistryManager;
   aliasManager?: GuestAliasManager;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestOperationsManager>
   ) {
     super(connection, init);
@@ -21744,7 +21744,7 @@ export class GuestOperationsManager extends ManagedObject {
 export class GuestProcessManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestProcessManager>
   ) {
     super(connection, init);
@@ -21810,7 +21810,7 @@ export class GuestProcessManager extends ManagedObject {
 export class GuestWindowsRegistryManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<GuestWindowsRegistryManager>
   ) {
     super(connection, init);
@@ -21918,7 +21918,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 export class VStorageObjectManagerBase extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VStorageObjectManagerBase>
   ) {
     super(connection, init);
@@ -21931,7 +21931,7 @@ export class AuthorizationManager extends ManagedObject {
   roleList?: AuthorizationRole[];
   description!: AuthorizationDescription;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<AuthorizationManager>
   ) {
     super(connection, init);
@@ -22111,7 +22111,7 @@ export class AuthorizationManager extends ManagedObject {
 export class LicenseAssignmentManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<LicenseAssignmentManager>
   ) {
     super(connection, init);
@@ -22175,7 +22175,7 @@ export class ManagedEntity extends ExtensibleManagedObject {
   alarmActionsEnabled?: boolean;
   tag?: Tag[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ManagedEntity>
   ) {
     super(connection, init);
@@ -22224,7 +22224,7 @@ export class Network extends ManagedEntity {
   host?: HostSystem[];
   vm?: VirtualMachine[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Network>
   ) {
     super(connection, init);
@@ -22245,7 +22245,7 @@ export class OpaqueNetwork extends Network {
   capability?: OpaqueNetworkCapability;
   extraConfig?: OptionValue[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<OpaqueNetwork>
   ) {
     super(connection, init);
@@ -22263,7 +22263,7 @@ export class ResourcePool extends ManagedEntity {
   namespace?: string;
   childConfiguration?: ResourceConfigSpec[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ResourcePool>
   ) {
     super(connection, init);
@@ -22401,7 +22401,7 @@ export class ResourcePool extends ManagedEntity {
 export class Task extends ExtensibleManagedObject {
   info!: TaskInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Task>
   ) {
     super(connection, init);
@@ -22456,7 +22456,7 @@ export class VirtualApp extends ResourcePool {
   parentVApp?: ManagedEntity;
   childLink?: VirtualAppLinkInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualApp>
   ) {
     super(connection, init);
@@ -22543,7 +22543,7 @@ export class VirtualApp extends ResourcePool {
 export class VirtualDiskManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualDiskManager>
   ) {
     super(connection, init);
@@ -22791,7 +22791,7 @@ export class VirtualMachine extends ManagedEntity {
   rootSnapshot?: VirtualMachineSnapshot[];
   guestHeartbeatStatus!: ManagedEntityStatus;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualMachine>
   ) {
     super(connection, init);
@@ -23413,7 +23413,7 @@ export class AlarmManager extends ManagedObject {
   defaultExpression?: AlarmExpression[];
   description!: AlarmDescription;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<AlarmManager>
   ) {
     super(connection, init);
@@ -23525,7 +23525,7 @@ export class DistributedVirtualPortgroup extends Network {
   config!: DVPortgroupConfigInfo;
   portKeys?: string[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<DistributedVirtualPortgroup>
   ) {
     super(connection, init);
@@ -23555,7 +23555,7 @@ export class DistributedVirtualPortgroup extends Network {
 export class CryptoManagerKmip extends CryptoManager {
   kmipServers?: KmipClusterInfo[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<CryptoManagerKmip>
   ) {
     super(connection, init);
@@ -23836,7 +23836,7 @@ export class CryptoManagerKmip extends CryptoManager {
 export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostActiveDirectoryAuthentication>
   ) {
     super(connection, init);
@@ -23957,7 +23957,7 @@ export class HostDatastoreSystem extends ManagedObject {
   datastore?: Datastore[];
   capabilities!: HostDatastoreSystemCapabilities;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostDatastoreSystem>
   ) {
     super(connection, init);
@@ -24160,7 +24160,7 @@ export class HostDatastoreSystem extends ManagedObject {
 export class HostFirewallSystem extends ExtensibleManagedObject {
   firewallInfo?: HostFirewallInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostFirewallSystem>
   ) {
     super(connection, init);
@@ -24224,7 +24224,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
   ipRouteConfig?: HostIpRouteConfig;
   consoleIpRouteConfig?: HostIpRouteConfig;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostNetworkSystem>
   ) {
     super(connection, init);
@@ -24459,7 +24459,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 export class HostVFlashManager extends ManagedObject {
   vFlashConfigInfo?: HostVFlashManagerVFlashConfigInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVFlashManager>
   ) {
     super(connection, init);
@@ -24522,7 +24522,7 @@ export class HostProfile extends Profile {
   validationFailureInfo?: HostProfileValidationFailureInfo;
   referenceHost?: HostSystem;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostProfile>
   ) {
     super(connection, init);
@@ -24579,7 +24579,7 @@ export class HostProfile extends Profile {
 export class HostProfileManager extends ProfileManager {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostProfileManager>
   ) {
     super(connection, init);
@@ -24838,7 +24838,7 @@ export class HostProfileManager extends ProfileManager {
 export class ManagedObjectView extends View {
   view?: ManagedObject[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ManagedObjectView>
   ) {
     super(connection, init);
@@ -24849,7 +24849,7 @@ export class ManagedObjectView extends View {
 export class VirtualMachineProvisioningChecker extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VirtualMachineProvisioningChecker>
   ) {
     super(connection, init);
@@ -24935,7 +24935,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 export class HostVStorageObjectManager extends VStorageObjectManagerBase {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostVStorageObjectManager>
   ) {
     super(connection, init);
@@ -25263,7 +25263,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VcenterVStorageObjectManager>
   ) {
     super(connection, init);
@@ -25685,7 +25685,7 @@ export class ComputeResource extends ManagedEntity {
   configurationEx!: ComputeResourceConfigInfo;
   lifecycleManaged?: boolean;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ComputeResource>
   ) {
     super(connection, init);
@@ -25722,7 +25722,7 @@ export class Datacenter extends ManagedEntity {
   network?: Network[];
   configuration!: DatacenterConfigInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Datacenter>
   ) {
     super(connection, init);
@@ -25832,7 +25832,7 @@ export class Datastore extends ManagedEntity {
   capability!: DatastoreCapability;
   iormConfiguration?: StorageIORMInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Datastore>
   ) {
     super(connection, init);
@@ -25918,7 +25918,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
   portgroup?: DistributedVirtualPortgroup[];
   runtime?: DVSRuntimeInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<DistributedVirtualSwitch>
   ) {
     super(connection, init);
@@ -26148,7 +26148,7 @@ export class Folder extends ManagedEntity {
   childEntity?: ManagedEntity[];
   namespace?: string;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<Folder>
   ) {
     super(connection, init);
@@ -26340,7 +26340,7 @@ export class HostSystem extends ManagedEntity {
   answerFileValidationState?: AnswerFileStatusResult;
   answerFileValidationResult?: AnswerFileStatusResult;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostSystem>
   ) {
     super(connection, init);
@@ -26626,7 +26626,7 @@ export class ServiceInstance extends ManagedObject {
   capability!: Capability;
   content!: ServiceContent;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ServiceInstance>
   ) {
     super(connection, init);
@@ -26736,7 +26736,7 @@ export class StoragePod extends Folder {
   summary?: StoragePodSummary;
   podStorageDrsEntry?: PodStorageDrsEntry;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<StoragePod>
   ) {
     super(connection, init);
@@ -26747,7 +26747,7 @@ export class StoragePod extends Folder {
 export class DistributedVirtualSwitchManager extends ManagedObject {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<DistributedVirtualSwitchManager>
   ) {
     super(connection, init);
@@ -26905,7 +26905,7 @@ export class DistributedVirtualSwitchManager extends ManagedObject {
 export class VmwareDistributedVirtualSwitch extends DistributedVirtualSwitch {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<VmwareDistributedVirtualSwitch>
   ) {
     super(connection, init);
@@ -26925,7 +26925,7 @@ export class VmwareDistributedVirtualSwitch extends DistributedVirtualSwitch {
 export class HostDiagnosticSystem extends ManagedObject {
   activePartition?: HostDiagnosticPartition;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostDiagnosticSystem>
   ) {
     super(connection, init);
@@ -26990,7 +26990,7 @@ export class HostStorageSystem extends ExtensibleManagedObject {
   systemFile?: string[];
   multipathStateInfo?: HostMultipathStateInfo;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<HostStorageSystem>
   ) {
     super(connection, init);
@@ -27816,7 +27816,7 @@ export class ContainerView extends ManagedObjectView {
   type?: string[];
   recursive!: boolean;
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ContainerView>
   ) {
     super(connection, init);
@@ -27831,7 +27831,7 @@ export class ContainerView extends ManagedObjectView {
 export class InventoryView extends ManagedObjectView {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<InventoryView>
   ) {
     super(connection, init);
@@ -27861,7 +27861,7 @@ export class InventoryView extends ManagedObjectView {
 export class ListView extends ManagedObjectView {
   
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ListView>
   ) {
     super(connection, init);
@@ -27909,7 +27909,7 @@ export class ClusterComputeResource extends ComputeResource {
   actionHistory?: ClusterActionHistory[];
   drsFault?: ClusterDrsFaults[];
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ClusterComputeResource>
   ) {
     super(connection, init);

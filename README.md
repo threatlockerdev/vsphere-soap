@@ -4,7 +4,7 @@ Typescript client for vSphere's SOAP API.
 
 ## Usage
 
-`npm i @hyperqube/vsphere-soap soap && npm i -D @types/soap`
+`npm i @hyperqube-io/vsphere-soap soap && npm i -D @types/soap`
 
 ```typescript
 import { Connection } from "@hyperqube/vsphere-soap";

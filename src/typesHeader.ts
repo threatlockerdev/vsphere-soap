@@ -32,7 +32,7 @@ export class ManagedObject {
   $value!: string;
 
   constructor(
-    protected readonly connection: Connection,
+    public connection: Connection,
     init?: Partial<ManagedObject>
   ) { }
 

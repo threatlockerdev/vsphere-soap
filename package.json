@@ -1,5 +1,5 @@
 {
-  "name": "@hyperqube-io/vsphere-soap",
+  "name": "@hyperqube/vsphere-soap",
   "version": "0.2.1",
   "description": "Typescript client for vSphere's SOAP API",
   "license": "UNLICENSED",

@@ -90,7 +90,7 @@ jobs:
             echo "//$NPM_REGISTRY/:_authToken=$NPM_TOKEN" > .npmrc
       - run:
           name: Publish
-          command: npm publish
+          command: npm publish --access public
       - run:
           name: Notify Slack
           command: |

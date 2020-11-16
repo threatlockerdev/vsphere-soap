@@ -3,6 +3,7 @@ import { IncomingHttpHeaders } from "http";
 import * as _ from "lodash";
 import * as soap from "soap";
 import { parse as parseUrl } from "url";
+import * as uuid from "uuid";
 
 import * as dto from "./types";
 
@@ -17,6 +18,8 @@ type SoapMethodCallback<Params, Result> = (params: Params, callback: (
 ) => void) => void;
 
 export class Connection {
+  readonly id = uuid.v4();
+
   constructor(
     readonly client: soap.Client
   ) { }

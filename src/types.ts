@@ -7,21 +7,47 @@
 
 import { Connection } from "./Connection";
 
-const constructHelperObjects = (connection: Connection, data: any, target: any, fieldClassMap: any): any => {
-  for (const key of Object.keys(data)) {
-    const itemConstructor = fieldClassMap[key];
-    if (itemConstructor !== undefined) {
-      const value = data[key];
-      if (value instanceof Array) {
-        target[key] = value.map(v => new itemConstructor(connection, v));
-      } else {
-        target[key] = new itemConstructor(connection, data[key]);
-      }
-    } else {
-      target[key] = data[key]!;
-    }
+const typeNames: {
+  [key in "classes" | "enums" | "interfaces"]: Record<string, Record<string, string | typeof ManagedObject>>;
+} = {
+  classes: {},
+  enums: {},
+  interfaces: {}
+};
+
+const literalTypes = ["undefined", "string", "boolean", "number", "any", "unknown", "null"];
+
+const constructHelperObjects = (connection: Connection, data: any, thisName: string, options?: { fromConstructor: boolean }): any => {
+  const { fromConstructor = false } = options ?? {};
+  if (!data) {
+    return data;
   }
-  return target;
+  if (thisName in typeNames.enums || literalTypes.includes(thisName) || thisName === undefined) {
+    return (typeof data === "object" && !!data && "$value" in data) ? data.$value : data;
+  }
+  if (thisName === "Date") {
+    return new Date(data);
+  }
+  if (thisName === "Buffer") {
+    return Buffer.from(data, "base64");
+  }
+  if (data instanceof Array) {
+    return data.map(item => constructHelperObjects(connection, item, thisName));
+  }
+  const fieldMap = typeNames.classes[thisName] ?? typeNames.interfaces[thisName];
+  if ("_this" in fieldMap && typeof fieldMap._this === "function" && !fromConstructor) {
+    return new fieldMap._this(connection, data);
+  }
+  return Object.fromEntries(Object.entries(data).map(([key, value]) => {
+    const itemConstructor = fieldMap[key];
+    if (typeof itemConstructor !== "function") {
+      return [key, constructHelperObjects(connection, value, itemConstructor)];
+    }
+    if (value instanceof Array) {
+      return [key, value.map(v => new itemConstructor(connection, v))];
+    }
+    return [key, new itemConstructor(connection, value as Partial<ManagedObject>)];
+  }));
 }
 
 export type ObjectReference = string | {
@@ -32,6 +58,7 @@ export type ObjectReference = string | {
 }
 
 export interface DataObject { }
+typeNames.interfaces["DataObject"] = {};
 
 export class ManagedObject {
   $value!: string;
@@ -39,12 +66,45 @@ export class ManagedObject {
   constructor(
     public connection: Connection,
     init?: Partial<ManagedObject>
-  ) { }
+  ) { Object.assign(this, init); }
 
   get id(): string {
     return this.$value;
   }
 }
+typeNames.classes["ManagedObject"] = {
+  _this: ManagedObject,
+  $value: "string"
+};
+
+export interface FaultCause {
+  fault: MethodFault;
+  localizedMessage?: string;
+}
+typeNames.interfaces["FaultCause"] = {
+  fault: "MethodFault",
+  localizedMessage: "string"
+};
+
+export interface FaultMessageArg {
+  key: string;
+  value: string;
+}
+typeNames.interfaces["FaultMessageArg"] = {
+  key: "string",
+  value: "string"
+}
+
+export interface FaultMessage {
+  arg?: FaultMessageArg[];
+  key: string;
+  message: string;
+}
+typeNames.interfaces["FaultMessage"] = {
+  arg: "FaultMessageArg",
+  key: "string",
+  message: "string"
+};
 
 export interface MethodFault {
   faultCause?: {
@@ -60,7 +120,13 @@ export interface MethodFault {
     message: string;
   }[];
 }
+typeNames.interfaces["MethodFault"] = {
+  faultCause: "FaultCause",
+  faultMessage: "FaultMessage"
+};
+
 export interface RuntimeFault extends MethodFault { }
+typeNames.interfaces["RuntimeFault"] = typeNames.interfaces["MethodFault"];
 
 
 export interface DynamicArray extends DataObject {
@@ -15998,7 +16064,7 @@ export class PropertyCollector extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { filter: PropertyFilter });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createFilter(args: {
@@ -16011,7 +16077,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, PropertyFilter>(
       "CreateFilter", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new PropertyFilter(this.connection, result);
+    return constructHelperObjects(this.connection, result, "PropertyFilter");
   }
   async retrieveContents(args: {
   specSet: PropertyFilterSpec[]
@@ -16021,7 +16087,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, ObjectContent[] | undefined>(
       "RetrieveProperties", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ObjectContent[]");
   }
   async checkForUpdates(args: {
   version?: string
@@ -16031,9 +16097,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, UpdateSet | undefined>(
       "CheckForUpdates", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { version: undefined,
-        filterSet: undefined,
-        truncated: undefined });
+    return constructHelperObjects(this.connection, result, "UpdateSet");
   }
   async waitForUpdates(args: {
   version?: string
@@ -16043,15 +16107,13 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, UpdateSet>(
       "WaitForUpdates", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { version: undefined,
-        filterSet: undefined,
-        truncated: undefined });
+    return constructHelperObjects(this.connection, result, "UpdateSet");
   }
   async cancelWaitForUpdates(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "CancelWaitForUpdates", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async waitForUpdatesEx(args: {
   version?: string;
@@ -16063,9 +16125,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, UpdateSet | undefined>(
       "WaitForUpdatesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { version: undefined,
-        filterSet: undefined,
-        truncated: undefined });
+    return constructHelperObjects(this.connection, result, "UpdateSet");
   }
   async retrievePropertiesEx(args: {
   specSet: PropertyFilterSpec[];
@@ -16077,8 +16137,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, RetrieveResult | undefined>(
       "RetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { token: undefined,
-        objects: undefined });
+    return constructHelperObjects(this.connection, result, "RetrieveResult");
   }
   async continueRetrievePropertiesEx(args: {
   token: string
@@ -16088,8 +16147,7 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, RetrieveResult>(
       "ContinueRetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { token: undefined,
-        objects: undefined });
+    return constructHelperObjects(this.connection, result, "RetrieveResult");
   }
   async cancelRetrievePropertiesEx(args: {
   token: string
@@ -16099,19 +16157,19 @@ export class PropertyCollector extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CancelRetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async createPropertyCollector(): Promise<PropertyCollector> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, PropertyCollector>(
       "CreatePropertyCollector", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new PropertyCollector(this.connection, result);
+    return constructHelperObjects(this.connection, result, "PropertyCollector");
   }
   async destroy(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyPropertyCollector", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class PropertyFilter extends ManagedObject {
@@ -16122,13 +16180,15 @@ export class PropertyFilter extends ManagedObject {
     init?: Partial<PropertyFilter>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async destroy(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyPropertyFilter", { _this: { attributes: { type: "PropertyFilter" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class CertificateManager extends ManagedObject {
@@ -16138,7 +16198,9 @@ export class CertificateManager extends ManagedObject {
     init?: Partial<CertificateManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async refreshCACertificatesAndCRLs(args: {
   host: HostSystem[]
@@ -16148,7 +16210,7 @@ export class CertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CertMgrRefreshCACertificatesAndCRLs_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async refreshCertificates(args: {
   host: HostSystem[]
@@ -16158,7 +16220,7 @@ export class CertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CertMgrRefreshCertificates_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async revokeCertificates(args: {
   host: HostSystem[]
@@ -16168,7 +16230,7 @@ export class CertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CertMgrRevokeCertificates_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class CustomFieldsManager extends ManagedObject {
@@ -16178,7 +16240,9 @@ export class CustomFieldsManager extends ManagedObject {
     init?: Partial<CustomFieldsManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addFieldDefinition(args: {
   name: string;
@@ -16194,12 +16258,7 @@ export class CustomFieldsManager extends ManagedObject {
 } & { _this: ObjectReference }, CustomFieldDef>(
       "AddCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        name: undefined,
-        type: undefined,
-        managedObjectType: undefined,
-        fieldDefPrivileges: undefined,
-        fieldInstancePrivileges: undefined });
+    return constructHelperObjects(this.connection, result, "CustomFieldDef");
   }
   async removeFieldDefinition(args: {
   key: number
@@ -16209,7 +16268,7 @@ export class CustomFieldsManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async renameFieldDefinition(args: {
   key: number;
@@ -16221,7 +16280,7 @@ export class CustomFieldsManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RenameCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setField(args: {
   entity: ManagedEntity;
@@ -16235,7 +16294,7 @@ export class CustomFieldsManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetField", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class CustomizationSpecManager extends ManagedObject {
@@ -16246,7 +16305,9 @@ export class CustomizationSpecManager extends ManagedObject {
     init?: Partial<CustomizationSpecManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async checkResources(args: {
   guestOs: string
@@ -16256,7 +16317,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CheckCustomizationResources", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async create(args: {
   item: CustomizationSpecItem
@@ -16266,7 +16327,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CreateCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async specItemToXml(args: {
   item: CustomizationSpecItem
@@ -16276,7 +16337,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "CustomizationSpecItemToXml", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async delete(args: {
   name: string
@@ -16286,7 +16347,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async exists(args: {
   name: string
@@ -16296,7 +16357,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "DoesCustomizationSpecExist", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async duplicate(args: {
   name: string;
@@ -16308,7 +16369,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DuplicateCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async get(args: {
   name: string
@@ -16318,8 +16379,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, CustomizationSpecItem>(
       "GetCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { info: undefined,
-        spec: undefined });
+    return constructHelperObjects(this.connection, result, "CustomizationSpecItem");
   }
   async overwrite(args: {
   item: CustomizationSpecItem
@@ -16329,7 +16389,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "OverwriteCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async rename(args: {
   name: string;
@@ -16341,7 +16401,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RenameCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async xmlToSpecItem(args: {
   specItemXml: string
@@ -16351,8 +16411,7 @@ export class CustomizationSpecManager extends ManagedObject {
 } & { _this: ObjectReference }, CustomizationSpecItem>(
       "XmlToCustomizationSpecItem", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { info: undefined,
-        spec: undefined });
+    return constructHelperObjects(this.connection, result, "CustomizationSpecItem");
   };
 }
 export class DatastoreNamespaceManager extends ManagedObject {
@@ -16362,7 +16421,9 @@ export class DatastoreNamespaceManager extends ManagedObject {
     init?: Partial<DatastoreNamespaceManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async ConvertNamespacePathToUuidPath(args: {
   datacenter?: Datacenter;
@@ -16374,7 +16435,7 @@ export class DatastoreNamespaceManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "ConvertNamespacePathToUuidPath", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async CreateDirectory(args: {
   datastore: Datastore;
@@ -16388,7 +16449,7 @@ export class DatastoreNamespaceManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "CreateDirectory", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async DeleteDirectory(args: {
   datacenter?: Datacenter;
@@ -16400,7 +16461,7 @@ export class DatastoreNamespaceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteDirectory", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class DiagnosticManager extends ManagedObject {
@@ -16410,7 +16471,9 @@ export class DiagnosticManager extends ManagedObject {
     init?: Partial<DiagnosticManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async browse(args: {
   host?: HostSystem;
@@ -16426,9 +16489,7 @@ export class DiagnosticManager extends ManagedObject {
 } & { _this: ObjectReference }, DiagnosticManagerLogHeader>(
       "BrowseDiagnosticLog", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { lineStart: undefined,
-        lineEnd: undefined,
-        lineText: undefined });
+    return constructHelperObjects(this.connection, result, "DiagnosticManagerLogHeader");
   }
   async generateLogBundles(args: {
   includeDefault: boolean;
@@ -16440,7 +16501,7 @@ export class DiagnosticManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "GenerateLogBundles_Task", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDescriptions(args: {
   host?: HostSystem
@@ -16450,7 +16511,7 @@ export class DiagnosticManager extends ManagedObject {
 } & { _this: ObjectReference }, DiagnosticManagerLogDescriptor[] | undefined>(
       "QueryDescriptions", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "DiagnosticManagerLogDescriptor[]");
   };
 }
 export class EnvironmentBrowser extends ManagedObject {
@@ -16461,7 +16522,7 @@ export class EnvironmentBrowser extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { datastoreBrowser: HostDatastoreBrowser });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async queryConfigOption(args: {
@@ -16474,24 +16535,13 @@ export class EnvironmentBrowser extends ManagedObject {
 } & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
       "QueryConfigOption", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { version: undefined,
-        description: undefined,
-        guestOSDescriptor: undefined,
-        guestOSDefaultIndex: undefined,
-        hardwareOptions: undefined,
-        capabilities: undefined,
-        datastore: undefined,
-        defaultDevice: undefined,
-        supportedMonitorType: undefined,
-        supportedOvfEnvironmentTransport: undefined,
-        supportedOvfInstallTransport: undefined,
-        propertyRelations: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualMachineConfigOption");
   }
   async queryConfigOptionDescriptor(): Promise<VirtualMachineConfigOptionDescriptor[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VirtualMachineConfigOptionDescriptor[] | undefined>(
       "QueryConfigOptionDescriptor", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VirtualMachineConfigOptionDescriptor[]");
   }
   async queryConfigOptionEx(args: {
   spec?: EnvironmentBrowserConfigOptionQuerySpec
@@ -16501,18 +16551,7 @@ export class EnvironmentBrowser extends ManagedObject {
 } & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
       "QueryConfigOptionEx", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { version: undefined,
-        description: undefined,
-        guestOSDescriptor: undefined,
-        guestOSDefaultIndex: undefined,
-        hardwareOptions: undefined,
-        capabilities: undefined,
-        datastore: undefined,
-        defaultDevice: undefined,
-        supportedMonitorType: undefined,
-        supportedOvfEnvironmentTransport: undefined,
-        supportedOvfInstallTransport: undefined,
-        propertyRelations: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualMachineConfigOption");
   }
   async queryConfigTarget(args: {
   host?: HostSystem
@@ -16522,39 +16561,7 @@ export class EnvironmentBrowser extends ManagedObject {
 } & { _this: ObjectReference }, ConfigTarget | undefined>(
       "QueryConfigTarget", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { numCpus: undefined,
-        numCpuCores: undefined,
-        numNumaNodes: undefined,
-        maxCpusPerHost: undefined,
-        smcPresent: undefined,
-        datastore: undefined,
-        network: undefined,
-        opaqueNetwork: undefined,
-        distributedVirtualPortgroup: undefined,
-        distributedVirtualSwitch: undefined,
-        cdRom: undefined,
-        serial: undefined,
-        parallel: undefined,
-        sound: undefined,
-        usb: undefined,
-        floppy: undefined,
-        legacyNetworkInfo: undefined,
-        scsiPassthrough: undefined,
-        scsiDisk: undefined,
-        ideDisk: undefined,
-        maxMemMBOptimalPerf: undefined,
-        supportedMaxMemMB: undefined,
-        resourcePool: undefined,
-        autoVmotion: undefined,
-        pciPassthrough: undefined,
-        sriov: undefined,
-        vFlashModule: undefined,
-        sharedGpuPassthroughTypes: undefined,
-        availablePersistentMemoryReservationMB: undefined,
-        dynamicPassthrough: undefined,
-        sgxTargetInfo: undefined,
-        precisionClockInfo: undefined,
-        sevSupported: undefined });
+    return constructHelperObjects(this.connection, result, "ConfigTarget");
   }
   async queryTargetCapabilities(args: {
   host?: HostSystem
@@ -16564,127 +16571,7 @@ export class EnvironmentBrowser extends ManagedObject {
 } & { _this: ObjectReference }, HostCapability | undefined>(
       "QueryTargetCapabilities", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { recursiveResourcePoolsSupported: undefined,
-        cpuMemoryResourceConfigurationSupported: undefined,
-        rebootSupported: undefined,
-        shutdownSupported: undefined,
-        vmotionSupported: undefined,
-        standbySupported: undefined,
-        ipmiSupported: undefined,
-        maxSupportedVMs: undefined,
-        maxRunningVMs: undefined,
-        maxSupportedVcpus: undefined,
-        maxRegisteredVMs: undefined,
-        datastorePrincipalSupported: undefined,
-        sanSupported: undefined,
-        nfsSupported: undefined,
-        iscsiSupported: undefined,
-        vlanTaggingSupported: undefined,
-        nicTeamingSupported: undefined,
-        highGuestMemSupported: undefined,
-        maintenanceModeSupported: undefined,
-        suspendedRelocateSupported: undefined,
-        restrictedSnapshotRelocateSupported: undefined,
-        perVmSwapFiles: undefined,
-        localSwapDatastoreSupported: undefined,
-        unsharedSwapVMotionSupported: undefined,
-        backgroundSnapshotsSupported: undefined,
-        preAssignedPCIUnitNumbersSupported: undefined,
-        screenshotSupported: undefined,
-        scaledScreenshotSupported: undefined,
-        storageVMotionSupported: undefined,
-        vmotionWithStorageVMotionSupported: undefined,
-        vmotionAcrossNetworkSupported: undefined,
-        maxNumDisksSVMotion: undefined,
-        hbrNicSelectionSupported: undefined,
-        vrNfcNicSelectionSupported: undefined,
-        recordReplaySupported: undefined,
-        ftSupported: undefined,
-        replayUnsupportedReason: undefined,
-        replayCompatibilityIssues: undefined,
-        smpFtSupported: undefined,
-        ftCompatibilityIssues: undefined,
-        smpFtCompatibilityIssues: undefined,
-        maxVcpusPerFtVm: undefined,
-        loginBySSLThumbprintSupported: undefined,
-        cloneFromSnapshotSupported: undefined,
-        deltaDiskBackingsSupported: undefined,
-        perVMNetworkTrafficShapingSupported: undefined,
-        tpmSupported: undefined,
-        tpmVersion: undefined,
-        txtEnabled: undefined,
-        supportedCpuFeature: undefined,
-        virtualExecUsageSupported: undefined,
-        storageIORMSupported: undefined,
-        vmDirectPathGen2Supported: undefined,
-        vmDirectPathGen2UnsupportedReason: undefined,
-        vmDirectPathGen2UnsupportedReasonExtended: undefined,
-        supportedVmfsMajorVersion: undefined,
-        vStorageCapable: undefined,
-        snapshotRelayoutSupported: undefined,
-        firewallIpRulesSupported: undefined,
-        servicePackageInfoSupported: undefined,
-        maxHostRunningVms: undefined,
-        maxHostSupportedVcpus: undefined,
-        vmfsDatastoreMountCapable: undefined,
-        eightPlusHostVmfsSharedAccessSupported: undefined,
-        nestedHVSupported: undefined,
-        vPMCSupported: undefined,
-        interVMCommunicationThroughVMCISupported: undefined,
-        scheduledHardwareUpgradeSupported: undefined,
-        featureCapabilitiesSupported: undefined,
-        latencySensitivitySupported: undefined,
-        storagePolicySupported: undefined,
-        accel3dSupported: undefined,
-        reliableMemoryAware: undefined,
-        multipleNetworkStackInstanceSupported: undefined,
-        messageBusProxySupported: undefined,
-        vsanSupported: undefined,
-        vFlashSupported: undefined,
-        hostAccessManagerSupported: undefined,
-        provisioningNicSelectionSupported: undefined,
-        nfs41Supported: undefined,
-        nfs41Krb5iSupported: undefined,
-        turnDiskLocatorLedSupported: undefined,
-        virtualVolumeDatastoreSupported: undefined,
-        markAsSsdSupported: undefined,
-        markAsLocalSupported: undefined,
-        smartCardAuthenticationSupported: undefined,
-        pMemSupported: undefined,
-        pMemSnapshotSupported: undefined,
-        cryptoSupported: undefined,
-        oneKVolumeAPIsSupported: undefined,
-        gatewayOnNicSupported: undefined,
-        upitSupported: undefined,
-        cpuHwMmuSupported: undefined,
-        encryptedVMotionSupported: undefined,
-        encryptionChangeOnAddRemoveSupported: undefined,
-        encryptionHotOperationSupported: undefined,
-        encryptionWithSnapshotsSupported: undefined,
-        encryptionFaultToleranceSupported: undefined,
-        encryptionMemorySaveSupported: undefined,
-        encryptionRDMSupported: undefined,
-        encryptionVFlashSupported: undefined,
-        encryptionCBRCSupported: undefined,
-        encryptionHBRSupported: undefined,
-        ftEfiSupported: undefined,
-        unmapMethodSupported: undefined,
-        maxMemMBPerFtVm: undefined,
-        virtualMmuUsageIgnored: undefined,
-        virtualExecUsageIgnored: undefined,
-        vmCreateDateSupported: undefined,
-        vmfs3EOLSupported: undefined,
-        ftVmcpSupported: undefined,
-        quickBootSupported: undefined,
-        assignableHardwareSupported: undefined,
-        useFeatureReqsForOldHWv: undefined,
-        markPerenniallyReservedSupported: undefined,
-        hppPspSupported: undefined,
-        deviceRebindWithoutRebootSupported: undefined,
-        storagePolicyChangeSupported: undefined,
-        precisionTimeProtocolSupported: undefined,
-        remoteDeviceVMotionSupported: undefined,
-        maxSupportedVmMemory: undefined });
+    return constructHelperObjects(this.connection, result, "HostCapability");
   };
 }
 export class ExtensibleManagedObject extends ManagedObject {
@@ -16695,7 +16582,9 @@ export class ExtensibleManagedObject extends ManagedObject {
     init?: Partial<ExtensibleManagedObject>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async setCustomValue(args: {
   key: string;
@@ -16707,7 +16596,7 @@ export class ExtensibleManagedObject extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "setCustomValue", { _this: { attributes: { type: "ExtensibleManagedObject" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ExtensionManager extends ManagedObject {
@@ -16717,7 +16606,9 @@ export class ExtensionManager extends ManagedObject {
     init?: Partial<ExtensionManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async findExtension(args: {
   extensionKey: string
@@ -16727,32 +16618,13 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, Extension | undefined>(
       "FindExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { description: undefined,
-        key: undefined,
-        company: undefined,
-        type: undefined,
-        version: undefined,
-        subjectName: undefined,
-        server: undefined,
-        client: undefined,
-        taskList: undefined,
-        eventList: undefined,
-        faultList: undefined,
-        privilegeList: undefined,
-        resourceList: undefined,
-        lastHeartbeatTime: undefined,
-        healthInfo: undefined,
-        ovfConsumerInfo: undefined,
-        extendedProductInfo: undefined,
-        managedEntityInfo: undefined,
-        shownInSolutionManager: undefined,
-        solutionManagerInfo: undefined });
+    return constructHelperObjects(this.connection, result, "Extension");
   }
   async getPublicKey(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "GetPublicKey", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryExtensionIpAllocationUsage(args: {
   extensionKeys?: string[]
@@ -16762,7 +16634,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, ExtensionManagerIpAllocationUsage[] | undefined>(
       "QueryExtensionIpAllocationUsage", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ExtensionManagerIpAllocationUsage[]");
   }
   async queryManagedBy(args: {
   extensionKey: string
@@ -16772,7 +16644,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryManagedBy", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async registerExtension(args: {
   extension: Extension
@@ -16782,7 +16654,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RegisterExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setCertificate(args: {
   extensionKey: string;
@@ -16794,7 +16666,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetExtensionCertificate", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setPublicKey(args: {
   extensionKey: string;
@@ -16806,7 +16678,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetPublicKey", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterExtension(args: {
   extensionKey: string
@@ -16816,7 +16688,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UnregisterExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateExtension(args: {
   extension: Extension
@@ -16826,7 +16698,7 @@ export class ExtensionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class FileManager extends ManagedObject {
@@ -16836,7 +16708,9 @@ export class FileManager extends ManagedObject {
     init?: Partial<FileManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async changeOwner(args: {
   name: string;
@@ -16850,7 +16724,7 @@ export class FileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ChangeOwner", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async copyFile(args: {
   sourceName: string;
@@ -16868,7 +16742,7 @@ export class FileManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CopyDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteFile(args: {
   name: string;
@@ -16880,7 +16754,7 @@ export class FileManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "DeleteDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async makeDirectory(args: {
   name: string;
@@ -16894,7 +16768,7 @@ export class FileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MakeDirectory", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async moveFile(args: {
   sourceName: string;
@@ -16912,7 +16786,7 @@ export class FileManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "MoveDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HealthUpdateManager extends ManagedObject {
@@ -16922,7 +16796,9 @@ export class HealthUpdateManager extends ManagedObject {
     init?: Partial<HealthUpdateManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addFilter(args: {
   providerId: string;
@@ -16936,7 +16812,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "AddFilter", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async addFilterEntities(args: {
   filterId: string;
@@ -16948,7 +16824,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async addMonitoredEntities(args: {
   providerId: string;
@@ -16960,7 +16836,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async hasMonitoredEntity(args: {
   providerId: string;
@@ -16972,7 +16848,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "HasMonitoredEntity", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async hasProvider(args: {
   id: string
@@ -16982,7 +16858,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "HasProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async postHealthUpdates(args: {
   providerId: string;
@@ -16994,7 +16870,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "PostHealthUpdates", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryFilterEntities(args: {
   filterId: string
@@ -17004,7 +16880,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async queryFilterInfoIds(args: {
   filterId: string
@@ -17014,7 +16890,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string[] | undefined>(
       "QueryFilterInfoIds", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryFilterList(args: {
   providerId: string
@@ -17024,7 +16900,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string[] | undefined>(
       "QueryFilterList", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryFilterName(args: {
   filterId: string
@@ -17034,7 +16910,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryFilterName", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryHealthUpdateInfos(args: {
   providerId: string
@@ -17044,7 +16920,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, HealthUpdateInfo[] | undefined>(
       "QueryHealthUpdateInfos", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HealthUpdateInfo[]");
   }
   async queryHealthUpdates(args: {
   providerId: string
@@ -17054,7 +16930,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, HealthUpdate[] | undefined>(
       "QueryHealthUpdates", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HealthUpdate[]");
   }
   async queryMonitoredEntities(args: {
   providerId: string
@@ -17064,13 +16940,13 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async queryProviderList(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "QueryProviderList", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryProviderName(args: {
   id: string
@@ -17080,7 +16956,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryProviderName", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryUnmonitoredHosts(args: {
   providerId: string;
@@ -17092,7 +16968,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryUnmonitoredHosts", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async registerProvider(args: {
   name: string;
@@ -17104,7 +16980,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "RegisterHealthUpdateProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async removeFilter(args: {
   filterId: string
@@ -17114,7 +16990,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveFilter", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeFilterEntities(args: {
   filterId: string;
@@ -17126,7 +17002,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeMonitoredEntities(args: {
   providerId: string;
@@ -17138,7 +17014,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterProvider(args: {
   providerId: string
@@ -17148,7 +17024,7 @@ export class HealthUpdateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UnregisterHealthUpdateProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HistoryCollector extends ManagedObject {
@@ -17158,25 +17034,27 @@ export class HistoryCollector extends ManagedObject {
     init?: Partial<HistoryCollector>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async remove(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyCollector", { _this: { attributes: { type: "HistoryCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async reset(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ResetCollector", { _this: { attributes: { type: "HistoryCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async rewind(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RewindCollector", { _this: { attributes: { type: "HistoryCollector" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setLatestPageSize(args: {
   maxCount: number
@@ -17186,7 +17064,7 @@ export class HistoryCollector extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetCollectorPageSize", { _this: { attributes: { type: "HistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HttpNfcLease extends ManagedObject {
@@ -17202,7 +17080,9 @@ export class HttpNfcLease extends ManagedObject {
     init?: Partial<HttpNfcLease>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async abort(args: {
   fault?: MethodFault
@@ -17212,19 +17092,19 @@ export class HttpNfcLease extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseAbort", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async complete(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "HttpNfcLeaseComplete", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async getManifest(): Promise<HttpNfcLeaseManifestEntry[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HttpNfcLeaseManifestEntry[] | undefined>(
       "HttpNfcLeaseGetManifest", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HttpNfcLeaseManifestEntry[]");
   }
   async progress(args: {
   percent: number
@@ -17234,7 +17114,7 @@ export class HttpNfcLease extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseProgress", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async pullFromUrls(args: {
   files?: HttpNfcLeaseSourceFile[]
@@ -17244,7 +17124,7 @@ export class HttpNfcLease extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "HttpNfcLeasePullFromUrls_Task", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async setManifestChecksumType(args: {
   deviceUrlsToChecksumTypes?: KeyValue[]
@@ -17254,7 +17134,7 @@ export class HttpNfcLease extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseSetManifestChecksumType", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class IoFilterManager extends ManagedObject {
@@ -17264,7 +17144,9 @@ export class IoFilterManager extends ManagedObject {
     init?: Partial<IoFilterManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async installIoFilter(args: {
   vibUrl: string;
@@ -17276,7 +17158,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "InstallIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDisksUsingFilter(args: {
   filterId: string;
@@ -17288,7 +17170,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, VirtualDiskId[]>(
       "QueryDisksUsingFilter", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VirtualDiskId[]");
   }
   async queryIoFilterInfo(args: {
   compRes: ComputeResource
@@ -17298,7 +17180,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, ClusterIoFilterInfo[] | undefined>(
       "QueryIoFilterInfo", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ClusterIoFilterInfo[]");
   }
   async queryIssue(args: {
   filterId: string;
@@ -17310,8 +17192,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, IoFilterQueryIssueResult>(
       "QueryIoFilterIssues", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { opType: undefined,
-        hostIssue: undefined });
+    return constructHelperObjects(this.connection, result, "IoFilterQueryIssueResult");
   }
   async resolveInstallationErrorsOnCluster(args: {
   filterId: string;
@@ -17323,7 +17204,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ResolveInstallationErrorsOnCluster_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async resolveInstallationErrorsOnHost(args: {
   filterId: string;
@@ -17335,7 +17216,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ResolveInstallationErrorsOnHost_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async uninstallIoFilter(args: {
   filterId: string;
@@ -17347,7 +17228,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "UninstallIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async upgradeIoFilter(args: {
   filterId: string;
@@ -17361,7 +17242,7 @@ export class IoFilterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "UpgradeIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class IpPoolManager extends ManagedObject {
@@ -17371,7 +17252,9 @@ export class IpPoolManager extends ManagedObject {
     init?: Partial<IpPoolManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async allocateIpv4Address(args: {
   dc: Datacenter;
@@ -17385,7 +17268,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "AllocateIpv4Address", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async allocateIpv6Address(args: {
   dc: Datacenter;
@@ -17399,7 +17282,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "AllocateIpv6Address", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async createIpPool(args: {
   dc: Datacenter;
@@ -17411,7 +17294,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, number>(
       "CreateIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async destroyIpPool(args: {
   dc: Datacenter;
@@ -17425,7 +17308,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DestroyIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryIPAllocations(args: {
   dc: Datacenter;
@@ -17439,7 +17322,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, IpPoolManagerIpAllocation[]>(
       "QueryIPAllocations", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "IpPoolManagerIpAllocation[]");
   }
   async queryIpPools(args: {
   dc: Datacenter
@@ -17449,7 +17332,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, IpPool[] | undefined>(
       "QueryIpPools", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "IpPool[]");
   }
   async releaseIpAllocation(args: {
   dc: Datacenter;
@@ -17463,7 +17346,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReleaseIpAllocation", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpPool(args: {
   dc: Datacenter;
@@ -17475,7 +17358,7 @@ export class IpPoolManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class LicenseManager extends ManagedObject {
@@ -17493,14 +17376,7 @@ export class LicenseManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { source: undefined,
-        sourceAvailable: undefined,
-        diagnostics: undefined,
-        featureInfo: undefined,
-        licensedEdition: undefined,
-        licenses: undefined,
-        licenseAssignmentManager: LicenseAssignmentManager,
-        evaluation: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async addLicense(args: {
@@ -17513,14 +17389,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "AddLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { licenseKey: undefined,
-        editionKey: undefined,
-        name: undefined,
-        total: undefined,
-        used: undefined,
-        costUnit: undefined,
-        properties: undefined,
-        labels: undefined });
+    return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async checkFeature(args: {
   host?: HostSystem;
@@ -17532,7 +17401,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "CheckLicenseFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async configureSource(args: {
   host?: HostSystem;
@@ -17544,7 +17413,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ConfigureLicenseSource", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async decodeLicense(args: {
   licenseKey: string
@@ -17554,14 +17423,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "DecodeLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { licenseKey: undefined,
-        editionKey: undefined,
-        name: undefined,
-        total: undefined,
-        used: undefined,
-        costUnit: undefined,
-        properties: undefined,
-        labels: undefined });
+    return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async disable(args: {
   host?: HostSystem;
@@ -17573,7 +17435,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "DisableFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async enable(args: {
   host?: HostSystem;
@@ -17585,7 +17447,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "EnableFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async querySourceAvailability(args: {
   host?: HostSystem
@@ -17595,7 +17457,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseAvailabilityInfo[] | undefined>(
       "QueryLicenseSourceAvailability", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "LicenseAvailabilityInfo[]");
   }
   async queryUsage(args: {
   host?: HostSystem
@@ -17605,10 +17467,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseUsageInfo>(
       "QueryLicenseUsage", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { source: undefined,
-        sourceAvailable: undefined,
-        reservationInfo: undefined,
-        featureInfo: undefined });
+    return constructHelperObjects(this.connection, result, "LicenseUsageInfo");
   }
   async querySupportedFeatures(args: {
   host?: HostSystem
@@ -17618,7 +17477,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseFeatureInfo[] | undefined>(
       "QuerySupportedFeatures", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "LicenseFeatureInfo[]");
   }
   async removeLicense(args: {
   licenseKey: string
@@ -17628,7 +17487,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeLabel(args: {
   licenseKey: string;
@@ -17640,7 +17499,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveLicenseLabel", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setEdition(args: {
   host?: HostSystem;
@@ -17652,7 +17511,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetLicenseEdition", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateLicense(args: {
   licenseKey: string;
@@ -17664,14 +17523,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "UpdateLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { licenseKey: undefined,
-        editionKey: undefined,
-        name: undefined,
-        total: undefined,
-        used: undefined,
-        costUnit: undefined,
-        properties: undefined,
-        labels: undefined });
+    return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async updateLabel(args: {
   licenseKey: string;
@@ -17685,7 +17537,7 @@ export class LicenseManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateLicenseLabel", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class LocalizationManager extends ManagedObject {
@@ -17695,7 +17547,9 @@ export class LocalizationManager extends ManagedObject {
     init?: Partial<LocalizationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -17706,7 +17560,9 @@ export class OverheadMemoryManager extends ManagedObject {
     init?: Partial<OverheadMemoryManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async lookupVmOverheadMemory(args: {
   vm: VirtualMachine;
@@ -17718,7 +17574,7 @@ export class OverheadMemoryManager extends ManagedObject {
 } & { _this: ObjectReference }, number>(
       "LookupVmOverheadMemory", { _this: { attributes: { type: "OverheadMemoryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   };
 }
 export class OvfManager extends ManagedObject {
@@ -17729,7 +17585,9 @@ export class OvfManager extends ManagedObject {
     init?: Partial<OvfManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async createDescriptor(args: {
   obj: ManagedEntity;
@@ -17741,10 +17599,7 @@ export class OvfManager extends ManagedObject {
 } & { _this: ObjectReference }, OvfCreateDescriptorResult>(
       "CreateDescriptor", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { ovfDescriptor: undefined,
-        error: undefined,
-        warning: undefined,
-        includeImageFiles: undefined });
+    return constructHelperObjects(this.connection, result, "OvfCreateDescriptorResult");
   }
   async createImportSpec(args: {
   ovfDescriptor: string;
@@ -17760,10 +17615,7 @@ export class OvfManager extends ManagedObject {
 } & { _this: ObjectReference }, OvfCreateImportSpecResult>(
       "CreateImportSpec", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { importSpec: undefined,
-        fileItem: undefined,
-        warning: undefined,
-        error: undefined });
+    return constructHelperObjects(this.connection, result, "OvfCreateImportSpecResult");
   }
   async parseDescriptor(args: {
   ovfDescriptor: string;
@@ -17775,24 +17627,7 @@ export class OvfManager extends ManagedObject {
 } & { _this: ObjectReference }, OvfParseDescriptorResult>(
       "ParseDescriptor", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { eula: undefined,
-        network: undefined,
-        ipAllocationScheme: undefined,
-        ipProtocols: undefined,
-        property: undefined,
-        productInfo: undefined,
-        annotation: undefined,
-        approximateDownloadSize: undefined,
-        approximateFlatDeploymentSize: undefined,
-        approximateSparseDeploymentSize: undefined,
-        defaultEntityName: undefined,
-        virtualApp: undefined,
-        deploymentOption: undefined,
-        defaultDeploymentOption: undefined,
-        entityName: undefined,
-        annotatedOst: undefined,
-        error: undefined,
-        warning: undefined });
+    return constructHelperObjects(this.connection, result, "OvfParseDescriptorResult");
   }
   async validateHost(args: {
   ovfDescriptor: string;
@@ -17806,12 +17641,7 @@ export class OvfManager extends ManagedObject {
 } & { _this: ObjectReference }, OvfValidateHostResult>(
       "ValidateHost", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { downloadSize: undefined,
-        flatDeploymentSize: undefined,
-        sparseDeploymentSize: undefined,
-        error: undefined,
-        warning: undefined,
-        supportedDiskProvisioning: undefined });
+    return constructHelperObjects(this.connection, result, "OvfValidateHostResult");
   };
 }
 export class PerformanceManager extends ManagedObject {
@@ -17823,7 +17653,9 @@ export class PerformanceManager extends ManagedObject {
     init?: Partial<PerformanceManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async createHistoricalInterval(args: {
   intervalId: PerfInterval
@@ -17833,7 +17665,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CreatePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryAvailableMetric(args: {
   entity: ManagedObject;
@@ -17849,7 +17681,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfMetricId[] | undefined>(
       "QueryAvailablePerfMetric", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "PerfMetricId[]");
   }
   async queryStats(args: {
   querySpec: PerfQuerySpec[]
@@ -17859,7 +17691,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfEntityMetricBase[] | undefined>(
       "QueryPerf", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "PerfEntityMetricBase[]");
   }
   async queryCompositeStats(args: {
   querySpec: PerfQuerySpec
@@ -17869,8 +17701,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfCompositeMetric>(
       "QueryPerfComposite", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { entity: undefined,
-        childEntity: undefined });
+    return constructHelperObjects(this.connection, result, "PerfCompositeMetric");
   }
   async queryCounter(args: {
   counterId: number[]
@@ -17880,7 +17711,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfCounterInfo[] | undefined>(
       "QueryPerfCounter", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "PerfCounterInfo[]");
   }
   async queryCounterByLevel(args: {
   level: number
@@ -17890,7 +17721,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfCounterInfo[]>(
       "QueryPerfCounterByLevel", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "PerfCounterInfo[]");
   }
   async queryProviderSummary(args: {
   entity: ManagedObject
@@ -17900,10 +17731,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, PerfProviderSummary>(
       "QueryPerfProviderSummary", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { entity: undefined,
-        currentSupported: undefined,
-        summarySupported: undefined,
-        refreshRate: undefined });
+    return constructHelperObjects(this.connection, result, "PerfProviderSummary");
   }
   async removeHistoricalInterval(args: {
   samplePeriod: number
@@ -17913,7 +17741,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemovePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async resetCounterLevelMapping(args: {
   counters: number[]
@@ -17923,7 +17751,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ResetCounterLevelMapping", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateCounterLevelMapping(args: {
   counterLevelMap: PerformanceManagerCounterLevelMapping[]
@@ -17933,7 +17761,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateCounterLevelMapping", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateHistoricalInterval(args: {
   interval: PerfInterval
@@ -17943,7 +17771,7 @@ export class PerformanceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdatePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ResourcePlanningManager extends ManagedObject {
@@ -17953,7 +17781,9 @@ export class ResourcePlanningManager extends ManagedObject {
     init?: Partial<ResourcePlanningManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async estimateDatabaseSize(args: {
   dbSizeParam: DatabaseSizeParam
@@ -17963,7 +17793,7 @@ export class ResourcePlanningManager extends ManagedObject {
 } & { _this: ObjectReference }, DatabaseSizeEstimate>(
       "EstimateDatabaseSize", { _this: { attributes: { type: "ResourcePlanningManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { size: undefined });
+    return constructHelperObjects(this.connection, result, "DatabaseSizeEstimate");
   };
 }
 export class SearchIndex extends ManagedObject {
@@ -17973,7 +17803,9 @@ export class SearchIndex extends ManagedObject {
     init?: Partial<SearchIndex>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async findAllByDnsName(args: {
   datacenter?: Datacenter;
@@ -17987,7 +17819,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByDnsName", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findAllByIp(args: {
   datacenter?: Datacenter;
@@ -18001,7 +17833,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByIp", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findAllByUuid(args: {
   datacenter?: Datacenter;
@@ -18017,7 +17849,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByUuid", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findByDatastorePath(args: {
   datacenter: Datacenter;
@@ -18029,7 +17861,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, VirtualMachine | undefined>(
       "FindByDatastorePath", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new VirtualMachine(this.connection, result);
+    return constructHelperObjects(this.connection, result, "VirtualMachine");
   }
   async findByDnsName(args: {
   datacenter?: Datacenter;
@@ -18043,7 +17875,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByDnsName", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ManagedEntity(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByInventoryPath(args: {
   inventoryPath: string
@@ -18053,7 +17885,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByInventoryPath", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ManagedEntity(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByIp(args: {
   datacenter?: Datacenter;
@@ -18067,7 +17899,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByIp", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ManagedEntity(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByUuid(args: {
   datacenter?: Datacenter;
@@ -18083,7 +17915,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByUuid", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ManagedEntity(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findChild(args: {
   entity: ManagedEntity;
@@ -18095,7 +17927,7 @@ export class SearchIndex extends ManagedObject {
 } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindChild", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ManagedEntity(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity");
   };
 }
 export class ServiceManager extends ManagedObject {
@@ -18105,7 +17937,9 @@ export class ServiceManager extends ManagedObject {
     init?: Partial<ServiceManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryServiceList(args: {
   serviceName?: string;
@@ -18117,7 +17951,7 @@ export class ServiceManager extends ManagedObject {
 } & { _this: ObjectReference }, ServiceManagerServiceInfo[] | undefined>(
       "QueryServiceList", { _this: { attributes: { type: "ServiceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ServiceManagerServiceInfo[]");
   };
 }
 export class SessionManager extends ManagedObject {
@@ -18132,13 +17966,15 @@ export class SessionManager extends ManagedObject {
     init?: Partial<SessionManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async acquireCloneTicket(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "AcquireCloneTicket", { _this: { attributes: { type: "SessionManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async acquireGenericServiceTicket(args: {
   spec: SessionManagerServiceRequestSpec
@@ -18148,9 +17984,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, SessionManagerGenericServiceTicket>(
       "AcquireGenericServiceTicket", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { id: undefined,
-        hostName: undefined,
-        sslThumbprint: undefined });
+    return constructHelperObjects(this.connection, result, "SessionManagerGenericServiceTicket");
   }
   async acquireLocalTicket(args: {
   userName: string
@@ -18160,8 +17994,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, SessionManagerLocalTicket>(
       "AcquireLocalTicket", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { userName: undefined,
-        passwordFilePath: undefined });
+    return constructHelperObjects(this.connection, result, "SessionManagerLocalTicket");
   }
   async cloneSession(args: {
   cloneTicket: string
@@ -18171,17 +18004,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "CloneSession", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async impersonateUser(args: {
   userName: string;
@@ -18193,17 +18016,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "ImpersonateUser", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async login(args: {
   userName: string;
@@ -18217,17 +18030,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "Login", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginBySSPI(args: {
   base64Token: string;
@@ -18239,17 +18042,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "LoginBySSPI", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginByToken(args: {
   locale?: string
@@ -18259,17 +18052,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "LoginByToken", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginExtensionByCertificate(args: {
   extensionKey: string;
@@ -18281,17 +18064,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "LoginExtensionByCertificate", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginExtensionBySubjectName(args: {
   extensionKey: string;
@@ -18303,23 +18076,13 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, UserSession>(
       "LoginExtensionBySubjectName", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        userName: undefined,
-        fullName: undefined,
-        loginTime: undefined,
-        lastActiveTime: undefined,
-        locale: undefined,
-        messageLocale: undefined,
-        extensionSession: undefined,
-        ipAddress: undefined,
-        userAgent: undefined,
-        callCount: undefined });
+    return constructHelperObjects(this.connection, result, "UserSession");
   }
   async logout(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "Logout", { _this: { attributes: { type: "SessionManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async sessionIsActive(args: {
   sessionID: string;
@@ -18331,7 +18094,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "SessionIsActive", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async setLocale(args: {
   locale: string
@@ -18341,7 +18104,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetLocale", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async terminate(args: {
   sessionId: string[]
@@ -18351,7 +18114,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "TerminateSession", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateMessage(args: {
   message: string
@@ -18361,7 +18124,7 @@ export class SessionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateServiceMessage", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class SimpleCommand extends ManagedObject {
@@ -18372,7 +18135,9 @@ export class SimpleCommand extends ManagedObject {
     init?: Partial<SimpleCommand>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async Execute(args: {
   arguments?: string[]
@@ -18382,7 +18147,7 @@ export class SimpleCommand extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "ExecuteSimpleCommand", { _this: { attributes: { type: "SimpleCommand" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   };
 }
 export class SiteInfoManager extends ManagedObject {
@@ -18392,13 +18157,15 @@ export class SiteInfoManager extends ManagedObject {
     init?: Partial<SiteInfoManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async GetSiteInfo(): Promise<SiteInfo> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, SiteInfo>(
       "GetSiteInfo", { _this: { attributes: { type: "SiteInfoManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "SiteInfo");
   };
 }
 export class StorageQueryManager extends ManagedObject {
@@ -18408,7 +18175,9 @@ export class StorageQueryManager extends ManagedObject {
     init?: Partial<StorageQueryManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryHostsWithAttachedLun(args: {
   lunUuid: string
@@ -18418,7 +18187,7 @@ export class StorageQueryManager extends ManagedObject {
 } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryHostsWithAttachedLun", { _this: { attributes: { type: "StorageQueryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostSystem[]");
   };
 }
 export class StorageResourceManager extends ManagedObject {
@@ -18428,7 +18197,9 @@ export class StorageResourceManager extends ManagedObject {
     init?: Partial<StorageResourceManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async applyRecommendationToPod(args: {
   pod: StoragePod;
@@ -18440,7 +18211,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ApplyStorageDrsRecommendationToPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async applyRecommendation(args: {
   key: string[]
@@ -18450,7 +18221,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ApplyStorageDrsRecommendation_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async cancelRecommendation(args: {
   key: string[]
@@ -18460,7 +18231,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CancelStorageDrsRecommendation", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async ConfigureDatastoreIORM(args: {
   datastore: Datastore;
@@ -18472,7 +18243,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ConfigureDatastoreIORM_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async configureStorageDrsForPod(args: {
   pod: StoragePod;
@@ -18486,7 +18257,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ConfigureStorageDrsForPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDatastorePerformanceSummary(args: {
   datastore: Datastore
@@ -18496,7 +18267,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, StoragePerformanceSummary[] | undefined>(
       "QueryDatastorePerformanceSummary", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "StoragePerformanceSummary[]");
   }
   async QueryIORMConfigOption(args: {
   host: HostSystem
@@ -18506,10 +18277,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, StorageIORMConfigOption>(
       "QueryIORMConfigOption", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { enabledOption: undefined,
-        congestionThresholdOption: undefined,
-        statsCollectionEnabledOption: undefined,
-        reservationEnabledOption: undefined });
+    return constructHelperObjects(this.connection, result, "StorageIORMConfigOption");
   }
   async recommendDatastores(args: {
   storageSpec: StoragePlacementSpec
@@ -18519,9 +18287,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, StoragePlacementResult>(
       "RecommendDatastores", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { recommendations: undefined,
-        drsFault: undefined,
-        task: Task });
+    return constructHelperObjects(this.connection, result, "StoragePlacementResult");
   }
   async refreshRecommendation(args: {
   pod: StoragePod
@@ -18531,7 +18297,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RefreshStorageDrsRecommendation", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async refreshRecommendationsForPod(args: {
   pod: StoragePod
@@ -18541,7 +18307,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "RefreshStorageDrsRecommendationsForPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async validateStoragePodConfig(args: {
   pod: StoragePod;
@@ -18553,7 +18319,7 @@ export class StorageResourceManager extends ManagedObject {
 } & { _this: ObjectReference }, MethodFault | undefined>(
       "ValidateStoragePodConfig", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "MethodFault");
   };
 }
 export class TaskHistoryCollector extends HistoryCollector {
@@ -18563,7 +18329,9 @@ export class TaskHistoryCollector extends HistoryCollector {
     init?: Partial<TaskHistoryCollector>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async readNext(args: {
   maxCount: number
@@ -18573,7 +18341,7 @@ export class TaskHistoryCollector extends HistoryCollector {
 } & { _this: ObjectReference }, TaskInfo[] | undefined>(
       "ReadNextTasks", { _this: { attributes: { type: "TaskHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "TaskInfo[]");
   }
   async readPrev(args: {
   maxCount: number
@@ -18583,7 +18351,7 @@ export class TaskHistoryCollector extends HistoryCollector {
 } & { _this: ObjectReference }, TaskInfo[] | undefined>(
       "ReadPreviousTasks", { _this: { attributes: { type: "TaskHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "TaskInfo[]");
   };
 }
 export class TaskManager extends ManagedObject {
@@ -18596,9 +18364,7 @@ export class TaskManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { recentTask: Task,
-        description: undefined,
-        maxCollector: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createCollector(args: {
@@ -18609,7 +18375,7 @@ export class TaskManager extends ManagedObject {
 } & { _this: ObjectReference }, TaskHistoryCollector>(
       "CreateCollectorForTasks", { _this: { attributes: { type: "TaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new TaskHistoryCollector(this.connection, result);
+    return constructHelperObjects(this.connection, result, "TaskHistoryCollector");
   }
   async createTask(args: {
   obj: ManagedObject;
@@ -18629,29 +18395,7 @@ export class TaskManager extends ManagedObject {
 } & { _this: ObjectReference }, TaskInfo>(
       "CreateTask", { _this: { attributes: { type: "TaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { key: undefined,
-        task: Task,
-        description: undefined,
-        name: undefined,
-        descriptionId: undefined,
-        entity: ManagedEntity,
-        entityName: undefined,
-        locked: ManagedEntity,
-        state: undefined,
-        cancelled: undefined,
-        cancelable: undefined,
-        error: undefined,
-        result: undefined,
-        progress: undefined,
-        reason: undefined,
-        queueTime: undefined,
-        startTime: undefined,
-        completeTime: undefined,
-        eventChainId: undefined,
-        changeTag: undefined,
-        parentTaskKey: undefined,
-        rootTaskKey: undefined,
-        activationId: undefined });
+    return constructHelperObjects(this.connection, result, "TaskInfo");
   };
 }
 export class UserDirectory extends ManagedObject {
@@ -18661,7 +18405,9 @@ export class UserDirectory extends ManagedObject {
     init?: Partial<UserDirectory>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async retrieveUserGroups(args: {
   domain?: string;
@@ -18683,7 +18429,7 @@ export class UserDirectory extends ManagedObject {
 } & { _this: ObjectReference }, UserSearchResult[] | undefined>(
       "RetrieveUserGroups", { _this: { attributes: { type: "UserDirectory" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "UserSearchResult[]");
   };
 }
 export class VirtualizationManager extends ManagedObject {
@@ -18693,7 +18439,9 @@ export class VirtualizationManager extends ManagedObject {
     init?: Partial<VirtualizationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -18704,7 +18452,9 @@ export class VsanUpgradeSystem extends ManagedObject {
     init?: Partial<VsanUpgradeSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async performUpgradePreflightCheck(args: {
   cluster: ClusterComputeResource;
@@ -18716,8 +18466,7 @@ export class VsanUpgradeSystem extends ManagedObject {
 } & { _this: ObjectReference }, VsanUpgradeSystemPreflightCheckResult>(
       "PerformVsanUpgradePreflightCheck", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { issues: undefined,
-        diskMappingToRestore: undefined });
+    return constructHelperObjects(this.connection, result, "VsanUpgradeSystemPreflightCheckResult");
   }
   async performUpgrade(args: {
   cluster: ClusterComputeResource;
@@ -18735,7 +18484,7 @@ export class VsanUpgradeSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "PerformVsanUpgrade_Task", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryUpgradeStatus(args: {
   cluster: ClusterComputeResource
@@ -18745,11 +18494,7 @@ export class VsanUpgradeSystem extends ManagedObject {
 } & { _this: ObjectReference }, VsanUpgradeSystemUpgradeStatus>(
       "QueryVsanUpgradeStatus", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { inProgress: undefined,
-        history: undefined,
-        aborted: undefined,
-        completed: undefined,
-        progress: undefined });
+    return constructHelperObjects(this.connection, result, "VsanUpgradeSystemUpgradeStatus");
   };
 }
 export class Alarm extends ExtensibleManagedObject {
@@ -18759,7 +18504,9 @@ export class Alarm extends ExtensibleManagedObject {
     init?: Partial<Alarm>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async reconfigure(args: {
   spec: AlarmSpec
@@ -18769,13 +18516,13 @@ export class Alarm extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureAlarm", { _this: { attributes: { type: "Alarm" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async remove(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RemoveAlarm", { _this: { attributes: { type: "Alarm" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ClusterEVCManager extends ExtensibleManagedObject {
@@ -18787,8 +18534,7 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { managedCluster: ClusterComputeResource,
-        evcState: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async checkAddHostEvc(args: {
@@ -18799,7 +18545,7 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckAddHostEvc_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkConfigureEvc(args: {
   evcModeKey: string;
@@ -18811,7 +18557,7 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckConfigureEvcMode_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async configureEvc(args: {
   evcModeKey: string;
@@ -18823,13 +18569,13 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ConfigureEvcMode_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async disableEvc(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "DisableEvcMode_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class CryptoManager extends ManagedObject {
@@ -18839,7 +18585,9 @@ export class CryptoManager extends ManagedObject {
     init?: Partial<CryptoManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addKey(args: {
   key: CryptoKeyPlain
@@ -18849,7 +18597,7 @@ export class CryptoManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddKey", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async addKeys(args: {
   keys?: CryptoKeyPlain[]
@@ -18859,7 +18607,7 @@ export class CryptoManager extends ManagedObject {
 } & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
       "AddKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "CryptoKeyResult[]");
   }
   async listKeys(args: {
   limit?: number
@@ -18869,7 +18617,7 @@ export class CryptoManager extends ManagedObject {
 } & { _this: ObjectReference }, CryptoKeyId[] | undefined>(
       "ListKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "CryptoKeyId[]");
   }
   async removeKey(args: {
   key: CryptoKeyId;
@@ -18881,7 +18629,7 @@ export class CryptoManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveKey", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeKeys(args: {
   keys?: CryptoKeyId[];
@@ -18893,7 +18641,7 @@ export class CryptoManager extends ManagedObject {
 } & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
       "RemoveKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "CryptoKeyResult[]");
   };
 }
 export class CryptoManagerHost extends CryptoManager {
@@ -18903,7 +18651,9 @@ export class CryptoManagerHost extends CryptoManager {
     init?: Partial<CryptoManagerHost>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async changeKey(args: {
   newKey: CryptoKeyPlain
@@ -18913,13 +18663,13 @@ export class CryptoManagerHost extends CryptoManager {
 } & { _this: ObjectReference }, Task>(
       "ChangeKey_Task", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async disable(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "CryptoManagerHostDisable", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enable(args: {
   initialKey: CryptoKeyPlain
@@ -18929,13 +18679,13 @@ export class CryptoManagerHost extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "CryptoManagerHostEnable", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async prepare(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "CryptoManagerHostPrepare", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class CryptoManagerHostKMS extends CryptoManagerHost {
@@ -18945,7 +18695,9 @@ export class CryptoManagerHostKMS extends CryptoManagerHost {
     init?: Partial<CryptoManagerHostKMS>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -18956,7 +18708,9 @@ export class EventHistoryCollector extends HistoryCollector {
     init?: Partial<EventHistoryCollector>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async readNext(args: {
   maxCount: number
@@ -18966,7 +18720,7 @@ export class EventHistoryCollector extends HistoryCollector {
 } & { _this: ObjectReference }, Event[] | undefined>(
       "ReadNextEvents", { _this: { attributes: { type: "EventHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Event[]");
   }
   async readPrev(args: {
   maxCount: number
@@ -18976,7 +18730,7 @@ export class EventHistoryCollector extends HistoryCollector {
 } & { _this: ObjectReference }, Event[] | undefined>(
       "ReadPreviousEvents", { _this: { attributes: { type: "EventHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Event[]");
   };
 }
 export class EventManager extends ManagedObject {
@@ -18988,7 +18742,9 @@ export class EventManager extends ManagedObject {
     init?: Partial<EventManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async createCollector(args: {
   filter: EventFilterSpec
@@ -18998,7 +18754,7 @@ export class EventManager extends ManagedObject {
 } & { _this: ObjectReference }, EventHistoryCollector>(
       "CreateCollectorForEvents", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new EventHistoryCollector(this.connection, result);
+    return constructHelperObjects(this.connection, result, "EventHistoryCollector");
   }
   async logUserEvent(args: {
   entity: ManagedEntity;
@@ -19010,7 +18766,7 @@ export class EventManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "LogUserEvent", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async postEvent(args: {
   eventToPost: Event;
@@ -19022,7 +18778,7 @@ export class EventManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "PostEvent", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async QueryEvent(args: {
   filter: EventFilterSpec
@@ -19032,7 +18788,7 @@ export class EventManager extends ManagedObject {
 } & { _this: ObjectReference }, Event[] | undefined>(
       "QueryEvents", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Event[]");
   }
   async retrieveArgumentDescription(args: {
   eventTypeId: string
@@ -19042,7 +18798,7 @@ export class EventManager extends ManagedObject {
 } & { _this: ObjectReference }, EventArgDesc[] | undefined>(
       "RetrieveArgumentDescription", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "EventArgDesc[]");
   };
 }
 export class HostAssignableHardwareManager extends ManagedObject {
@@ -19053,19 +18809,21 @@ export class HostAssignableHardwareManager extends ManagedObject {
     init?: Partial<HostAssignableHardwareManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async downloadDescriptionTree(): Promise<Buffer> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Buffer>(
       "DownloadDescriptionTree", { _this: { attributes: { type: "HostAssignableHardwareManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "Buffer");
   }
   async retrieveDynamicPassthroughInfo(): Promise<VirtualMachineDynamicPassthroughInfo[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VirtualMachineDynamicPassthroughInfo[] | undefined>(
       "RetrieveDynamicPassthroughInfo", { _this: { attributes: { type: "HostAssignableHardwareManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VirtualMachineDynamicPassthroughInfo[]");
   }
   async updateConfig(args: {
   config: HostAssignableHardwareConfig
@@ -19075,7 +18833,7 @@ export class HostAssignableHardwareManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateAssignableHardwareConfig", { _this: { attributes: { type: "HostAssignableHardwareManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostAuthenticationManager extends ManagedObject {
@@ -19087,8 +18845,7 @@ export class HostAuthenticationManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { info: undefined,
-        supportedStore: HostAuthenticationStore });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   
@@ -19100,7 +18857,9 @@ export class HostAuthenticationStore extends ManagedObject {
     init?: Partial<HostAuthenticationStore>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -19111,19 +18870,21 @@ export class HostAutoStartManager extends ManagedObject {
     init?: Partial<HostAutoStartManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async autoPowerOff(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "AutoStartPowerOff", { _this: { attributes: { type: "HostAutoStartManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async autoPowerOn(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "AutoStartPowerOn", { _this: { attributes: { type: "HostAutoStartManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigure(args: {
   spec: HostAutoStartManagerConfig
@@ -19133,7 +18894,7 @@ export class HostAutoStartManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureAutostart", { _this: { attributes: { type: "HostAutoStartManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostBootDeviceSystem extends ManagedObject {
@@ -19143,14 +18904,15 @@ export class HostBootDeviceSystem extends ManagedObject {
     init?: Partial<HostBootDeviceSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryBootDevices(): Promise<HostBootDeviceInfo | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostBootDeviceInfo | undefined>(
       "QueryBootDevices", { _this: { attributes: { type: "HostBootDeviceSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { bootDevices: undefined,
-        currentBootDeviceKey: undefined });
+    return constructHelperObjects(this.connection, result, "HostBootDeviceInfo");
   }
   async updateBootDevice(args: {
   key: string
@@ -19160,7 +18922,7 @@ export class HostBootDeviceSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateBootDevice", { _this: { attributes: { type: "HostBootDeviceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostCacheConfigurationManager extends ManagedObject {
@@ -19170,7 +18932,9 @@ export class HostCacheConfigurationManager extends ManagedObject {
     init?: Partial<HostCacheConfigurationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async configureCache(args: {
   spec: HostCacheConfigurationSpec
@@ -19180,7 +18944,7 @@ export class HostCacheConfigurationManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ConfigureHostCache_Task", { _this: { attributes: { type: "HostCacheConfigurationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostCertificateManager extends ManagedObject {
@@ -19190,7 +18954,9 @@ export class HostCertificateManager extends ManagedObject {
     init?: Partial<HostCertificateManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async generateCertificateSigningRequest(args: {
   useIpAddressAsCommonName: boolean
@@ -19200,7 +18966,7 @@ export class HostCertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "GenerateCertificateSigningRequest", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async generateCertificateSigningRequestByDn(args: {
   distinguishedName: string
@@ -19210,7 +18976,7 @@ export class HostCertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "GenerateCertificateSigningRequestByDn", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async installServerCertificate(args: {
   cert: string
@@ -19220,19 +18986,19 @@ export class HostCertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "InstallServerCertificate", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async listCACertificateRevocationLists(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "ListCACertificateRevocationLists", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async listCACertificates(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "ListCACertificates", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async replaceCACertificatesAndCRLs(args: {
   caCert: string[];
@@ -19244,7 +19010,7 @@ export class HostCertificateManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReplaceCACertificatesAndCRLs", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostCpuSchedulerSystem extends ExtensibleManagedObject {
@@ -19254,19 +19020,21 @@ export class HostCpuSchedulerSystem extends ExtensibleManagedObject {
     init?: Partial<HostCpuSchedulerSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async disableHyperThreading(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DisableHyperThreading", { _this: { attributes: { type: "HostCpuSchedulerSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enableHyperThreading(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "EnableHyperThreading", { _this: { attributes: { type: "HostCpuSchedulerSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostDatastoreBrowser extends ManagedObject {
@@ -19278,8 +19046,7 @@ export class HostDatastoreBrowser extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { datastore: Datastore,
-        supportedType: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async deleteFile(args: {
@@ -19290,7 +19057,7 @@ export class HostDatastoreBrowser extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteFile", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async searchSubFolders(args: {
   datastorePath: string;
@@ -19302,7 +19069,7 @@ export class HostDatastoreBrowser extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "SearchDatastoreSubFolders_Task", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async search(args: {
   datastorePath: string;
@@ -19314,7 +19081,7 @@ export class HostDatastoreBrowser extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "SearchDatastore_Task", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostDateTimeSystem extends ManagedObject {
@@ -19324,25 +19091,27 @@ export class HostDateTimeSystem extends ManagedObject {
     init?: Partial<HostDateTimeSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryAvailableTimeZones(): Promise<HostDateTimeSystemTimeZone[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostDateTimeSystemTimeZone[] | undefined>(
       "QueryAvailableTimeZones", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostDateTimeSystemTimeZone[]");
   }
   async queryDateTime(): Promise<Date> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Date>(
       "QueryDateTime", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "Date");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshDateTimeSystem", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateDateTime(args: {
   dateTime: Date
@@ -19352,7 +19121,7 @@ export class HostDateTimeSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateDateTime", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateConfig(args: {
   config: HostDateTimeConfig
@@ -19362,7 +19131,7 @@ export class HostDateTimeSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateDateTimeConfig", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostDirectoryStore extends HostAuthenticationStore {
@@ -19372,7 +19141,9 @@ export class HostDirectoryStore extends HostAuthenticationStore {
     init?: Partial<HostDirectoryStore>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -19383,7 +19154,9 @@ export class HostEsxAgentHostManager extends ManagedObject {
     init?: Partial<HostEsxAgentHostManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async updateConfig(args: {
   configInfo: HostEsxAgentHostManagerConfigInfo
@@ -19393,7 +19166,7 @@ export class HostEsxAgentHostManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "EsxAgentHostManagerUpdateConfig", { _this: { attributes: { type: "HostEsxAgentHostManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostFirmwareSystem extends ManagedObject {
@@ -19403,25 +19176,27 @@ export class HostFirmwareSystem extends ManagedObject {
     init?: Partial<HostFirmwareSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async backupConfiguration(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "BackupFirmwareConfiguration", { _this: { attributes: { type: "HostFirmwareSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryConfigUploadURL(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "QueryFirmwareConfigUploadURL", { _this: { attributes: { type: "HostFirmwareSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async resetToFactoryDefaults(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ResetFirmwareToFactoryDefaults", { _this: { attributes: { type: "HostFirmwareSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async restoreConfiguration(args: {
   force: boolean
@@ -19431,7 +19206,7 @@ export class HostFirmwareSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RestoreFirmwareConfiguration", { _this: { attributes: { type: "HostFirmwareSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostGraphicsManager extends ExtensibleManagedObject {
@@ -19444,19 +19219,21 @@ export class HostGraphicsManager extends ExtensibleManagedObject {
     init?: Partial<HostGraphicsManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async isSharedGraphicsActive(): Promise<boolean> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, boolean>(
       "IsSharedGraphicsActive", { _this: { attributes: { type: "HostGraphicsManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshGraphicsManager", { _this: { attributes: { type: "HostGraphicsManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateGraphicsConfig(args: {
   config: HostGraphicsConfig
@@ -19466,7 +19243,7 @@ export class HostGraphicsManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateGraphicsConfig", { _this: { attributes: { type: "HostGraphicsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostHealthStatusSystem extends ManagedObject {
@@ -19476,31 +19253,33 @@ export class HostHealthStatusSystem extends ManagedObject {
     init?: Partial<HostHealthStatusSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async clearSystemEventLog(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ClearSystemEventLog", { _this: { attributes: { type: "HostHealthStatusSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async FetchSystemEventLog(): Promise<SystemEventInfo[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, SystemEventInfo[] | undefined>(
       "FetchSystemEventLog", { _this: { attributes: { type: "HostHealthStatusSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "SystemEventInfo[]");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshHealthStatusSystem", { _this: { attributes: { type: "HostHealthStatusSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async resetSystemHealthInfo(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ResetSystemHealthInfo", { _this: { attributes: { type: "HostHealthStatusSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostAccessManager extends ManagedObject {
@@ -19510,7 +19289,9 @@ export class HostAccessManager extends ManagedObject {
     init?: Partial<HostAccessManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async changeAccessMode(args: {
   principal: string;
@@ -19524,7 +19305,7 @@ export class HostAccessManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ChangeAccessMode", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async changeLockdownMode(args: {
   mode: HostLockdownMode
@@ -19534,25 +19315,25 @@ export class HostAccessManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ChangeLockdownMode", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryLockdownExceptions(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "QueryLockdownExceptions", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async querySystemUsers(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "QuerySystemUsers", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async retrieveAccessEntries(): Promise<HostAccessControlEntry[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostAccessControlEntry[] | undefined>(
       "RetrieveHostAccessControlEntries", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostAccessControlEntry[]");
   }
   async updateLockdownExceptions(args: {
   users?: string[]
@@ -19562,7 +19343,7 @@ export class HostAccessManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateLockdownExceptions", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateSystemUsers(args: {
   users?: string[]
@@ -19572,7 +19353,7 @@ export class HostAccessManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateSystemUsers", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostImageConfigManager extends ManagedObject {
@@ -19582,20 +19363,21 @@ export class HostImageConfigManager extends ManagedObject {
     init?: Partial<HostImageConfigManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryHostAcceptanceLevel(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "HostImageConfigGetAcceptance", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryHostImageProfile(): Promise<HostImageProfileSummary> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostImageProfileSummary>(
       "HostImageConfigGetProfile", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { name: undefined,
-        vendor: undefined });
+    return constructHelperObjects(this.connection, result, "HostImageProfileSummary");
   }
   async updateAcceptanceLevel(args: {
   newAcceptanceLevel: string
@@ -19605,19 +19387,19 @@ export class HostImageConfigManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateHostImageAcceptanceLevel", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async fetchSoftwarePackages(): Promise<SoftwarePackage[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, SoftwarePackage[] | undefined>(
       "fetchSoftwarePackages", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "SoftwarePackage[]");
   }
   async installDate(): Promise<Date> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Date>(
       "installDate", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "Date");
   };
 }
 export class IscsiManager extends ManagedObject {
@@ -19627,7 +19409,9 @@ export class IscsiManager extends ManagedObject {
     init?: Partial<IscsiManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async bindVnic(args: {
   iScsiHbaName: string;
@@ -19639,7 +19423,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "BindVnic", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryBoundVnics(args: {
   iScsiHbaName: string
@@ -19649,7 +19433,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
       "QueryBoundVnics", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "IscsiPortInfo[]");
   }
   async queryCandidateNics(args: {
   iScsiHbaName: string
@@ -19659,7 +19443,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
       "QueryCandidateNics", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "IscsiPortInfo[]");
   }
   async queryMigrationDependencies(args: {
   pnicDevice: string[]
@@ -19669,9 +19453,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, IscsiMigrationDependency>(
       "QueryMigrationDependencies", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { migrationAllowed: undefined,
-        disallowReason: undefined,
-        dependency: undefined });
+    return constructHelperObjects(this.connection, result, "IscsiMigrationDependency");
   }
   async queryPnicStatus(args: {
   pnicDevice: string
@@ -19681,7 +19463,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, IscsiStatus>(
       "QueryPnicStatus", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { reason: undefined });
+    return constructHelperObjects(this.connection, result, "IscsiStatus");
   }
   async queryVnicStatus(args: {
   vnicDevice: string
@@ -19691,7 +19473,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, IscsiStatus>(
       "QueryVnicStatus", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { reason: undefined });
+    return constructHelperObjects(this.connection, result, "IscsiStatus");
   }
   async unbindVnic(args: {
   iScsiHbaName: string;
@@ -19705,7 +19487,7 @@ export class IscsiManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UnbindVnic", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostKernelModuleSystem extends ManagedObject {
@@ -19715,7 +19497,9 @@ export class HostKernelModuleSystem extends ManagedObject {
     init?: Partial<HostKernelModuleSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryConfiguredModuleOptionString(args: {
   name: string
@@ -19725,13 +19509,13 @@ export class HostKernelModuleSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryConfiguredModuleOptionString", { _this: { attributes: { type: "HostKernelModuleSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryModules(): Promise<KernelModuleInfo[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, KernelModuleInfo[] | undefined>(
       "QueryModules", { _this: { attributes: { type: "HostKernelModuleSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "KernelModuleInfo[]");
   }
   async updateModuleOptionString(args: {
   name: string;
@@ -19743,7 +19527,7 @@ export class HostKernelModuleSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateModuleOptionString", { _this: { attributes: { type: "HostKernelModuleSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostLocalAccountManager extends ManagedObject {
@@ -19753,7 +19537,9 @@ export class HostLocalAccountManager extends ManagedObject {
     init?: Partial<HostLocalAccountManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async assignUserToGroup(args: {
   user: string;
@@ -19765,7 +19551,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AssignUserToGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async changePassword(args: {
   user: string;
@@ -19779,7 +19565,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ChangePassword", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async createGroup(args: {
   group: HostAccountSpec
@@ -19789,7 +19575,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CreateGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async createUser(args: {
   user: HostAccountSpec
@@ -19799,7 +19585,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CreateUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeGroup(args: {
   groupName: string
@@ -19809,7 +19595,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeUser(args: {
   userName: string
@@ -19819,7 +19605,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unassignUserFromGroup(args: {
   user: string;
@@ -19831,7 +19617,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UnassignUserFromGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateUser(args: {
   user: HostAccountSpec
@@ -19841,7 +19627,7 @@ export class HostLocalAccountManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostLocalAuthentication extends HostAuthenticationStore {
@@ -19851,7 +19637,9 @@ export class HostLocalAuthentication extends HostAuthenticationStore {
     init?: Partial<HostLocalAuthentication>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -19863,7 +19651,9 @@ export class HostMemorySystem extends ExtensibleManagedObject {
     init?: Partial<HostMemorySystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async reconfigureServiceConsoleReservation(args: {
   cfgBytes: number
@@ -19873,7 +19663,7 @@ export class HostMemorySystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureServiceConsoleReservation", { _this: { attributes: { type: "HostMemorySystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigureVirtualMachineReservation(args: {
   spec: VirtualMachineMemoryReservationSpec
@@ -19883,7 +19673,7 @@ export class HostMemorySystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureVirtualMachineReservation", { _this: { attributes: { type: "HostMemorySystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class MessageBusProxy extends ManagedObject {
@@ -19893,7 +19683,9 @@ export class MessageBusProxy extends ManagedObject {
     init?: Partial<MessageBusProxy>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -19904,7 +19696,9 @@ export class HostNvdimmSystem extends ManagedObject {
     init?: Partial<HostNvdimmSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async createNamespace(args: {
   createSpec: NvdimmNamespaceCreateSpec
@@ -19914,7 +19708,7 @@ export class HostNvdimmSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CreateNvdimmNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createPMemNamespace(args: {
   createSpec: NvdimmPMemNamespaceCreateSpec
@@ -19924,13 +19718,13 @@ export class HostNvdimmSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CreateNvdimmPMemNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteBlockNamespaces(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "DeleteNvdimmBlockNamespaces_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteNamespace(args: {
   deleteSpec: NvdimmNamespaceDeleteSpec
@@ -19940,7 +19734,7 @@ export class HostNvdimmSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "DeleteNvdimmNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostPatchManager extends ManagedObject {
@@ -19950,7 +19744,9 @@ export class HostPatchManager extends ManagedObject {
     init?: Partial<HostPatchManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async Check(args: {
   metaUrls?: string[];
@@ -19964,7 +19760,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async InstallV2(args: {
   metaUrls?: string[];
@@ -19980,7 +19776,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "InstallHostPatchV2_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async Install(args: {
   repository: HostPatchManagerLocator;
@@ -19994,7 +19790,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "InstallHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async Query(args: {
   spec?: HostPatchManagerPatchManagerOperationSpec
@@ -20004,7 +19800,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "QueryHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async ScanV2(args: {
   metaUrls?: string[];
@@ -20018,7 +19814,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "ScanHostPatchV2_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async Scan(args: {
   repository: HostPatchManagerLocator;
@@ -20030,7 +19826,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "ScanHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async Stage(args: {
   metaUrls?: string[];
@@ -20046,7 +19842,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "StageHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async Uninstall(args: {
   bulletinIds?: string[];
@@ -20058,7 +19854,7 @@ export class HostPatchManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "UninstallHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostPciPassthruSystem extends ExtensibleManagedObject {
@@ -20069,13 +19865,15 @@ export class HostPciPassthruSystem extends ExtensibleManagedObject {
     init?: Partial<HostPciPassthruSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "Refresh", { _this: { attributes: { type: "HostPciPassthruSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updatePassthruConfig(args: {
   config: HostPciPassthruConfig[]
@@ -20085,7 +19883,7 @@ export class HostPciPassthruSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdatePassthruConfig", { _this: { attributes: { type: "HostPciPassthruSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostPowerSystem extends ManagedObject {
@@ -20096,7 +19894,9 @@ export class HostPowerSystem extends ManagedObject {
     init?: Partial<HostPowerSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async configurePolicy(args: {
   key: number
@@ -20106,7 +19906,7 @@ export class HostPowerSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ConfigurePowerPolicy", { _this: { attributes: { type: "HostPowerSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostServiceSystem extends ExtensibleManagedObject {
@@ -20116,13 +19916,15 @@ export class HostServiceSystem extends ExtensibleManagedObject {
     init?: Partial<HostServiceSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshServices", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async restart(args: {
   id: string
@@ -20132,7 +19934,7 @@ export class HostServiceSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RestartService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async start(args: {
   id: string
@@ -20142,7 +19944,7 @@ export class HostServiceSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "StartService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async stop(args: {
   id: string
@@ -20152,7 +19954,7 @@ export class HostServiceSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "StopService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async uninstall(args: {
   id: string
@@ -20162,7 +19964,7 @@ export class HostServiceSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UninstallService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updatePolicy(args: {
   id: string;
@@ -20174,7 +19976,7 @@ export class HostServiceSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateServicePolicy", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostSnmpSystem extends ManagedObject {
@@ -20185,7 +19987,9 @@ export class HostSnmpSystem extends ManagedObject {
     init?: Partial<HostSnmpSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async reconfigureSnmpAgent(args: {
   spec: HostSnmpConfigSpec
@@ -20195,13 +19999,13 @@ export class HostSnmpSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureSnmpAgent", { _this: { attributes: { type: "HostSnmpSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async sendTestNotification(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "SendTestNotification", { _this: { attributes: { type: "HostSnmpSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostVMotionSystem extends ExtensibleManagedObject {
@@ -20212,13 +20016,15 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
     init?: Partial<HostVMotionSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async deselectVnic(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DeselectVnic", { _this: { attributes: { type: "HostVMotionSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async selectVnic(args: {
   device: string
@@ -20228,7 +20034,7 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "SelectVnic", { _this: { attributes: { type: "HostVMotionSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpConfig(args: {
   ipConfig: HostIpConfig
@@ -20238,7 +20044,7 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateIpConfig", { _this: { attributes: { type: "HostVMotionSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostVirtualNicManager extends ExtensibleManagedObject {
@@ -20248,7 +20054,9 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
     init?: Partial<HostVirtualNicManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async deselectVnic(args: {
   nicType: string;
@@ -20260,7 +20068,7 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeselectVnicForNicType", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryNetConfig(args: {
   nicType: string
@@ -20270,10 +20078,7 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, VirtualNicManagerNetConfig | undefined>(
       "QueryNetConfig", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { nicType: undefined,
-        multiSelectAllowed: undefined,
-        candidateVnic: undefined,
-        selectedVnic: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualNicManagerNetConfig");
   }
   async selectVnic(args: {
   nicType: string;
@@ -20285,7 +20090,7 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "SelectVnicForNicType", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostVsanInternalSystem extends ManagedObject {
@@ -20295,7 +20100,9 @@ export class HostVsanInternalSystem extends ManagedObject {
     init?: Partial<HostVsanInternalSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async abdicateDomOwnership(args: {
   uuids: string[]
@@ -20305,7 +20112,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string[] | undefined>(
       "AbdicateDomOwnership", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async canProvisionObjects(args: {
   npbs: VsanNewPolicyBatch[];
@@ -20317,7 +20124,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
       "CanProvisionObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VsanPolicySatisfiability[]");
   }
   async deleteVsanObjects(args: {
   uuids: string[];
@@ -20329,7 +20136,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, HostVsanInternalSystemDeleteVsanObjectsResult[]>(
       "DeleteVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostVsanInternalSystemDeleteVsanObjectsResult[]");
   }
   async getVsanObjExtAttrs(args: {
   uuids: string[]
@@ -20339,7 +20146,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "GetVsanObjExtAttrs", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryCmmds(args: {
   queries: HostVsanInternalSystemCmmdsQuery[]
@@ -20349,7 +20156,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryCmmds", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryObjectsOnPhysicalVsanDisk(args: {
   disks: string[]
@@ -20359,7 +20166,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryObjectsOnPhysicalVsanDisk", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryPhysicalVsanDisks(args: {
   props?: string[]
@@ -20369,7 +20176,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryPhysicalVsanDisks", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async querySyncingVsanObjects(args: {
   uuids?: string[]
@@ -20379,7 +20186,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QuerySyncingVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryVsanObjectUuidsByFilter(args: {
   uuids?: string[];
@@ -20393,7 +20200,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string[] | undefined>(
       "QueryVsanObjectUuidsByFilter", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryVsanObjects(args: {
   uuids?: string[]
@@ -20403,7 +20210,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryVsanStatistics(args: {
   labels: string[]
@@ -20413,7 +20220,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryVsanStatistics", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async reconfigurationSatisfiable(args: {
   pcbs: VsanPolicyChangeBatch[];
@@ -20425,7 +20232,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
       "ReconfigurationSatisfiable", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VsanPolicySatisfiability[]");
   }
   async reconfigureDomObject(args: {
   uuid: string;
@@ -20437,7 +20244,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureDomObject", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async runVsanPhysicalDiskDiagnostics(args: {
   disks?: string[]
@@ -20447,7 +20254,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]>(
       "RunVsanPhysicalDiskDiagnostics", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]");
   }
   async upgradeVsanObjects(args: {
   uuids: string[];
@@ -20459,7 +20266,7 @@ export class HostVsanInternalSystem extends ManagedObject {
 } & { _this: ObjectReference }, HostVsanInternalSystemVsanObjectOperationResult[] | undefined>(
       "UpgradeVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostVsanInternalSystemVsanObjectOperationResult[]");
   };
 }
 export class HostVsanSystem extends ManagedObject {
@@ -20469,7 +20276,9 @@ export class HostVsanSystem extends ManagedObject {
     init?: Partial<HostVsanSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addDisks(args: {
   disk: HostScsiDisk[]
@@ -20479,7 +20288,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "AddDisks_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async evacuateNode(args: {
   maintenanceSpec: HostMaintenanceSpec;
@@ -20491,7 +20300,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "EvacuateVsanNode_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async initializeDisks(args: {
   mapping: VsanHostDiskMapping[]
@@ -20501,7 +20310,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "InitializeDisks_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDisksForVsan(args: {
   canonicalName?: string[]
@@ -20511,23 +20320,19 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, VsanHostDiskResult[] | undefined>(
       "QueryDisksForVsan", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VsanHostDiskResult[]");
   }
   async queryHostStatus(): Promise<VsanHostClusterStatus> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VsanHostClusterStatus>(
       "QueryHostStatus", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { uuid: undefined,
-        nodeUuid: undefined,
-        health: undefined,
-        nodeState: undefined,
-        memberUuid: undefined });
+    return constructHelperObjects(this.connection, result, "VsanHostClusterStatus");
   }
   async recommissionNode(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "RecommissionVsanNode_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async removeDiskMapping(args: {
   mapping: VsanHostDiskMapping[];
@@ -20541,7 +20346,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "RemoveDiskMapping_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async removeDisk(args: {
   disk: HostScsiDisk[];
@@ -20555,7 +20360,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "RemoveDisk_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async unmountDiskMapping(args: {
   mapping: VsanHostDiskMapping[]
@@ -20565,7 +20370,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "UnmountDiskMapping_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async update(args: {
   config: VsanHostConfigInfo
@@ -20575,7 +20380,7 @@ export class HostVsanSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "UpdateVsan_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class OptionManager extends ManagedObject {
@@ -20586,7 +20391,9 @@ export class OptionManager extends ManagedObject {
     init?: Partial<OptionManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryView(args: {
   name?: string
@@ -20596,7 +20403,7 @@ export class OptionManager extends ManagedObject {
 } & { _this: ObjectReference }, OptionValue[] | undefined>(
       "QueryOptions", { _this: { attributes: { type: "OptionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "OptionValue[]");
   }
   async updateValues(args: {
   changedValue: OptionValue[]
@@ -20606,7 +20413,7 @@ export class OptionManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateOptions", { _this: { attributes: { type: "OptionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ProfileComplianceManager extends ManagedObject {
@@ -20616,7 +20423,9 @@ export class ProfileComplianceManager extends ManagedObject {
     init?: Partial<ProfileComplianceManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async checkCompliance(args: {
   profile?: Profile[];
@@ -20628,7 +20437,7 @@ export class ProfileComplianceManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckCompliance_Task", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async clearComplianceStatus(args: {
   profile?: Profile[];
@@ -20640,7 +20449,7 @@ export class ProfileComplianceManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ClearComplianceStatus", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryComplianceStatus(args: {
   profile?: Profile[];
@@ -20652,7 +20461,7 @@ export class ProfileComplianceManager extends ManagedObject {
 } & { _this: ObjectReference }, ComplianceResult[] | undefined>(
       "QueryComplianceStatus", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ComplianceResult[]");
   }
   async queryExpressionMetadata(args: {
   expressionName?: string[];
@@ -20664,7 +20473,7 @@ export class ProfileComplianceManager extends ManagedObject {
 } & { _this: ObjectReference }, ProfileExpressionMetadata[] | undefined>(
       "QueryExpressionMetadata", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ProfileExpressionMetadata[]");
   };
 }
 export class Profile extends ManagedObject {
@@ -20681,13 +20490,7 @@ export class Profile extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { config: undefined,
-        description: undefined,
-        name: undefined,
-        createdTime: undefined,
-        modifiedTime: undefined,
-        entity: ManagedEntity,
-        complianceStatus: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async associateEntities(args: {
@@ -20698,7 +20501,7 @@ export class Profile extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AssociateProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async checkCompliance(args: {
   entity?: ManagedEntity[]
@@ -20708,13 +20511,13 @@ export class Profile extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckProfileCompliance_Task", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async destroy(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async dissociateEntities(args: {
   entity?: ManagedEntity[]
@@ -20724,19 +20527,19 @@ export class Profile extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DissociateProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async exportProfile(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "ExportProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveDescription(): Promise<ProfileDescription | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, ProfileDescription | undefined>(
       "RetrieveDescription", { _this: { attributes: { type: "Profile" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { section: undefined });
+    return constructHelperObjects(this.connection, result, "ProfileDescription");
   };
 }
 export class ProfileManager extends ManagedObject {
@@ -20747,7 +20550,7 @@ export class ProfileManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { profile: Profile });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createProfile(args: {
@@ -20758,7 +20561,7 @@ export class ProfileManager extends ManagedObject {
 } & { _this: ObjectReference }, Profile>(
       "CreateProfile", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Profile(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Profile");
   }
   async findAssociatedProfile(args: {
   entity: ManagedEntity
@@ -20768,7 +20571,7 @@ export class ProfileManager extends ManagedObject {
 } & { _this: ObjectReference }, Profile[] | undefined>(
       "FindAssociatedProfile", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Profile[]");
   }
   async queryPolicyMetadata(args: {
   policyName?: string[];
@@ -20780,7 +20583,7 @@ export class ProfileManager extends ManagedObject {
 } & { _this: ObjectReference }, ProfilePolicyMetadata[] | undefined>(
       "QueryPolicyMetadata", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ProfilePolicyMetadata[]");
   };
 }
 export class ClusterProfile extends Profile {
@@ -20790,7 +20593,9 @@ export class ClusterProfile extends Profile {
     init?: Partial<ClusterProfile>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async update(args: {
   config: ClusterProfileConfigSpec
@@ -20800,7 +20605,7 @@ export class ClusterProfile extends Profile {
 } & { _this: ObjectReference }, void>(
       "UpdateClusterProfile", { _this: { attributes: { type: "ClusterProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ClusterProfileManager extends ProfileManager {
@@ -20810,7 +20615,9 @@ export class ClusterProfileManager extends ProfileManager {
     init?: Partial<ClusterProfileManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -20821,7 +20628,9 @@ export class HostSpecificationManager extends ManagedObject {
     init?: Partial<HostSpecificationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async deleteHostSpecification(args: {
   host: HostSystem
@@ -20831,7 +20640,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async deleteHostSubSpecification(args: {
   host: HostSystem;
@@ -20843,7 +20652,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteHostSubSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async getUpdatedHosts(args: {
   startChangeID?: string;
@@ -20855,7 +20664,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "HostSpecGetUpdatedHosts", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async retrieveHostSpecification(args: {
   host: HostSystem;
@@ -20867,11 +20676,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, HostSpecification>(
       "RetrieveHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { createdTime: undefined,
-        lastModified: undefined,
-        host: HostSystem,
-        subSpecs: undefined,
-        changeID: undefined });
+    return constructHelperObjects(this.connection, result, "HostSpecification");
   }
   async updateHostSpecification(args: {
   host: HostSystem;
@@ -20883,7 +20688,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateHostSubSpecification(args: {
   host: HostSystem;
@@ -20895,7 +20700,7 @@ export class HostSpecificationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateHostSubSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ScheduledTask extends ExtensibleManagedObject {
@@ -20905,7 +20710,9 @@ export class ScheduledTask extends ExtensibleManagedObject {
     init?: Partial<ScheduledTask>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async reconfigure(args: {
   spec: ScheduledTaskSpec
@@ -20915,19 +20722,19 @@ export class ScheduledTask extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReconfigureScheduledTask", { _this: { attributes: { type: "ScheduledTask" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async remove(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RemoveScheduledTask", { _this: { attributes: { type: "ScheduledTask" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async run(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RunScheduledTask", { _this: { attributes: { type: "ScheduledTask" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ScheduledTaskManager extends ManagedObject {
@@ -20939,8 +20746,7 @@ export class ScheduledTaskManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { scheduledTask: ScheduledTask,
-        description: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createObjectScheduledTask(args: {
@@ -20953,7 +20759,7 @@ export class ScheduledTaskManager extends ManagedObject {
 } & { _this: ObjectReference }, ScheduledTask>(
       "CreateObjectScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ScheduledTask(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ScheduledTask");
   }
   async create(args: {
   entity: ManagedEntity;
@@ -20965,7 +20771,7 @@ export class ScheduledTaskManager extends ManagedObject {
 } & { _this: ObjectReference }, ScheduledTask>(
       "CreateScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ScheduledTask(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ScheduledTask");
   }
   async retrieveEntityScheduledTask(args: {
   entity?: ManagedEntity
@@ -20975,7 +20781,7 @@ export class ScheduledTaskManager extends ManagedObject {
 } & { _this: ObjectReference }, ScheduledTask[] | undefined>(
       "RetrieveEntityScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ScheduledTask[]");
   }
   async retrieveObjectScheduledTask(args: {
   obj?: ManagedObject
@@ -20985,7 +20791,7 @@ export class ScheduledTaskManager extends ManagedObject {
 } & { _this: ObjectReference }, ScheduledTask[] | undefined>(
       "RetrieveObjectScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ScheduledTask[]");
   };
 }
 export class TenantTenantManager extends ManagedObject {
@@ -20995,7 +20801,9 @@ export class TenantTenantManager extends ManagedObject {
     init?: Partial<TenantTenantManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async markServiceProviderEntities(args: {
   entity?: ManagedEntity[]
@@ -21005,13 +20813,13 @@ export class TenantTenantManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MarkServiceProviderEntities", { _this: { attributes: { type: "TenantTenantManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveServiceProviderEntities(): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "RetrieveServiceProviderEntities", { _this: { attributes: { type: "TenantTenantManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async unmarkServiceProviderEntities(args: {
   entity?: ManagedEntity[]
@@ -21021,7 +20829,7 @@ export class TenantTenantManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UnmarkServiceProviderEntities", { _this: { attributes: { type: "TenantTenantManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class FailoverClusterConfigurator extends ManagedObject {
@@ -21031,7 +20839,9 @@ export class FailoverClusterConfigurator extends ManagedObject {
     init?: Partial<FailoverClusterConfigurator>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async configure(args: {
   configSpec: VchaClusterConfigSpec
@@ -21041,7 +20851,7 @@ export class FailoverClusterConfigurator extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "configureVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createPassiveNode(args: {
   passiveDeploymentSpec: PassiveNodeDeploymentSpec;
@@ -21053,7 +20863,7 @@ export class FailoverClusterConfigurator extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "createPassiveNode_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createWitnessNode(args: {
   witnessDeploymentSpec: NodeDeploymentSpec;
@@ -21065,7 +20875,7 @@ export class FailoverClusterConfigurator extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "createWitnessNode_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deploy(args: {
   deploymentSpec: VchaClusterDeploymentSpec
@@ -21075,22 +20885,19 @@ export class FailoverClusterConfigurator extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "deployVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async destroy(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "destroyVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async getConfig(): Promise<VchaClusterConfigInfo> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VchaClusterConfigInfo>(
       "getVchaConfig", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { failoverNodeInfo1: undefined,
-        failoverNodeInfo2: undefined,
-        witnessNodeInfo: undefined,
-        state: undefined });
+    return constructHelperObjects(this.connection, result, "VchaClusterConfigInfo");
   }
   async prepare(args: {
   networkSpec: VchaClusterNetworkSpec
@@ -21100,7 +20907,7 @@ export class FailoverClusterConfigurator extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "prepareVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class FailoverClusterManager extends ManagedObject {
@@ -21110,21 +20917,21 @@ export class FailoverClusterManager extends ManagedObject {
     init?: Partial<FailoverClusterManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async getClusterHealth(): Promise<VchaClusterHealth> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VchaClusterHealth>(
       "GetVchaClusterHealth", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { runtimeInfo: undefined,
-        healthMessages: undefined,
-        additionalInformation: undefined });
+    return constructHelperObjects(this.connection, result, "VchaClusterHealth");
   }
   async getClusterMode(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "getClusterMode", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async initiateFailover(args: {
   planned: boolean
@@ -21134,7 +20941,7 @@ export class FailoverClusterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "initiateFailover_Task", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async setClusterMode(args: {
   mode: string
@@ -21144,7 +20951,7 @@ export class FailoverClusterManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "setClusterMode_Task", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class View extends ManagedObject {
@@ -21154,13 +20961,15 @@ export class View extends ManagedObject {
     init?: Partial<View>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async destroy(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyView", { _this: { attributes: { type: "View" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ViewManager extends ManagedObject {
@@ -21171,7 +20980,7 @@ export class ViewManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { viewList: View });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createContainerView(args: {
@@ -21186,13 +20995,13 @@ export class ViewManager extends ManagedObject {
 } & { _this: ObjectReference }, ContainerView>(
       "CreateContainerView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ContainerView(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ContainerView");
   }
   async createInventoryView(): Promise<InventoryView> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, InventoryView>(
       "CreateInventoryView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new InventoryView(this.connection, result);
+    return constructHelperObjects(this.connection, result, "InventoryView");
   }
   async createListView(args: {
   obj?: ManagedObject[]
@@ -21202,7 +21011,7 @@ export class ViewManager extends ManagedObject {
 } & { _this: ObjectReference }, ListView>(
       "CreateListView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ListView(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ListView");
   }
   async createListViewFromView(args: {
   view: View
@@ -21212,7 +21021,7 @@ export class ViewManager extends ManagedObject {
 } & { _this: ObjectReference }, ListView>(
       "CreateListViewFromView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ListView(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ListView");
   };
 }
 export class VirtualMachineGuestCustomizationManager extends ManagedObject {
@@ -21222,7 +21031,9 @@ export class VirtualMachineGuestCustomizationManager extends ManagedObject {
     init?: Partial<VirtualMachineGuestCustomizationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async abortCustomization(args: {
   vm: VirtualMachine;
@@ -21234,7 +21045,7 @@ export class VirtualMachineGuestCustomizationManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "AbortCustomization_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async customize(args: {
   vm: VirtualMachine;
@@ -21250,7 +21061,7 @@ export class VirtualMachineGuestCustomizationManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CustomizeGuest_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async startNetwork(args: {
   vm: VirtualMachine;
@@ -21262,7 +21073,7 @@ export class VirtualMachineGuestCustomizationManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "StartGuestNetwork_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class VirtualMachineSnapshot extends ExtensibleManagedObject {
@@ -21275,16 +21086,14 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { config: undefined,
-        childSnapshot: VirtualMachineSnapshot,
-        vm: VirtualMachine });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async exportSnapshot(): Promise<HttpNfcLease> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HttpNfcLease>(
       "ExportSnapshot", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new HttpNfcLease(this.connection, result);
+    return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async remove(args: {
   removeChildren: boolean;
@@ -21296,7 +21105,7 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task>(
       "RemoveSnapshot_Task", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async rename(args: {
   name?: string;
@@ -21308,7 +21117,7 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RenameSnapshot", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async revert(args: {
   host?: HostSystem;
@@ -21320,7 +21129,7 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task>(
       "RevertToSnapshot_Task", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class VirtualMachineCompatibilityChecker extends ManagedObject {
@@ -21330,7 +21139,9 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
     init?: Partial<VirtualMachineCompatibilityChecker>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async checkCompatibility(args: {
   vm: VirtualMachine;
@@ -21346,7 +21157,7 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckCompatibility_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkPowerOn(args: {
   vm: VirtualMachine;
@@ -21362,7 +21173,7 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckPowerOn_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkVmConfig(args: {
   spec: VirtualMachineConfigSpec;
@@ -21380,7 +21191,7 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckVmConfig_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class GuestAliasManager extends ManagedObject {
@@ -21390,7 +21201,9 @@ export class GuestAliasManager extends ManagedObject {
     init?: Partial<GuestAliasManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addAlias(args: {
   vm: VirtualMachine;
@@ -21410,7 +21223,7 @@ export class GuestAliasManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddGuestAlias", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async listAliases(args: {
   vm: VirtualMachine;
@@ -21424,7 +21237,7 @@ export class GuestAliasManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestAliases[] | undefined>(
       "ListGuestAliases", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "GuestAliases[]");
   }
   async listMappedAliases(args: {
   vm: VirtualMachine;
@@ -21436,7 +21249,7 @@ export class GuestAliasManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestMappedAliases[] | undefined>(
       "ListGuestMappedAliases", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "GuestMappedAliases[]");
   }
   async removeAlias(args: {
   vm: VirtualMachine;
@@ -21454,7 +21267,7 @@ export class GuestAliasManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveGuestAlias", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeAliasByCert(args: {
   vm: VirtualMachine;
@@ -21470,7 +21283,7 @@ export class GuestAliasManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveGuestAliasByCert", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class GuestAuthManager extends ManagedObject {
@@ -21480,7 +21293,9 @@ export class GuestAuthManager extends ManagedObject {
     init?: Partial<GuestAuthManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async acquireCredentials(args: {
   vm: VirtualMachine;
@@ -21494,7 +21309,7 @@ export class GuestAuthManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestAuthentication>(
       "AcquireCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { interactiveSession: undefined });
+    return constructHelperObjects(this.connection, result, "GuestAuthentication");
   }
   async releaseCredentials(args: {
   vm: VirtualMachine;
@@ -21506,7 +21321,7 @@ export class GuestAuthManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReleaseCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async validateCredentials(args: {
   vm: VirtualMachine;
@@ -21518,7 +21333,7 @@ export class GuestAuthManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ValidateCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class GuestFileManager extends ManagedObject {
@@ -21528,7 +21343,9 @@ export class GuestFileManager extends ManagedObject {
     init?: Partial<GuestFileManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async changeFileAttributes(args: {
   vm: VirtualMachine;
@@ -21544,7 +21361,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ChangeFileAttributesInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async createTemporaryDirectory(args: {
   vm: VirtualMachine;
@@ -21562,7 +21379,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "CreateTemporaryDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async createTemporaryFile(args: {
   vm: VirtualMachine;
@@ -21580,7 +21397,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "CreateTemporaryFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async deleteDirectory(args: {
   vm: VirtualMachine;
@@ -21596,7 +21413,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async deleteFile(args: {
   vm: VirtualMachine;
@@ -21610,7 +21427,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async initiateFileTransferFromGuest(args: {
   vm: VirtualMachine;
@@ -21624,9 +21441,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, FileTransferInformation>(
       "InitiateFileTransferFromGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { attributes: undefined,
-        size: undefined,
-        url: undefined });
+    return constructHelperObjects(this.connection, result, "FileTransferInformation");
   }
   async initiateFileTransferToGuest(args: {
   vm: VirtualMachine;
@@ -21646,7 +21461,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "InitiateFileTransferToGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async listFiles(args: {
   vm: VirtualMachine;
@@ -21666,8 +21481,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestListFileInfo>(
       "ListFilesInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { files: undefined,
-        remaining: undefined });
+    return constructHelperObjects(this.connection, result, "GuestListFileInfo");
   }
   async makeDirectory(args: {
   vm: VirtualMachine;
@@ -21683,7 +21497,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MakeDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async moveDirectory(args: {
   vm: VirtualMachine;
@@ -21699,7 +21513,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MoveDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async moveFile(args: {
   vm: VirtualMachine;
@@ -21717,7 +21531,7 @@ export class GuestFileManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MoveFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class GuestOperationsManager extends ManagedObject {
@@ -21732,11 +21546,7 @@ export class GuestOperationsManager extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { authManager: GuestAuthManager,
-        fileManager: GuestFileManager,
-        processManager: GuestProcessManager,
-        guestWindowsRegistryManager: GuestWindowsRegistryManager,
-        aliasManager: GuestAliasManager });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   
@@ -21748,7 +21558,9 @@ export class GuestProcessManager extends ManagedObject {
     init?: Partial<GuestProcessManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async listProcesses(args: {
   vm: VirtualMachine;
@@ -21762,7 +21574,7 @@ export class GuestProcessManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestProcessInfo[] | undefined>(
       "ListProcessesInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "GuestProcessInfo[]");
   }
   async readEnvironmentVariable(args: {
   vm: VirtualMachine;
@@ -21776,7 +21588,7 @@ export class GuestProcessManager extends ManagedObject {
 } & { _this: ObjectReference }, string[] | undefined>(
       "ReadEnvironmentVariableInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async startProgram(args: {
   vm: VirtualMachine;
@@ -21790,7 +21602,7 @@ export class GuestProcessManager extends ManagedObject {
 } & { _this: ObjectReference }, number>(
       "StartProgramInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async terminateProcess(args: {
   vm: VirtualMachine;
@@ -21804,7 +21616,7 @@ export class GuestProcessManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "TerminateProcessInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class GuestWindowsRegistryManager extends ManagedObject {
@@ -21814,7 +21626,9 @@ export class GuestWindowsRegistryManager extends ManagedObject {
     init?: Partial<GuestWindowsRegistryManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async createRegistryKey(args: {
   vm: VirtualMachine;
@@ -21832,7 +21646,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "CreateRegistryKeyInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async deleteRegistryKey(args: {
   vm: VirtualMachine;
@@ -21848,7 +21662,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteRegistryKeyInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async deleteRegistryValue(args: {
   vm: VirtualMachine;
@@ -21862,7 +21676,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DeleteRegistryValueInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async listRegistryKeys(args: {
   vm: VirtualMachine;
@@ -21880,7 +21694,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestRegKeyRecordSpec[] | undefined>(
       "ListRegistryKeysInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "GuestRegKeyRecordSpec[]");
   }
   async listRegistryValues(args: {
   vm: VirtualMachine;
@@ -21898,7 +21712,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, GuestRegValueSpec[] | undefined>(
       "ListRegistryValuesInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "GuestRegValueSpec[]");
   }
   async setRegistryValue(args: {
   vm: VirtualMachine;
@@ -21912,7 +21726,7 @@ export class GuestWindowsRegistryManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetRegistryValueInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class VStorageObjectManagerBase extends ManagedObject {
@@ -21922,7 +21736,9 @@ export class VStorageObjectManagerBase extends ManagedObject {
     init?: Partial<VStorageObjectManagerBase>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -21935,7 +21751,9 @@ export class AuthorizationManager extends ManagedObject {
     init?: Partial<AuthorizationManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addRole(args: {
   name: string;
@@ -21947,7 +21765,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, number>(
       "AddAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async fetchUserPrivilegeOnEntities(args: {
   entities: ManagedEntity[];
@@ -21959,7 +21777,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, UserPrivilegeResult[] | undefined>(
       "FetchUserPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "UserPrivilegeResult[]");
   }
   async hasPrivilegeOnEntities(args: {
   entity: ManagedEntity[];
@@ -21973,7 +21791,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
       "HasPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "EntityPrivilege[]");
   }
   async hasPrivilegeOnEntity(args: {
   entity: ManagedEntity;
@@ -21987,7 +21805,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean[] | undefined>(
       "HasPrivilegeOnEntity", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean[]");
   }
   async hasUserPrivilegeOnEntities(args: {
   entities: ManagedObject[];
@@ -22001,7 +21819,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
       "HasUserPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "EntityPrivilege[]");
   }
   async mergePermissions(args: {
   srcRoleId: number;
@@ -22013,7 +21831,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "MergePermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeRole(args: {
   roleId: number;
@@ -22025,7 +21843,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeEntityPermission(args: {
   entity: ManagedEntity;
@@ -22039,7 +21857,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveEntityPermission", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async resetEntityPermissions(args: {
   entity: ManagedEntity;
@@ -22051,13 +21869,13 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ResetEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveAllPermissions(): Promise<Permission[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Permission[] | undefined>(
       "RetrieveAllPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async retrieveEntityPermissions(args: {
   entity: ManagedEntity;
@@ -22069,7 +21887,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, Permission[] | undefined>(
       "RetrieveEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async retrieveRolePermissions(args: {
   roleId: number
@@ -22079,7 +21897,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, Permission[] | undefined>(
       "RetrieveRolePermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async setEntityPermissions(args: {
   entity: ManagedEntity;
@@ -22091,7 +21909,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateRole(args: {
   roleId: number;
@@ -22105,7 +21923,7 @@ export class AuthorizationManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class LicenseAssignmentManager extends ManagedObject {
@@ -22115,7 +21933,9 @@ export class LicenseAssignmentManager extends ManagedObject {
     init?: Partial<LicenseAssignmentManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async queryAssignedLicenses(args: {
   entityId?: string
@@ -22125,7 +21945,7 @@ export class LicenseAssignmentManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseAssignmentManagerLicenseAssignment[] | undefined>(
       "QueryAssignedLicenses", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "LicenseAssignmentManagerLicenseAssignment[]");
   }
   async removeAssignedLicense(args: {
   entityId: string
@@ -22135,7 +21955,7 @@ export class LicenseAssignmentManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveAssignedLicense", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateAssignedLicense(args: {
   entity: string;
@@ -22149,14 +21969,7 @@ export class LicenseAssignmentManager extends ManagedObject {
 } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "UpdateAssignedLicense", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { licenseKey: undefined,
-        editionKey: undefined,
-        name: undefined,
-        total: undefined,
-        used: undefined,
-        costUnit: undefined,
-        properties: undefined,
-        labels: undefined });
+    return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   };
 }
 export class ManagedEntity extends ExtensibleManagedObject {
@@ -22180,33 +21993,20 @@ export class ManagedEntity extends ExtensibleManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { parent: ManagedEntity,
-        customValue: undefined,
-        overallStatus: undefined,
-        configStatus: undefined,
-        configIssue: undefined,
-        effectiveRole: undefined,
-        permission: undefined,
-        name: undefined,
-        disabledMethod: undefined,
-        recentTask: Task,
-        declaredAlarmState: undefined,
-        triggeredAlarmState: undefined,
-        alarmActionsEnabled: undefined,
-        tag: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async destroy(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "Destroy_Task", { _this: { attributes: { type: "ManagedEntity" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reload(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "Reload", { _this: { attributes: { type: "ManagedEntity" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async rename(args: {
   newName: string
@@ -22216,7 +22016,7 @@ export class ManagedEntity extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, Task>(
       "Rename_Task", { _this: { attributes: { type: "ManagedEntity" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class Network extends ManagedEntity {
@@ -22229,16 +22029,14 @@ export class Network extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { summary: undefined,
-        host: HostSystem,
-        vm: VirtualMachine });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async destroyNetwork(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyNetwork", { _this: { attributes: { type: "Network" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class OpaqueNetwork extends Network {
@@ -22249,7 +22047,9 @@ export class OpaqueNetwork extends Network {
     init?: Partial<OpaqueNetwork>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -22268,14 +22068,7 @@ export class ResourcePool extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { summary: undefined,
-        runtime: undefined,
-        owner: ComputeResource,
-        resourcePool: ResourcePool,
-        vm: VirtualMachine,
-        config: undefined,
-        namespace: undefined,
-        childConfiguration: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async createVm(args: {
@@ -22288,7 +22081,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateChildVM_Task", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createResourcePool(args: {
   name: string;
@@ -22300,7 +22093,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, ResourcePool>(
       "CreateResourcePool", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ResourcePool(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ResourcePool");
   }
   async createVApp(args: {
   name: string;
@@ -22316,13 +22109,13 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, VirtualApp>(
       "CreateVApp", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new VirtualApp(this.connection, result);
+    return constructHelperObjects(this.connection, result, "VirtualApp");
   }
   async destroyChildren(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyChildren", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async importVApp(args: {
   spec: ImportSpec;
@@ -22336,7 +22129,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, HttpNfcLease>(
       "ImportVApp", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new HttpNfcLease(this.connection, result);
+    return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async moveInto(args: {
   list: ManagedEntity[]
@@ -22346,20 +22139,19 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "MoveIntoResourcePool", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryResourceConfigOption(): Promise<ResourceConfigOption> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, ResourceConfigOption>(
       "QueryResourceConfigOption", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { cpuAllocationOption: undefined,
-        memoryAllocationOption: undefined });
+    return constructHelperObjects(this.connection, result, "ResourceConfigOption");
   }
   async refreshRuntime(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshRuntime", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async registerVm(args: {
   path: string;
@@ -22373,7 +22165,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RegisterChildVM_Task", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateChildResourceConfiguration(args: {
   spec: ResourceConfigSpec[]
@@ -22383,7 +22175,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateChildResourceConfiguration", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateConfig(args: {
   name?: string;
@@ -22395,7 +22187,7 @@ export class ResourcePool extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateConfig", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class Task extends ExtensibleManagedObject {
@@ -22405,13 +22197,15 @@ export class Task extends ExtensibleManagedObject {
     init?: Partial<Task>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async cancel(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "CancelTask", { _this: { attributes: { type: "Task" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async UpdateDescription(args: {
   description: LocalizableMessage
@@ -22421,7 +22215,7 @@ export class Task extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetTaskDescription", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setState(args: {
   state: TaskInfoState;
@@ -22435,7 +22229,7 @@ export class Task extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetTaskState", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async UpdateProgress(args: {
   percentDone: number
@@ -22445,7 +22239,7 @@ export class Task extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateProgress", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class VirtualApp extends ResourcePool {
@@ -22461,12 +22255,7 @@ export class VirtualApp extends ResourcePool {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { parentFolder: Folder,
-        datastore: Datastore,
-        network: Network,
-        vAppConfig: undefined,
-        parentVApp: ManagedEntity,
-        childLink: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async clone(args: {
@@ -22481,13 +22270,13 @@ export class VirtualApp extends ResourcePool {
 } & { _this: ObjectReference }, Task>(
       "CloneVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async exportVApp(): Promise<HttpNfcLease> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HttpNfcLease>(
       "ExportVApp", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new HttpNfcLease(this.connection, result);
+    return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async powerOff(args: {
   force: boolean
@@ -22497,19 +22286,19 @@ export class VirtualApp extends ResourcePool {
 } & { _this: ObjectReference }, Task>(
       "PowerOffVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async powerOn(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "PowerOnVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async suspend(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "SuspendVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateLinkedChildren(args: {
   addChangeSet?: VirtualAppLinkInfo[];
@@ -22521,7 +22310,7 @@ export class VirtualApp extends ResourcePool {
 } & { _this: ObjectReference }, void>(
       "UpdateLinkedChildren", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVAppConfig(args: {
   spec: VAppConfigSpec
@@ -22531,13 +22320,13 @@ export class VirtualApp extends ResourcePool {
 } & { _this: ObjectReference }, void>(
       "UpdateVAppConfig", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unregister(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "unregisterVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class VirtualDiskManager extends ManagedObject {
@@ -22547,7 +22336,9 @@ export class VirtualDiskManager extends ManagedObject {
     init?: Partial<VirtualDiskManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async copyVirtualDisk(args: {
   sourceName: string;
@@ -22567,7 +22358,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CopyVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createVirtualDisk(args: {
   name: string;
@@ -22581,7 +22372,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CreateVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async defragmentVirtualDisk(args: {
   name: string;
@@ -22593,7 +22384,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "DefragmentVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVirtualDisk(args: {
   name: string;
@@ -22605,7 +22396,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "DeleteVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async eagerZeroVirtualDisk(args: {
   name: string;
@@ -22617,7 +22408,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "EagerZeroVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async extendVirtualDisk(args: {
   name: string;
@@ -22633,7 +22424,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ExtendVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async importUnmanagedSnapshot(args: {
   vdisk: string;
@@ -22647,7 +22438,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ImportUnmanagedSnapshot", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async inflateVirtualDisk(args: {
   name: string;
@@ -22659,7 +22450,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "InflateVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async moveVirtualDisk(args: {
   sourceName: string;
@@ -22679,7 +22470,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "MoveVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryVirtualDiskFragmentation(args: {
   name: string;
@@ -22691,7 +22482,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, number>(
       "QueryVirtualDiskFragmentation", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async queryVirtualDiskGeometry(args: {
   name: string;
@@ -22703,9 +22494,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, HostDiskDimensionsChs>(
       "QueryVirtualDiskGeometry", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { cylinder: undefined,
-        head: undefined,
-        sector: undefined });
+    return constructHelperObjects(this.connection, result, "HostDiskDimensionsChs");
   }
   async queryVirtualDiskUuid(args: {
   name: string;
@@ -22717,7 +22506,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, string>(
       "QueryVirtualDiskUuid", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async releaseManagedSnapshot(args: {
   vdisk: string;
@@ -22729,7 +22518,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ReleaseManagedSnapshot", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setVirtualDiskUuid(args: {
   name: string;
@@ -22743,7 +22532,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "SetVirtualDiskUuid", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async shrinkVirtualDisk(args: {
   name: string;
@@ -22757,7 +22546,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ShrinkVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async zeroFillVirtualDisk(args: {
   name: string;
@@ -22769,7 +22558,7 @@ export class VirtualDiskManager extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "ZeroFillVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class VirtualMachine extends ManagedEntity {
@@ -22796,34 +22585,14 @@ export class VirtualMachine extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { capability: undefined,
-        config: undefined,
-        layout: undefined,
-        layoutEx: undefined,
-        storage: undefined,
-        environmentBrowser: EnvironmentBrowser,
-        resourcePool: ResourcePool,
-        parentVApp: ManagedEntity,
-        resourceConfig: undefined,
-        runtime: undefined,
-        guest: undefined,
-        summary: undefined,
-        datastore: Datastore,
-        network: Network,
-        snapshot: undefined,
-        rootSnapshot: VirtualMachineSnapshot,
-        guestHeartbeatStatus: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async acquireMksTicket(): Promise<VirtualMachineMksTicket> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VirtualMachineMksTicket>(
       "AcquireMksTicket", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { ticket: undefined,
-        cfgFile: undefined,
-        host: undefined,
-        port: undefined,
-        sslThumbprint: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualMachineMksTicket");
   }
   async acquireTicket(args: {
   ticketType: string
@@ -22833,12 +22602,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, VirtualMachineTicket>(
       "AcquireTicket", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { ticket: undefined,
-        cfgFile: undefined,
-        host: undefined,
-        port: undefined,
-        sslThumbprint: undefined,
-        url: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualMachineTicket");
   }
   async answer(args: {
   questionId: string;
@@ -22850,7 +22614,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "AnswerVM", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async applyEvcMode(args: {
   mask?: HostFeatureMask[];
@@ -22862,7 +22626,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ApplyEvcModeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async attachDisk(args: {
   diskId: ID;
@@ -22878,7 +22642,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "AttachDisk_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkCustomizationSpec(args: {
   spec: CustomizationSpec
@@ -22888,7 +22652,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "CheckCustomizationSpec", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async clone(args: {
   folder: Folder;
@@ -22902,19 +22666,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CloneVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async consolidateDisks(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "ConsolidateVMDisks_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createScreenshot(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "CreateScreenshot_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSecondaryEx(args: {
   host?: HostSystem;
@@ -22926,7 +22690,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateSecondaryVMEx_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSecondary(args: {
   host?: HostSystem
@@ -22936,7 +22700,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshotEx(args: {
   name: string;
@@ -22952,7 +22716,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateSnapshotEx_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
   name: string;
@@ -22968,13 +22732,13 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateSnapshot_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async cryptoUnlock(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "CryptoUnlock_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async customize(args: {
   spec: CustomizationSpec
@@ -22984,13 +22748,13 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CustomizeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async defragmentAllDisks(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DefragmentAllDisks", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async detachDisk(args: {
   diskId: ID
@@ -23000,7 +22764,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "DetachDisk_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async disableSecondary(args: {
   vm: VirtualMachine
@@ -23010,7 +22774,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "DisableSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async dropConnections(args: {
   listOfConnections?: VirtualMachineConnection[]
@@ -23020,7 +22784,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, boolean>(
       "DropConnections", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async enableSecondary(args: {
   vm: VirtualMachine;
@@ -23032,25 +22796,25 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "EnableSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async estimateStorageRequirementForConsolidate(): Promise<Task | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task | undefined>(
       "EstimateStorageForConsolidateSnapshots_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async exportVm(): Promise<HttpNfcLease> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HttpNfcLease>(
       "ExportVm", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new HttpNfcLease(this.connection, result);
+    return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async extractOvfEnvironment(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "ExtractOvfEnvironment", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async instantClone(args: {
   spec: VirtualMachineInstantCloneSpec
@@ -23060,7 +22824,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "InstantClone_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async makePrimary(args: {
   vm: VirtualMachine
@@ -23070,13 +22834,13 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "MakePrimaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async markAsTemplate(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "MarkAsTemplate", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async markAsVirtualMachine(args: {
   pool: ResourcePool;
@@ -23088,7 +22852,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "MarkAsVirtualMachine", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async migrate(args: {
   pool?: ResourcePool;
@@ -23104,19 +22868,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "MigrateVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async mountToolsInstaller(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "MountToolsInstaller", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async powerOff(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "PowerOffVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async powerOn(args: {
   host?: HostSystem
@@ -23126,7 +22890,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PowerOnVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async promoteDisks(args: {
   unlink: boolean;
@@ -23138,7 +22902,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PromoteDisks_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async putUsbScanCodes(args: {
   spec: UsbScanCodeSpec
@@ -23148,7 +22912,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, number>(
       "PutUsbScanCodes", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async queryChangedDiskAreas(args: {
   snapshot?: VirtualMachineSnapshot;
@@ -23164,21 +22928,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, DiskChangeInfo>(
       "QueryChangedDiskAreas", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { startOffset: undefined,
-        length: undefined,
-        changedArea: undefined });
+    return constructHelperObjects(this.connection, result, "DiskChangeInfo");
   }
   async queryConnections(): Promise<VirtualMachineConnection[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VirtualMachineConnection[] | undefined>(
       "QueryConnections", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VirtualMachineConnection[]");
   }
   async queryFaultToleranceCompatibility(): Promise<MethodFault[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, MethodFault[] | undefined>(
       "QueryFaultToleranceCompatibility", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "MethodFault[]");
   }
   async queryFaultToleranceCompatibilityEx(args: {
   forLegacyFt?: boolean
@@ -23188,19 +22950,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, MethodFault[] | undefined>(
       "QueryFaultToleranceCompatibilityEx", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "MethodFault[]");
   }
   async queryUnownedFiles(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "QueryUnownedFiles", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async rebootGuest(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RebootGuest", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigure(args: {
   spec: VirtualMachineConfigSpec
@@ -23210,13 +22972,13 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconfigVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async refreshStorageInfo(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshStorageInfo", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async relocate(args: {
   spec: VirtualMachineRelocateSpec;
@@ -23228,7 +22990,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RelocateVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async removeAllSnapshots(args: {
   consolidate?: boolean
@@ -23238,19 +23000,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RemoveAllSnapshots_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async resetGuestInformation(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ResetGuestInformation", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async reset(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "ResetVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async revertToCurrentSnapshot(args: {
   host?: HostSystem;
@@ -23262,13 +23024,13 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RevertToCurrentSnapshot_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async sendNMI(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "SendNMI", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setDisplayTopology(args: {
   displays: VirtualMachineDisplayTopology[]
@@ -23278,7 +23040,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "SetDisplayTopology", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setScreenResolution(args: {
   width: number;
@@ -23290,19 +23052,19 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "SetScreenResolution", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async shutdownGuest(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ShutdownGuest", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async standbyGuest(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "StandbyGuest", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async startRecording(args: {
   name: string;
@@ -23314,7 +23076,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "StartRecording_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async startReplaying(args: {
   replaySnapshot: VirtualMachineSnapshot
@@ -23324,25 +23086,25 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "StartReplaying_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async stopRecording(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "StopRecording_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async stopReplaying(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "StopReplaying_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async suspend(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "SuspendVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async terminateFaultTolerantVM(args: {
   vm?: VirtualMachine
@@ -23352,31 +23114,31 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "TerminateFaultTolerantVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async terminate(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "TerminateVM", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async turnOffFaultTolerance(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "TurnOffFaultToleranceForVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async unmountToolsInstaller(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "UnmountToolsInstaller", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unregister(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "UnregisterVM", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async upgradeTools(args: {
   installerOptions?: string
@@ -23386,7 +23148,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpgradeTools_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async upgradeVirtualHardware(args: {
   version?: string
@@ -23396,7 +23158,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpgradeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reloadFromPath(args: {
   configurationPath: string
@@ -23406,7 +23168,7 @@ export class VirtualMachine extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "reloadVirtualMachineFromPath_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class AlarmManager extends ManagedObject {
@@ -23417,7 +23179,9 @@ export class AlarmManager extends ManagedObject {
     init?: Partial<AlarmManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async acknowledgeAlarm(args: {
   alarm: Alarm;
@@ -23429,7 +23193,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "AcknowledgeAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async getAlarmActionsEnabled(args: {
   entity: ManagedEntity
@@ -23439,7 +23203,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, boolean>(
       "AreAlarmActionsEnabled", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async clearTriggeredAlarms(args: {
   filter: AlarmFilterSpec
@@ -23449,7 +23213,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ClearTriggeredAlarms", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async create(args: {
   entity: ManagedEntity;
@@ -23461,7 +23225,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, Alarm>(
       "CreateAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Alarm(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Alarm");
   }
   async disableAlarm(args: {
   alarm: Alarm;
@@ -23473,7 +23237,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DisableAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enableAlarm(args: {
   alarm: Alarm;
@@ -23485,7 +23249,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "EnableAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setAlarmActionsEnabled(args: {
   entity: ManagedEntity;
@@ -23497,7 +23261,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "EnableAlarmActions", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async getAlarm(args: {
   entity?: ManagedEntity
@@ -23507,7 +23271,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, Alarm[] | undefined>(
       "GetAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "Alarm[]");
   }
   async getAlarmState(args: {
   entity: ManagedEntity
@@ -23517,7 +23281,7 @@ export class AlarmManager extends ManagedObject {
 } & { _this: ObjectReference }, AlarmState[] | undefined>(
       "GetAlarmState", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "AlarmState[]");
   };
 }
 export class DistributedVirtualPortgroup extends Network {
@@ -23529,7 +23293,9 @@ export class DistributedVirtualPortgroup extends Network {
     init?: Partial<DistributedVirtualPortgroup>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async rollback(args: {
   entityBackup?: EntityBackupConfig
@@ -23539,7 +23305,7 @@ export class DistributedVirtualPortgroup extends Network {
 } & { _this: ObjectReference }, Task | undefined>(
       "DVPortgroupRollback_Task", { _this: { attributes: { type: "DistributedVirtualPortgroup" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigure(args: {
   spec: DVPortgroupConfigSpec
@@ -23549,7 +23315,7 @@ export class DistributedVirtualPortgroup extends Network {
 } & { _this: ObjectReference }, Task>(
       "ReconfigureDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualPortgroup" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class CryptoManagerKmip extends CryptoManager {
@@ -23559,7 +23325,9 @@ export class CryptoManagerKmip extends CryptoManager {
     init?: Partial<CryptoManagerKmip>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async generateClientCsr(args: {
   cluster: KeyProviderId
@@ -23569,7 +23337,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, string>(
       "GenerateClientCsr", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async generateKey(args: {
   keyProvider?: KeyProviderId
@@ -23579,10 +23347,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, CryptoKeyResult>(
       "GenerateKey", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { keyId: undefined,
-        success: undefined,
-        reason: undefined,
-        fault: undefined });
+    return constructHelperObjects(this.connection, result, "CryptoKeyResult");
   }
   async generateSelfSignedClientCert(args: {
   cluster: KeyProviderId
@@ -23592,7 +23357,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, string>(
       "GenerateSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async getDefaultKmsCluster(args: {
   entity?: ManagedEntity;
@@ -23604,7 +23369,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, KeyProviderId | undefined>(
       "GetDefaultKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { id: undefined });
+    return constructHelperObjects(this.connection, result, "KeyProviderId");
   }
   async IsKmsClusterActive(args: {
   cluster?: KeyProviderId
@@ -23614,7 +23379,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, boolean>(
       "IsKmsClusterActive", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "boolean");
   }
   async listKmipServers(args: {
   limit?: number
@@ -23624,7 +23389,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
       "ListKmipServers", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "KmipClusterInfo[]");
   }
   async listKmsClusters(args: {
   includeKmsServers?: boolean;
@@ -23638,7 +23403,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
       "ListKmsClusters", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "KmipClusterInfo[]");
   }
   async markDefault(args: {
   clusterId: KeyProviderId
@@ -23648,7 +23413,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "MarkDefault", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryCryptoKeyStatus(args: {
   keyIds?: CryptoKeyId[];
@@ -23660,7 +23425,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, CryptoManagerKmipCryptoKeyStatus[] | undefined>(
       "QueryCryptoKeyStatus", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "CryptoManagerKmipCryptoKeyStatus[]");
   }
   async registerKmipServer(args: {
   server: KmipServerSpec
@@ -23670,7 +23435,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "RegisterKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async registerKmsCluster(args: {
   clusterId: KeyProviderId;
@@ -23682,7 +23447,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "RegisterKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeKmipServer(args: {
   clusterId: KeyProviderId;
@@ -23694,7 +23459,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "RemoveKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveClientCert(args: {
   cluster: KeyProviderId
@@ -23704,7 +23469,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, string>(
       "RetrieveClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveClientCsr(args: {
   cluster: KeyProviderId
@@ -23714,7 +23479,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, string>(
       "RetrieveClientCsr", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveKmipServerCert(args: {
   keyProvider: KeyProviderId;
@@ -23726,9 +23491,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, CryptoManagerKmipServerCertInfo>(
       "RetrieveKmipServerCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { certificate: undefined,
-        certInfo: undefined,
-        clientTrustServer: undefined });
+    return constructHelperObjects(this.connection, result, "CryptoManagerKmipServerCertInfo");
   }
   async retrieveKmipServersStatus(args: {
   clusters?: KmipClusterInfo[]
@@ -23738,7 +23501,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "RetrieveKmipServersStatus_Task", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveSelfSignedClientCert(args: {
   cluster: KeyProviderId
@@ -23748,7 +23511,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, string>(
       "RetrieveSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async setDefaultKmsCluster(args: {
   entity?: ManagedEntity;
@@ -23760,7 +23523,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "SetDefaultKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterKmsCluster(args: {
   clusterId: KeyProviderId
@@ -23770,7 +23533,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UnregisterKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateKmipServer(args: {
   server: KmipServerSpec
@@ -23780,7 +23543,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UpdateKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateKmsSignedCsrClientCert(args: {
   cluster: KeyProviderId;
@@ -23792,7 +23555,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UpdateKmsSignedCsrClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateSelfSignedClientCert(args: {
   cluster: KeyProviderId;
@@ -23804,7 +23567,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UpdateSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async uploadClientCert(args: {
   cluster: KeyProviderId;
@@ -23818,7 +23581,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UploadClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async uploadKmipServerCert(args: {
   cluster: KeyProviderId;
@@ -23830,7 +23593,7 @@ export class CryptoManagerKmip extends CryptoManager {
 } & { _this: ObjectReference }, void>(
       "UploadKmipServerCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
@@ -23840,19 +23603,21 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
     init?: Partial<HostActiveDirectoryAuthentication>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async disableSmartCardAuthentication(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DisableSmartCardAuthentication", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enableSmartCardAuthentication(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "EnableSmartCardAuthentication", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async importCertificateForCAM(args: {
   certPath: string;
@@ -23864,7 +23629,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, Task>(
       "ImportCertificateForCAM_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async installSmartCardTrustAnchor(args: {
   cert: string
@@ -23874,7 +23639,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, void>(
       "InstallSmartCardTrustAnchor", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async joinDomainWithCAM(args: {
   domainName: string;
@@ -23886,7 +23651,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, Task>(
       "JoinDomainWithCAM_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async joinDomain(args: {
   domainName: string;
@@ -23900,7 +23665,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, Task>(
       "JoinDomain_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async leaveCurrentDomain(args: {
   force: boolean
@@ -23910,13 +23675,13 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, Task>(
       "LeaveCurrentDomain_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async listSmartCardTrustAnchors(): Promise<string[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string[] | undefined>(
       "ListSmartCardTrustAnchors", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async removeSmartCardTrustAnchor(args: {
   issuer: string;
@@ -23928,7 +23693,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, void>(
       "RemoveSmartCardTrustAnchor", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeSmartCardTrustAnchorByFingerprint(args: {
   fingerprint: string;
@@ -23940,7 +23705,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, void>(
       "RemoveSmartCardTrustAnchorByFingerprint", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async replaceSmartCardTrustAnchors(args: {
   certs?: string[]
@@ -23950,7 +23715,7 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
 } & { _this: ObjectReference }, void>(
       "ReplaceSmartCardTrustAnchors", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostDatastoreSystem extends ManagedObject {
@@ -23962,8 +23727,7 @@ export class HostDatastoreSystem extends ManagedObject {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { datastore: Datastore,
-        capabilities: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async configureDatastorePrincipal(args: {
@@ -23976,7 +23740,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "ConfigureDatastorePrincipal", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async createLocalDatastore(args: {
   name: string;
@@ -23988,7 +23752,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "CreateLocalDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createNasDatastore(args: {
   spec: HostNasVolumeSpec
@@ -23998,7 +23762,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "CreateNasDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createVmfsDatastore(args: {
   spec: VmfsDatastoreCreateSpec
@@ -24008,7 +23772,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "CreateVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createVvolDatastore(args: {
   spec: HostDatastoreSystemVvolDatastoreSpec
@@ -24018,7 +23782,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "CreateVvolDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async disableClusteredVmdkSupport(args: {
   datastore: Datastore
@@ -24028,7 +23792,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "DisableClusteredVmdkSupport", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enableClusteredVmdkSupport(args: {
   datastore: Datastore
@@ -24038,7 +23802,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "EnableClusteredVmdkSupport", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async expandVmfsDatastore(args: {
   datastore: Datastore;
@@ -24050,7 +23814,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "ExpandVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async extendVmfsDatastore(args: {
   datastore: Datastore;
@@ -24062,7 +23826,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Datastore>(
       "ExtendVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datastore(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datastore");
   }
   async queryAvailableDisksForVmfs(args: {
   datastore?: Datastore
@@ -24072,13 +23836,13 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
       "QueryAvailableDisksForVmfs", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostScsiDisk[]");
   }
   async queryUnresolvedVmfsVolumes(): Promise<HostUnresolvedVmfsVolume[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostUnresolvedVmfsVolume[] | undefined>(
       "QueryUnresolvedVmfsVolumes", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostUnresolvedVmfsVolume[]");
   }
   async queryVmfsDatastoreCreateOptions(args: {
   devicePath: string;
@@ -24090,7 +23854,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreCreateOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async queryVmfsDatastoreExpandOptions(args: {
   datastore: Datastore
@@ -24100,7 +23864,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreExpandOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async queryVmfsDatastoreExtendOptions(args: {
   datastore: Datastore;
@@ -24114,7 +23878,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreExtendOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async removeDatastore(args: {
   datastore: Datastore
@@ -24124,7 +23888,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeDatastoreEx(args: {
   datastore: Datastore[]
@@ -24134,7 +23898,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "RemoveDatastoreEx_Task", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async resignatureUnresolvedVmfsVolume(args: {
   resolutionSpec: HostUnresolvedVmfsResignatureSpec
@@ -24144,7 +23908,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "ResignatureUnresolvedVmfsVolume_Task", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateLocalSwapDatastore(args: {
   datastore?: Datastore
@@ -24154,7 +23918,7 @@ export class HostDatastoreSystem extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateLocalSwapDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostFirewallSystem extends ExtensibleManagedObject {
@@ -24164,7 +23928,9 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
     init?: Partial<HostFirewallSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async disableRuleset(args: {
   id: string
@@ -24174,7 +23940,7 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "DisableRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enableRuleset(args: {
   id: string
@@ -24184,13 +23950,13 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "EnableRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshFirewall", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateDefaultPolicy(args: {
   defaultPolicy: HostFirewallDefaultPolicy
@@ -24200,7 +23966,7 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateDefaultPolicy", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateRuleset(args: {
   id: string;
@@ -24212,7 +23978,7 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostNetworkSystem extends ExtensibleManagedObject {
@@ -24228,7 +23994,9 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
     init?: Partial<HostNetworkSystem>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async addPortGroup(args: {
   portgrp: HostPortGroupSpec
@@ -24238,7 +24006,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddPortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async addServiceConsoleVirtualNic(args: {
   portgroup: string;
@@ -24250,7 +24018,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, string>(
       "AddServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async addVirtualNic(args: {
   portgroup: string;
@@ -24262,7 +24030,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, string>(
       "AddVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async addVirtualSwitch(args: {
   vswitchName: string;
@@ -24274,7 +24042,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "AddVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryNetworkHint(args: {
   device?: string[]
@@ -24284,13 +24052,13 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, PhysicalNicHintInfo[] | undefined>(
       "QueryNetworkHint", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "PhysicalNicHintInfo[]");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshNetworkSystem", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removePortGroup(args: {
   pgName: string
@@ -24300,7 +24068,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemovePortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeServiceConsoleVirtualNic(args: {
   device: string
@@ -24310,7 +24078,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeVirtualNic(args: {
   device: string
@@ -24320,7 +24088,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeVirtualSwitch(args: {
   vswitchName: string
@@ -24330,7 +24098,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RemoveVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async restartServiceConsoleVirtualNic(args: {
   device: string
@@ -24340,7 +24108,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "RestartServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateConsoleIpRouteConfig(args: {
   config: HostIpRouteConfig
@@ -24350,7 +24118,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateConsoleIpRouteConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateDnsConfig(args: {
   config: HostDnsConfig
@@ -24360,7 +24128,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateDnsConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpRouteConfig(args: {
   config: HostIpRouteConfig
@@ -24370,7 +24138,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateIpRouteConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpRouteTableConfig(args: {
   config: HostIpRouteTableConfig
@@ -24380,7 +24148,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateIpRouteTableConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateNetworkConfig(args: {
   config: HostNetworkConfig;
@@ -24392,8 +24160,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, HostNetworkConfigResult>(
       "UpdateNetworkConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { vnicDevice: undefined,
-        consoleVnicDevice: undefined });
+    return constructHelperObjects(this.connection, result, "HostNetworkConfigResult");
   }
   async updatePhysicalNicLinkSpeed(args: {
   device: string;
@@ -24405,7 +24172,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdatePhysicalNicLinkSpeed", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updatePortGroup(args: {
   pgName: string;
@@ -24417,7 +24184,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdatePortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateServiceConsoleVirtualNic(args: {
   device: string;
@@ -24429,7 +24196,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVirtualNic(args: {
   device: string;
@@ -24441,7 +24208,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVirtualSwitch(args: {
   vswitchName: string;
@@ -24453,7 +24220,7 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
 } & { _this: ObjectReference }, void>(
       "UpdateVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostVFlashManager extends ManagedObject {
@@ -24463,7 +24230,9 @@ export class HostVFlashManager extends ManagedObject {
     init?: Partial<HostVFlashManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async configureVFlashResourceEx(args: {
   devicePath?: string[]
@@ -24473,7 +24242,7 @@ export class HostVFlashManager extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "ConfigureVFlashResourceEx_Task", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async configureHostVFlashCache(args: {
   spec: HostVFlashManagerVFlashCacheConfigSpec
@@ -24483,7 +24252,7 @@ export class HostVFlashManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "HostConfigVFlashCache", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async configureVFlashResource(args: {
   spec: HostVFlashManagerVFlashResourceConfigSpec
@@ -24493,7 +24262,7 @@ export class HostVFlashManager extends ManagedObject {
 } & { _this: ObjectReference }, void>(
       "HostConfigureVFlashResource", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async getVFlashModuleDefaultConfig(args: {
   vFlashModule: string
@@ -24503,17 +24272,13 @@ export class HostVFlashManager extends ManagedObject {
 } & { _this: ObjectReference }, VirtualDiskVFlashCacheConfigInfo>(
       "HostGetVFlashModuleDefaultConfig", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { vFlashModule: undefined,
-        reservationInMB: undefined,
-        cacheConsistencyType: undefined,
-        cacheMode: undefined,
-        blockSizeInKB: undefined });
+    return constructHelperObjects(this.connection, result, "VirtualDiskVFlashCacheConfigInfo");
   }
   async removeVFlashResource(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "HostRemoveVFlashResource", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostProfile extends Profile {
@@ -24527,10 +24292,7 @@ export class HostProfile extends Profile {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { validationState: undefined,
-        validationStateUpdateTime: undefined,
-        validationFailureInfo: undefined,
-        referenceHost: HostSystem });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async execute(args: {
@@ -24543,17 +24305,13 @@ export class HostProfile extends Profile {
 } & { _this: ObjectReference }, ProfileExecuteResult>(
       "ExecuteHostProfile", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { status: undefined,
-        configSpec: undefined,
-        inapplicablePath: undefined,
-        requireInput: undefined,
-        error: undefined });
+    return constructHelperObjects(this.connection, result, "ProfileExecuteResult");
   }
   async ResetValidationState(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "HostProfileResetValidationState", { _this: { attributes: { type: "HostProfile" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async update(args: {
   config: HostProfileConfigSpec
@@ -24563,7 +24321,7 @@ export class HostProfile extends Profile {
 } & { _this: ObjectReference }, void>(
       "UpdateHostProfile", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateReferenceHost(args: {
   host?: HostSystem
@@ -24573,7 +24331,7 @@ export class HostProfile extends Profile {
 } & { _this: ObjectReference }, void>(
       "UpdateReferenceHost", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class HostProfileManager extends ProfileManager {
@@ -24583,7 +24341,9 @@ export class HostProfileManager extends ProfileManager {
     init?: Partial<HostProfileManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async applyEntitiesConfiguration(args: {
   applyConfigSpecs?: ApplyHostProfileConfigurationSpec[]
@@ -24593,7 +24353,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "ApplyEntitiesConfig_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async applyHostConfiguration(args: {
   host: HostSystem;
@@ -24607,7 +24367,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task>(
       "ApplyHostConfig_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkAnswerFileStatus(args: {
   host: HostSystem[]
@@ -24617,7 +24377,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckAnswerFileStatus_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async compositeProfile(args: {
   source: Profile;
@@ -24637,7 +24397,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "CompositeHostProfile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDefaultProfile(args: {
   profileType: string;
@@ -24651,17 +24411,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, ApplyProfile>(
       "CreateDefaultProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { enabled: undefined,
-        policy: undefined,
-        profileTypeName: undefined,
-        profileVersion: undefined,
-        property: undefined,
-        favorite: undefined,
-        toBeMerged: undefined,
-        toReplaceWith: undefined,
-        toBeDeleted: undefined,
-        copyEnableStatus: undefined,
-        hidden: undefined });
+    return constructHelperObjects(this.connection, result, "ApplyProfile");
   }
   async exportAnswerFile(args: {
   host: HostSystem
@@ -24671,7 +24421,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task>(
       "ExportAnswerFile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async generateConfigTaskList(args: {
   configSpec: HostConfigSpec;
@@ -24683,9 +24433,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, HostProfileManagerConfigTaskList>(
       "GenerateConfigTaskList", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { configSpec: undefined,
-        taskDescription: undefined,
-        taskListRequirement: undefined });
+    return constructHelperObjects(this.connection, result, "HostProfileManagerConfigTaskList");
   }
   async generateHostConfigTaskSpec(args: {
   hostsInfo?: StructuredCustomizations[]
@@ -24695,7 +24443,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "GenerateHostConfigTaskSpec_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async generateTaskList(args: {
   configSpec: HostConfigSpec;
@@ -24707,7 +24455,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "GenerateHostProfileTaskList_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryAnswerFileStatus(args: {
   host: HostSystem[]
@@ -24717,7 +24465,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, AnswerFileStatusResult[] | undefined>(
       "QueryAnswerFileStatus", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "AnswerFileStatusResult[]");
   }
   async queryProfileMetadata(args: {
   profileName?: string[];
@@ -24729,7 +24477,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, ProfileMetadata[] | undefined>(
       "QueryHostProfileMetadata", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ProfileMetadata[]");
   }
   async queryProfileStructure(args: {
   profile?: Profile
@@ -24739,8 +24487,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, ProfileProfileStructure>(
       "QueryProfileStructure", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { profileTypeName: undefined,
-        child: undefined });
+    return constructHelperObjects(this.connection, result, "ProfileProfileStructure");
   }
   async retrieveAnswerFile(args: {
   host: HostSystem
@@ -24750,9 +24497,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, AnswerFile | undefined>(
       "RetrieveAnswerFile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { userInput: undefined,
-        createdTime: undefined,
-        modifiedTime: undefined });
+    return constructHelperObjects(this.connection, result, "AnswerFile");
   }
   async retrieveAnswerFileForProfile(args: {
   host: HostSystem;
@@ -24764,9 +24509,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, AnswerFile | undefined>(
       "RetrieveAnswerFileForProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { userInput: undefined,
-        createdTime: undefined,
-        modifiedTime: undefined });
+    return constructHelperObjects(this.connection, result, "AnswerFile");
   }
   async retrieveHostCustomizations(args: {
   hosts?: HostSystem[]
@@ -24776,7 +24519,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
       "RetrieveHostCustomizations", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "StructuredCustomizations[]");
   }
   async retrieveHostCustomizationsForProfile(args: {
   hosts?: HostSystem[];
@@ -24788,7 +24531,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
       "RetrieveHostCustomizationsForProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "StructuredCustomizations[]");
   }
   async updateAnswerFile(args: {
   host: HostSystem;
@@ -24800,7 +24543,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task>(
       "UpdateAnswerFile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateHostCustomizations(args: {
   hostToConfigSpecMap?: HostProfileManagerHostToConfigSpecMap[]
@@ -24810,7 +24553,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "UpdateHostCustomizations_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async validateComposition(args: {
   source: Profile;
@@ -24832,7 +24575,7 @@ export class HostProfileManager extends ProfileManager {
 } & { _this: ObjectReference }, Task | undefined>(
       "ValidateHostProfileComposition_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class ManagedObjectView extends View {
@@ -24842,7 +24585,9 @@ export class ManagedObjectView extends View {
     init?: Partial<ManagedObjectView>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   
 }
@@ -24853,7 +24598,9 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
     init?: Partial<VirtualMachineProvisioningChecker>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async checkClone(args: {
   vm: VirtualMachine;
@@ -24871,7 +24618,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckClone_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkInstantClone(args: {
   vm: VirtualMachine;
@@ -24885,7 +24632,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task | undefined>(
       "CheckInstantClone_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkMigrate(args: {
   vm: VirtualMachine;
@@ -24903,7 +24650,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckMigrate_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async checkRelocate(args: {
   vm: VirtualMachine;
@@ -24917,7 +24664,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "CheckRelocate_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryVMotionCompatibilityEx(args: {
   vm: VirtualMachine[];
@@ -24929,7 +24676,7 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
 } & { _this: ObjectReference }, Task>(
       "QueryVMotionCompatibilityEx_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostVStorageObjectManager extends VStorageObjectManagerBase {
@@ -24939,7 +24686,9 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
     init?: Partial<HostVStorageObjectManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async clearVStorageObjectControlFlags(args: {
   id: ID;
@@ -24953,7 +24702,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "HostClearVStorageObjectControlFlags", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async cloneVStorageObject(args: {
   id: ID;
@@ -24967,7 +24716,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostCloneVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDisk(args: {
   spec: VslmCreateSpec
@@ -24977,7 +24726,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostCreateDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVStorageObject(args: {
   id: ID;
@@ -24989,7 +24738,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostDeleteVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async extendDisk(args: {
   id: ID;
@@ -25003,7 +24752,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostExtendDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async inflateDisk(args: {
   id: ID;
@@ -25015,7 +24764,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostInflateDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async listVStorageObject(args: {
   datastore: Datastore
@@ -25025,7 +24774,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, ID[] | undefined>(
       "HostListVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ID[]");
   }
   async reconcileDatastoreInventory(args: {
   datastore: Datastore
@@ -25035,7 +24784,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostReconcileDatastoreInventory_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async registerDisk(args: {
   path: string;
@@ -25047,7 +24796,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObject>(
       "HostRegisterDisk", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { config: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async relocateVStorageObject(args: {
   id: ID;
@@ -25061,7 +24810,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostRelocateVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async renameVStorageObject(args: {
   id: ID;
@@ -25075,7 +24824,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "HostRenameVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveVStorageInfrastructureObjectPolicy(args: {
   datastore: Datastore
@@ -25085,7 +24834,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
       "HostRetrieveVStorageInfrastructureObjectPolicy", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "vslmInfrastructureObjectPolicy[]");
   }
   async retrieveVStorageObject(args: {
   id: ID;
@@ -25097,7 +24846,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObject>(
       "HostRetrieveVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { config: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async retrieveVStorageObjectMetadata(args: {
   id: ID;
@@ -25113,7 +24862,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, KeyValue[] | undefined>(
       "HostRetrieveVStorageObjectMetadata", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "KeyValue[]");
   }
   async retrieveVStorageObjectMetadataValue(args: {
   id: ID;
@@ -25129,7 +24878,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, string>(
       "HostRetrieveVStorageObjectMetadataValue", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveVStorageObjectState(args: {
   id: ID;
@@ -25141,7 +24890,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectStateInfo>(
       "HostRetrieveVStorageObjectState", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { tentative: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObjectStateInfo");
   }
   async scheduleReconcileDatastoreInventory(args: {
   datastore: Datastore
@@ -25151,7 +24900,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "HostScheduleReconcileDatastoreInventory", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setVStorageObjectControlFlags(args: {
   id: ID;
@@ -25165,7 +24914,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "HostSetVStorageObjectControlFlags", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVStorageObjectMetadata(args: {
   id: ID;
@@ -25181,7 +24930,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostUpdateVStorageObjectMetadata_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDiskFromSnapshot(args: {
   id: ID;
@@ -25203,7 +24952,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectCreateDiskFromSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
   id: ID;
@@ -25217,7 +24966,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectCreateSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteSnapshot(args: {
   id: ID;
@@ -25231,7 +24980,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectDeleteSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveSnapshotInfo(args: {
   id: ID;
@@ -25243,7 +24992,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
       "HostVStorageObjectRetrieveSnapshotInfo", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { snapshots: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotInfo");
   }
   async RevertVStorageObject(args: {
   id: ID;
@@ -25257,7 +25006,7 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectRevert_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
@@ -25267,7 +25016,9 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
     init?: Partial<VcenterVStorageObjectManager>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async attachTagToVStorageObject(args: {
   id: ID;
@@ -25281,7 +25032,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "AttachTagToVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async clearVStorageObjectControlFlags(args: {
   id: ID;
@@ -25295,7 +25046,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "ClearVStorageObjectControlFlags", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async cloneVStorageObject(args: {
   id: ID;
@@ -25309,7 +25060,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "CloneVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDiskFromSnapshot(args: {
   id: ID;
@@ -25331,7 +25082,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "CreateDiskFromSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDisk(args: {
   spec: VslmCreateSpec
@@ -25341,7 +25092,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "CreateDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteSnapshot(args: {
   id: ID;
@@ -25355,7 +25106,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "DeleteSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVStorageObject(args: {
   id: ID;
@@ -25367,7 +25118,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "DeleteVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async detachTagFromVStorageObject(args: {
   id: ID;
@@ -25381,7 +25132,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "DetachTagFromVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async extendDisk(args: {
   id: ID;
@@ -25395,7 +25146,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "ExtendDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async inflateDisk(args: {
   id: ID;
@@ -25407,7 +25158,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "InflateDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async listTagsAttachedToVStorageObject(args: {
   id: ID
@@ -25417,7 +25168,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VslmTagEntry[] | undefined>(
       "ListTagsAttachedToVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VslmTagEntry[]");
   }
   async listVStorageObject(args: {
   datastore: Datastore
@@ -25427,7 +25178,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, ID[] | undefined>(
       "ListVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ID[]");
   }
   async listVStorageObjectsAttachedToTag(args: {
   category: string;
@@ -25439,7 +25190,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, ID[] | undefined>(
       "ListVStorageObjectsAttachedToTag", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ID[]");
   }
   async reconcileDatastoreInventory(args: {
   datastore: Datastore
@@ -25449,7 +25200,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "ReconcileDatastoreInventory_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async registerDisk(args: {
   path: string;
@@ -25461,7 +25212,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObject>(
       "RegisterDisk", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { config: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async relocateVStorageObject(args: {
   id: ID;
@@ -25475,7 +25226,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "RelocateVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async renameVStorageObject(args: {
   id: ID;
@@ -25489,7 +25240,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "RenameVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveSnapshotDetails(args: {
   id: ID;
@@ -25503,8 +25254,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectSnapshotDetails>(
       "RetrieveSnapshotDetails", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { path: undefined,
-        changedBlockTrackingId: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotDetails");
   }
   async retrieveSnapshotInfo(args: {
   id: ID;
@@ -25516,7 +25266,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
       "RetrieveSnapshotInfo", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { snapshots: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotInfo");
   }
   async retrieveVStorageInfrastructureObjectPolicy(args: {
   datastore: Datastore
@@ -25526,7 +25276,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
       "RetrieveVStorageInfrastructureObjectPolicy", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "vslmInfrastructureObjectPolicy[]");
   }
   async retrieveVStorageObject(args: {
   id: ID;
@@ -25538,7 +25288,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObject>(
       "RetrieveVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { config: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async retrieveVStorageObjectAssociations(args: {
   ids?: RetrieveVStorageObjSpec[]
@@ -25548,7 +25298,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectAssociations[] | undefined>(
       "RetrieveVStorageObjectAssociations", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VStorageObjectAssociations[]");
   }
   async retrieveVStorageObjectState(args: {
   id: ID;
@@ -25560,7 +25310,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, VStorageObjectStateInfo>(
       "RetrieveVStorageObjectState", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { tentative: undefined });
+    return constructHelperObjects(this.connection, result, "VStorageObjectStateInfo");
   }
   async RevertVStorageObject(args: {
   id: ID;
@@ -25574,7 +25324,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "RevertVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async scheduleReconcileDatastoreInventory(args: {
   datastore: Datastore
@@ -25584,7 +25334,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "ScheduleReconcileDatastoreInventory", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async setVStorageObjectControlFlags(args: {
   id: ID;
@@ -25598,7 +25348,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, void>(
       "SetVStorageObjectControlFlags", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVStorageInfrastructureObjectPolicy(args: {
   spec: vslmInfrastructureObjectPolicySpec
@@ -25608,7 +25358,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "UpdateVStorageInfrastructureObjectPolicy_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVStorageObjectCrypto(args: {
   id: ID;
@@ -25624,7 +25374,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "UpdateVStorageObjectCrypto_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVStorageObjectPolicy(args: {
   id: ID;
@@ -25638,7 +25388,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "UpdateVStorageObjectPolicy_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
   id: ID;
@@ -25652,7 +25402,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, Task>(
       "VStorageObjectCreateSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryChangedDiskAreas(args: {
   id: ID;
@@ -25670,9 +25420,7 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
 } & { _this: ObjectReference }, DiskChangeInfo>(
       "VstorageObjectVCenterQueryChangedDiskAreas", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { startOffset: undefined,
-        length: undefined,
-        changedArea: undefined });
+    return constructHelperObjects(this.connection, result, "DiskChangeInfo");
   };
 }
 export class ComputeResource extends ManagedEntity {
@@ -25690,14 +25438,7 @@ export class ComputeResource extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { resourcePool: ResourcePool,
-        host: HostSystem,
-        datastore: Datastore,
-        network: Network,
-        summary: undefined,
-        environmentBrowser: EnvironmentBrowser,
-        configurationEx: undefined,
-        lifecycleManaged: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async reconfigureEx(args: {
@@ -25710,7 +25451,7 @@ export class ComputeResource extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconfigureComputeResource_Task", { _this: { attributes: { type: "ComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class Datacenter extends ManagedEntity {
@@ -25727,13 +25468,7 @@ export class Datacenter extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { vmFolder: Folder,
-        hostFolder: Folder,
-        datastoreFolder: Folder,
-        networkFolder: Folder,
-        datastore: Datastore,
-        network: Network,
-        configuration: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async batchQueryConnectInfo(args: {
@@ -25744,7 +25479,7 @@ export class Datacenter extends ManagedEntity {
 } & { _this: ObjectReference }, DatacenterBasicConnectInfo[] | undefined>(
       "BatchQueryConnectInfo", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "DatacenterBasicConnectInfo[]");
   }
   async powerOnVm(args: {
   vm: VirtualMachine[];
@@ -25756,7 +25491,7 @@ export class Datacenter extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PowerOnMultiVM_Task", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryConnectionInfo(args: {
   hostname: string;
@@ -25774,16 +25509,7 @@ export class Datacenter extends ManagedEntity {
 } & { _this: ObjectReference }, HostConnectInfo>(
       "QueryConnectionInfo", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { serverIp: undefined,
-        inDasCluster: undefined,
-        host: undefined,
-        vm: undefined,
-        vimAccountNameRequired: undefined,
-        clusterSupported: undefined,
-        network: undefined,
-        datastore: undefined,
-        license: undefined,
-        capability: undefined });
+    return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async queryConnectionInfoViaSpec(args: {
   spec: HostConnectSpec
@@ -25793,16 +25519,7 @@ export class Datacenter extends ManagedEntity {
 } & { _this: ObjectReference }, HostConnectInfo>(
       "QueryConnectionInfoViaSpec", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { serverIp: undefined,
-        inDasCluster: undefined,
-        host: undefined,
-        vm: undefined,
-        vimAccountNameRequired: undefined,
-        clusterSupported: undefined,
-        network: undefined,
-        datastore: undefined,
-        license: undefined,
-        capability: undefined });
+    return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async reconfigure(args: {
   spec: DatacenterConfigSpec;
@@ -25814,13 +25531,13 @@ export class Datacenter extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconfigureDatacenter_Task", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryConfigOptionDescriptor(): Promise<VirtualMachineConfigOptionDescriptor[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, VirtualMachineConfigOptionDescriptor[] | undefined>(
       "queryDatacenterConfigOptionDescriptor", { _this: { attributes: { type: "Datacenter" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "VirtualMachineConfigOptionDescriptor[]");
   };
 }
 export class Datastore extends ManagedEntity {
@@ -25837,46 +25554,38 @@ export class Datastore extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { info: undefined,
-        summary: undefined,
-        host: undefined,
-        vm: VirtualMachine,
-        browser: HostDatastoreBrowser,
-        capability: undefined,
-        iormConfiguration: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async enterMaintenanceMode(): Promise<StoragePlacementResult> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, StoragePlacementResult>(
       "DatastoreEnterMaintenanceMode", { _this: { attributes: { type: "Datastore" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { recommendations: undefined,
-        drsFault: undefined,
-        task: Task });
+    return constructHelperObjects(this.connection, result, "StoragePlacementResult");
   }
   async exitMaintenanceMode(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "DatastoreExitMaintenanceMode_Task", { _this: { attributes: { type: "Datastore" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async destroyDatastore(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "DestroyDatastore", { _this: { attributes: { type: "Datastore" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async refresh(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshDatastore", { _this: { attributes: { type: "Datastore" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async refreshStorageInfo(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "RefreshDatastoreStorageInfo", { _this: { attributes: { type: "Datastore" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async renameDatastore(args: {
   newName: string
@@ -25886,7 +25595,7 @@ export class Datastore extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "RenameDatastore", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateVVolVirtualMachineFiles(args: {
   failoverPair?: DatastoreVVolContainerFailoverPair[]
@@ -25896,7 +25605,7 @@ export class Datastore extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpdateVVolVirtualMachineFiles_Task", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVirtualMachineFiles(args: {
   mountPathDatastoreMapping: DatastoreMountPathDatastorePair[]
@@ -25906,7 +25615,7 @@ export class Datastore extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpdateVirtualMachineFiles_Task", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class DistributedVirtualSwitch extends ManagedEntity {
@@ -25923,13 +25632,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { uuid: undefined,
-        capability: undefined,
-        summary: undefined,
-        config: undefined,
-        networkResourcePool: undefined,
-        portgroup: DistributedVirtualPortgroup,
-        runtime: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async addPortgroups(args: {
@@ -25940,7 +25643,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "AddDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async addNetworkResourcePool(args: {
   configSpec: DVSNetworkResourcePoolConfigSpec[]
@@ -25950,7 +25653,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "AddNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async addPortgroup(args: {
   spec: DVPortgroupConfigSpec
@@ -25960,7 +25663,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async rollback(args: {
   entityBackup?: EntityBackupConfig
@@ -25970,7 +25673,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task | undefined>(
       "DVSRollback_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigureVmVnicNetworkResourcePool(args: {
   configSpec: DvsVmVnicResourcePoolConfigSpec[]
@@ -25980,7 +25683,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "DvsReconfigureVmVnicNetworkResourcePool_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async enableNetworkResourceManagement(args: {
   enable: boolean
@@ -25990,7 +25693,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "EnableNetworkResourceManagement", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async fetchPortKeys(args: {
   criteria?: DistributedVirtualSwitchPortCriteria
@@ -26000,7 +25703,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, string[] | undefined>(
       "FetchDVPortKeys", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string[]");
   }
   async fetchPorts(args: {
   criteria?: DistributedVirtualSwitchPortCriteria
@@ -26010,7 +25713,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, DistributedVirtualPort[] | undefined>(
       "FetchDVPorts", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "DistributedVirtualPort[]");
   }
   async lookupPortgroup(args: {
   portgroupKey: string
@@ -26020,7 +25723,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
       "LookupDvPortGroup", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new DistributedVirtualPortgroup(this.connection, result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualPortgroup");
   }
   async merge(args: {
   dvs: DistributedVirtualSwitch
@@ -26030,7 +25733,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "MergeDvs_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async movePort(args: {
   portKey: string[];
@@ -26042,7 +25745,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "MoveDVPort_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async performProductSpecOperation(args: {
   operation: string;
@@ -26054,13 +25757,13 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PerformDvsProductSpecOperation_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async queryUsedVlanId(): Promise<number[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, number[] | undefined>(
       "QueryUsedVlanIdInDvs", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number[]");
   }
   async reconfigurePort(args: {
   port: DVPortConfigSpec[]
@@ -26070,7 +25773,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconfigureDVPort_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigure(args: {
   spec: DVSConfigSpec
@@ -26080,7 +25783,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconfigureDvs_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async rectifyHost(args: {
   hosts?: HostSystem[]
@@ -26090,7 +25793,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RectifyDvsHost_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async refreshPortState(args: {
   portKeys?: string[]
@@ -26100,7 +25803,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "RefreshDVPortState", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async removeNetworkResourcePool(args: {
   key: string[]
@@ -26110,7 +25813,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "RemoveNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateHealthCheckConfig(args: {
   healthCheckConfig: DVSHealthCheckConfig[]
@@ -26120,7 +25823,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpdateDVSHealthCheckConfig_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateCapability(args: {
   capability: DVSCapability
@@ -26130,7 +25833,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateDvsCapability", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateNetworkResourcePool(args: {
   configSpec: DVSNetworkResourcePoolConfigSpec[]
@@ -26140,7 +25843,7 @@ export class DistributedVirtualSwitch extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class Folder extends ManagedEntity {
@@ -26153,9 +25856,7 @@ export class Folder extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { childType: undefined,
-        childEntity: ManagedEntity,
-        namespace: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async addStandaloneHost(args: {
@@ -26172,7 +25873,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "AddStandaloneHost_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async batchAddHostsToCluster(args: {
   cluster: ClusterComputeResource;
@@ -26190,7 +25891,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "BatchAddHostsToCluster_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async batchAddStandaloneHosts(args: {
   newHosts?: FolderNewHostSpec[];
@@ -26204,7 +25905,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "BatchAddStandaloneHosts_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createCluster(args: {
   name: string;
@@ -26216,7 +25917,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, ClusterComputeResource>(
       "CreateCluster", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ClusterComputeResource(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ClusterComputeResource");
   }
   async createClusterEx(args: {
   name: string;
@@ -26228,7 +25929,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, ClusterComputeResource>(
       "CreateClusterEx", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new ClusterComputeResource(this.connection, result);
+    return constructHelperObjects(this.connection, result, "ClusterComputeResource");
   }
   async createDistributedVirtualSwitch(args: {
   spec: DVSCreateSpec
@@ -26238,7 +25939,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateDVS_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async createDatacenter(args: {
   name: string
@@ -26248,7 +25949,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Datacenter>(
       "CreateDatacenter", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Datacenter(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Datacenter");
   }
   async createFolder(args: {
   name: string
@@ -26258,7 +25959,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Folder>(
       "CreateFolder", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Folder(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Folder");
   }
   async createStoragePod(args: {
   name: string
@@ -26268,7 +25969,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, StoragePod>(
       "CreateStoragePod", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new StoragePod(this.connection, result);
+    return constructHelperObjects(this.connection, result, "StoragePod");
   }
   async createVm(args: {
   config: VirtualMachineConfigSpec;
@@ -26282,7 +25983,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "CreateVM_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async moveInto(args: {
   list: ManagedEntity[]
@@ -26292,7 +25993,7 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "MoveIntoFolder_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async registerVm(args: {
   path: string;
@@ -26310,13 +26011,13 @@ export class Folder extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RegisterVM_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async unregisterAndDestroy(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "UnregisterAndDestroy_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   };
 }
 export class HostSystem extends ManagedEntity {
@@ -26345,37 +26046,14 @@ export class HostSystem extends ManagedEntity {
   ) {
     super(connection, init);
     if (init) {
-      constructHelperObjects(connection, init, this, { runtime: undefined,
-        summary: undefined,
-        hardware: undefined,
-        capability: undefined,
-        licensableResource: undefined,
-        remediationState: undefined,
-        precheckRemediationResult: undefined,
-        remediationResult: undefined,
-        complianceCheckState: undefined,
-        complianceCheckResult: undefined,
-        configManager: undefined,
-        config: undefined,
-        vm: VirtualMachine,
-        datastore: Datastore,
-        network: Network,
-        datastoreBrowser: HostDatastoreBrowser,
-        systemResources: undefined,
-        answerFileValidationState: undefined,
-        answerFileValidationResult: undefined });
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
     }
   }
   async acquireCimServicesTicket(): Promise<HostServiceTicket> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostServiceTicket>(
       "AcquireCimServicesTicket", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { host: undefined,
-        port: undefined,
-        sslThumbprint: undefined,
-        service: undefined,
-        serviceVersion: undefined,
-        sessionId: undefined });
+    return constructHelperObjects(this.connection, result, "HostServiceTicket");
   }
   async configureCryptoKey(args: {
   keyId?: CryptoKeyId
@@ -26385,13 +26063,13 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "ConfigureCryptoKey", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async disconnect(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "DisconnectHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async enableCrypto(args: {
   keyPlain: CryptoKeyPlain
@@ -26401,13 +26079,13 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "EnableCrypto", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enterLockdownMode(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "EnterLockdownMode", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async enterMaintenanceMode(args: {
   timeout: number;
@@ -26421,13 +26099,13 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "EnterMaintenanceMode_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async exitLockdownMode(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "ExitLockdownMode", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async exitMaintenanceMode(args: {
   timeout: number
@@ -26437,7 +26115,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ExitMaintenanceMode_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async enterStandbyMode(args: {
   timeoutSec: number;
@@ -26449,7 +26127,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PowerDownHostToStandBy_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async exitStandbyMode(args: {
   timeoutSec: number
@@ -26459,28 +26137,19 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "PowerUpHostFromStandBy_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async prepareCrypto(): Promise<void> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
       "PrepareCrypto", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async queryConnectionInfo(): Promise<HostConnectInfo> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostConnectInfo>(
       "QueryHostConnectionInfo", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { serverIp: undefined,
-        inDasCluster: undefined,
-        host: undefined,
-        vm: undefined,
-        vimAccountNameRequired: undefined,
-        clusterSupported: undefined,
-        network: undefined,
-        datastore: undefined,
-        license: undefined,
-        capability: undefined });
+    return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async queryOverhead(args: {
   memorySize: number;
@@ -26494,7 +26163,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, number>(
       "QueryMemoryOverhead", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async queryOverheadEx(args: {
   vmConfigInfo: VirtualMachineConfigInfo
@@ -26504,21 +26173,19 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, number>(
       "QueryMemoryOverheadEx", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async queryProductLockerLocation(): Promise<string> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, string>(
       "QueryProductLockerLocation", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "string");
   }
   async queryTpmAttestationReport(): Promise<HostTpmAttestationReport | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostTpmAttestationReport | undefined>(
       "QueryTpmAttestationReport", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { tpmPcrValues: undefined,
-        tpmEvents: undefined,
-        tpmLogReliable: undefined });
+    return constructHelperObjects(this.connection, result, "HostTpmAttestationReport");
   }
   async reboot(args: {
   force: boolean
@@ -26528,13 +26195,13 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "RebootHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigureDAS(): Promise<Task> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
       "ReconfigureHostForDAS_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async reconnect(args: {
   cnxSpec?: HostConnectSpec;
@@ -26546,19 +26213,19 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ReconnectHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveFreeEpcMemory(): Promise<number> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, number>(
       "RetrieveFreeEpcMemory", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async retrieveHardwareUptime(): Promise<number> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, number>(
       "RetrieveHardwareUptime", { _this: { attributes: { type: "HostSystem" }, $value: this.$value },  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "number");
   }
   async shutdown(args: {
   force: boolean
@@ -26568,7 +26235,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "ShutdownHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateFlags(args: {
   flagInfo: HostFlagInfo
@@ -26578,7 +26245,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateFlags", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpmi(args: {
   ipmiInfo: HostIpmiInfo
@@ -26588,7 +26255,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateIpmi", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateProductLockerLocation(args: {
   path: string
@@ -26598,7 +26265,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, Task>(
       "UpdateProductLockerLocation_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return new Task(this.connection, result);
+    return constructHelperObjects(this.connection, result, "Task");
   }
   async updateSystemResources(args: {
   resourceInfo: HostSystemResourceInfo
@@ -26608,7 +26275,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateSystemResources", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   }
   async updateSystemSwapConfiguration(args: {
   sysSwapConfig: HostSystemSwapConfiguration
@@ -26618,7 +26285,7 @@ export class HostSystem extends ManagedEntity {
 } & { _this: ObjectReference }, void>(
       "UpdateSystemSwapConfiguration", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "void");
   };
 }
 export class ServiceInstance extends ManagedObject {
@@ -26630,13 +26297,15 @@ export class ServiceInstance extends ManagedObject {
     init?: Partial<ServiceInstance>
   ) {
     super(connection, init);
-    Object.assign(this, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
   }
   async currentTime(): Promise<Date> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, Date>(
       "CurrentTime", { _this: "ServiceInstance",  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, {  });
+    return constructHelperObjects(this.connection, result, "Date");
   }
   async queryVMotionCompatibility(args: {
   vm: VirtualMachine;
@@ -26650,22 +26319,2590 @@ export class ServiceInstance extends ManagedObject {
 } & { _this: ObjectReference }, HostVMotionCompatibility[] | undefined>(
       "QueryVMotionCompatibility", { _this: "ServiceInstance", ...args }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "HostVMotionCompatibility[]");
   }
   async retrieveProductComponents(): Promise<ProductComponentInfo[] | undefined> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, ProductComponentInfo[] | undefined>(
       "RetrieveProductComponents", { _this: "ServiceInstance",  }
     ).then(r => r.result);
-    return result;
+    return constructHelperObjects(this.connection, result, "ProductComponentInfo[]");
   }
   async retrieveContent(): Promise<ServiceContent> {
     const result = await this.connection.exec<unknown & { _this: ObjectReference }, ServiceContent>(
       "RetrieveServiceContent", { _this: "ServiceInstance",  }
     ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { rootFolder: Folder,
+    return constructHelperObjects(this.connection, result, "ServiceContent");
+  }
+  async validateMigration(args: {
+  vm: VirtualMachine[];
+    state?: VirtualMachinePowerState;
+    testType?: string[];
+    pool?: ResourcePool;
+    host?: HostSystem
+}): Promise<Event[] | undefined> {
+    const result = await this.connection.exec<{
+  vm: VirtualMachine[];
+    state?: VirtualMachinePowerState;
+    testType?: string[];
+    pool?: ResourcePool;
+    host?: HostSystem
+} & { _this: ObjectReference }, Event[] | undefined>(
+      "ValidateMigration", { _this: "ServiceInstance", ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Event[]");
+  };
+}
+export class StoragePod extends Folder {
+  summary?: StoragePodSummary;
+  podStorageDrsEntry?: PodStorageDrsEntry;
+  constructor(
+    public connection: Connection,
+    init?: Partial<StoragePod>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  
+}
+export class DistributedVirtualSwitchManager extends ManagedObject {
+  
+  constructor(
+    public connection: Connection,
+    init?: Partial<DistributedVirtualSwitchManager>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async exportEntity(args: {
+  selectionSet: SelectionSet[]
+}): Promise<Task | undefined> {
+    const result = await this.connection.exec<{
+  selectionSet: SelectionSet[]
+} & { _this: ObjectReference }, Task | undefined>(
+      "DVSManagerExportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async importEntity(args: {
+  entityBackup: EntityBackupConfig[];
+    importType: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  entityBackup: EntityBackupConfig[];
+    importType: string
+} & { _this: ObjectReference }, Task>(
+      "DVSManagerImportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async lookupPortgroup(args: {
+  switchUuid: string;
+    portgroupKey: string
+}): Promise<DistributedVirtualPortgroup | undefined> {
+    const result = await this.connection.exec<{
+  switchUuid: string;
+    portgroupKey: string
+} & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
+      "DVSManagerLookupDvPortGroup", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualPortgroup");
+  }
+  async querySupportedSwitchSpec(args: {
+  recommended?: boolean
+}): Promise<DistributedVirtualSwitchProductSpec[] | undefined> {
+    const result = await this.connection.exec<{
+  recommended?: boolean
+} & { _this: ObjectReference }, DistributedVirtualSwitchProductSpec[] | undefined>(
+      "QueryAvailableDvsSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchProductSpec[]");
+  }
+  async queryCompatibleHostForExistingDvs(args: {
+  container: ManagedEntity;
+    recursive: boolean;
+    dvs: DistributedVirtualSwitch
+}): Promise<HostSystem[] | undefined> {
+    const result = await this.connection.exec<{
+  container: ManagedEntity;
+    recursive: boolean;
+    dvs: DistributedVirtualSwitch
+} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      "QueryCompatibleHostForExistingDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostSystem[]");
+  }
+  async queryCompatibleHostForNewDvs(args: {
+  container: ManagedEntity;
+    recursive: boolean;
+    switchProductSpec?: DistributedVirtualSwitchProductSpec
+}): Promise<HostSystem[] | undefined> {
+    const result = await this.connection.exec<{
+  container: ManagedEntity;
+    recursive: boolean;
+    switchProductSpec?: DistributedVirtualSwitchProductSpec
+} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      "QueryCompatibleHostForNewDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostSystem[]");
+  }
+  async querySwitchByUuid(args: {
+  uuid: string
+}): Promise<DistributedVirtualSwitch | undefined> {
+    const result = await this.connection.exec<{
+  uuid: string
+} & { _this: ObjectReference }, DistributedVirtualSwitch | undefined>(
+      "QueryDvsByUuid", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualSwitch");
+  }
+  async checkCompatibility(args: {
+  hostContainer: DistributedVirtualSwitchManagerHostContainer;
+    dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
+    hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
+}): Promise<DistributedVirtualSwitchManagerCompatibilityResult[] | undefined> {
+    const result = await this.connection.exec<{
+  hostContainer: DistributedVirtualSwitchManagerHostContainer;
+    dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
+    hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
+} & { _this: ObjectReference }, DistributedVirtualSwitchManagerCompatibilityResult[] | undefined>(
+      "QueryDvsCheckCompatibility", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchManagerCompatibilityResult[]");
+  }
+  async queryCompatibleHostSpec(args: {
+  switchProductSpec?: DistributedVirtualSwitchProductSpec
+}): Promise<DistributedVirtualSwitchHostProductSpec[] | undefined> {
+    const result = await this.connection.exec<{
+  switchProductSpec?: DistributedVirtualSwitchProductSpec
+} & { _this: ObjectReference }, DistributedVirtualSwitchHostProductSpec[] | undefined>(
+      "QueryDvsCompatibleHostSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchHostProductSpec[]");
+  }
+  async queryDvsConfigTarget(args: {
+  host?: HostSystem;
+    dvs?: DistributedVirtualSwitch
+}): Promise<DVSManagerDvsConfigTarget> {
+    const result = await this.connection.exec<{
+  host?: HostSystem;
+    dvs?: DistributedVirtualSwitch
+} & { _this: ObjectReference }, DVSManagerDvsConfigTarget>(
+      "QueryDvsConfigTarget", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DVSManagerDvsConfigTarget");
+  }
+  async queryFeatureCapability(args: {
+  switchProductSpec?: DistributedVirtualSwitchProductSpec
+}): Promise<DVSFeatureCapability | undefined> {
+    const result = await this.connection.exec<{
+  switchProductSpec?: DistributedVirtualSwitchProductSpec
+} & { _this: ObjectReference }, DVSFeatureCapability | undefined>(
+      "QueryDvsFeatureCapability", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "DVSFeatureCapability");
+  }
+  async rectifyHost(args: {
+  hosts: HostSystem[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  hosts: HostSystem[]
+} & { _this: ObjectReference }, Task>(
+      "RectifyDvsOnHost_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  };
+}
+export class VmwareDistributedVirtualSwitch extends DistributedVirtualSwitch {
+  
+  constructor(
+    public connection: Connection,
+    init?: Partial<VmwareDistributedVirtualSwitch>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async updateLacpGroupConfig(args: {
+  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
+} & { _this: ObjectReference }, Task>(
+      "UpdateDVSLacpGroupConfig_Task", { _this: { attributes: { type: "VmwareDistributedVirtualSwitch" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  };
+}
+export class HostDiagnosticSystem extends ManagedObject {
+  activePartition?: HostDiagnosticPartition;
+  constructor(
+    public connection: Connection,
+    init?: Partial<HostDiagnosticSystem>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async createDiagnosticPartition(args: {
+  spec: HostDiagnosticPartitionCreateSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  spec: HostDiagnosticPartitionCreateSpec
+} & { _this: ObjectReference }, void>(
+      "CreateDiagnosticPartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async queryAvailablePartition(): Promise<HostDiagnosticPartition[] | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostDiagnosticPartition[] | undefined>(
+      "QueryAvailablePartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiagnosticPartition[]");
+  }
+  async queryPartitionCreateDesc(args: {
+  diskUuid: string;
+    diagnosticType: string
+}): Promise<HostDiagnosticPartitionCreateDescription> {
+    const result = await this.connection.exec<{
+  diskUuid: string;
+    diagnosticType: string
+} & { _this: ObjectReference }, HostDiagnosticPartitionCreateDescription>(
+      "QueryPartitionCreateDesc", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiagnosticPartitionCreateDescription");
+  }
+  async queryPartitionCreateOptions(args: {
+  storageType: string;
+    diagnosticType: string
+}): Promise<HostDiagnosticPartitionCreateOption[] | undefined> {
+    const result = await this.connection.exec<{
+  storageType: string;
+    diagnosticType: string
+} & { _this: ObjectReference }, HostDiagnosticPartitionCreateOption[] | undefined>(
+      "QueryPartitionCreateOptions", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiagnosticPartitionCreateOption[]");
+  }
+  async selectActivePartition(args: {
+  partition?: HostScsiDiskPartition
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  partition?: HostScsiDiskPartition
+} & { _this: ObjectReference }, void>(
+      "SelectActivePartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  };
+}
+export class HostStorageSystem extends ExtensibleManagedObject {
+  storageDeviceInfo?: HostStorageDeviceInfo;
+  fileSystemVolumeInfo!: HostFileSystemVolumeInfo;
+  systemFile?: string[];
+  multipathStateInfo?: HostMultipathStateInfo;
+  constructor(
+    public connection: Connection,
+    init?: Partial<HostStorageSystem>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async addInternetScsiSendTargets(args: {
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaSendTarget[]
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaSendTarget[]
+} & { _this: ObjectReference }, void>(
+      "AddInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async addInternetScsiStaticTargets(args: {
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaStaticTarget[]
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaStaticTarget[]
+} & { _this: ObjectReference }, void>(
+      "AddInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async attachScsiLun(args: {
+  lunUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunUuid: string
+} & { _this: ObjectReference }, void>(
+      "AttachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async attachScsiLunEx(args: {
+  lunUuid: string[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  lunUuid: string[]
+} & { _this: ObjectReference }, Task>(
+      "AttachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async attachVmfsExtent(args: {
+  vmfsPath: string;
+    extent: HostScsiDiskPartition
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsPath: string;
+    extent: HostScsiDiskPartition
+} & { _this: ObjectReference }, void>(
+      "AttachVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async changeNFSUserPassword(args: {
+  password: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  password: string
+} & { _this: ObjectReference }, void>(
+      "ChangeNFSUserPassword", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async clearNFSUser(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "ClearNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async computeDiskPartitionInfo(args: {
+  devicePath: string;
+    layout: HostDiskPartitionLayout;
+    partitionFormat?: string
+}): Promise<HostDiskPartitionInfo> {
+    const result = await this.connection.exec<{
+  devicePath: string;
+    layout: HostDiskPartitionLayout;
+    partitionFormat?: string
+} & { _this: ObjectReference }, HostDiskPartitionInfo>(
+      "ComputeDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo");
+  }
+  async computeDiskPartitionInfoForResize(args: {
+  partition: HostScsiDiskPartition;
+    blockRange: HostDiskPartitionBlockRange;
+    partitionFormat?: string
+}): Promise<HostDiskPartitionInfo> {
+    const result = await this.connection.exec<{
+  partition: HostScsiDiskPartition;
+    blockRange: HostDiskPartitionBlockRange;
+    partitionFormat?: string
+} & { _this: ObjectReference }, HostDiskPartitionInfo>(
+      "ComputeDiskPartitionInfoForResize", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo");
+  }
+  async connectNvmeController(args: {
+  connectSpec: HostNvmeConnectSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  connectSpec: HostNvmeConnectSpec
+} & { _this: ObjectReference }, void>(
+      "ConnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async createNvmeOverRdmaAdapter(args: {
+  rdmaDeviceName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  rdmaDeviceName: string
+} & { _this: ObjectReference }, void>(
+      "CreateNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async deleteScsiLunState(args: {
+  lunCanonicalName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunCanonicalName: string
+} & { _this: ObjectReference }, void>(
+      "DeleteScsiLunState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async deleteVffsVolumeState(args: {
+  vffsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vffsUuid: string
+} & { _this: ObjectReference }, void>(
+      "DeleteVffsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async deleteVmfsVolumeState(args: {
+  vmfsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string
+} & { _this: ObjectReference }, void>(
+      "DeleteVmfsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async destroyVffs(args: {
+  vffsPath: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vffsPath: string
+} & { _this: ObjectReference }, void>(
+      "DestroyVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async detachScsiLun(args: {
+  lunUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunUuid: string
+} & { _this: ObjectReference }, void>(
+      "DetachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async detachScsiLunEx(args: {
+  lunUuid: string[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  lunUuid: string[]
+} & { _this: ObjectReference }, Task>(
+      "DetachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async disableMultipathPath(args: {
+  pathName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  pathName: string
+} & { _this: ObjectReference }, void>(
+      "DisableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async disconnectNvmeController(args: {
+  disconnectSpec: HostNvmeDisconnectSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  disconnectSpec: HostNvmeDisconnectSpec
+} & { _this: ObjectReference }, void>(
+      "DisconnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async discoverFcoeHbas(args: {
+  fcoeSpec: FcoeConfigFcoeSpecification
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  fcoeSpec: FcoeConfigFcoeSpecification
+} & { _this: ObjectReference }, void>(
+      "DiscoverFcoeHbas", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async discoverNvmeControllers(args: {
+  discoverSpec: HostNvmeDiscoverSpec
+}): Promise<HostNvmeDiscoveryLog> {
+    const result = await this.connection.exec<{
+  discoverSpec: HostNvmeDiscoverSpec
+} & { _this: ObjectReference }, HostNvmeDiscoveryLog>(
+      "DiscoverNvmeControllers", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostNvmeDiscoveryLog");
+  }
+  async enableMultipathPath(args: {
+  pathName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  pathName: string
+} & { _this: ObjectReference }, void>(
+      "EnableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async expandVmfsExtent(args: {
+  vmfsPath: string;
+    extent: HostScsiDiskPartition
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsPath: string;
+    extent: HostScsiDiskPartition
+} & { _this: ObjectReference }, void>(
+      "ExpandVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async extendVffs(args: {
+  vffsPath: string;
+    devicePath: string;
+    spec?: HostDiskPartitionSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vffsPath: string;
+    devicePath: string;
+    spec?: HostDiskPartitionSpec
+} & { _this: ObjectReference }, void>(
+      "ExtendVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async formatVffs(args: {
+  createSpec: HostVffsSpec
+}): Promise<HostVffsVolume> {
+    const result = await this.connection.exec<{
+  createSpec: HostVffsSpec
+} & { _this: ObjectReference }, HostVffsVolume>(
+      "FormatVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostVffsVolume");
+  }
+  async formatVmfs(args: {
+  createSpec: HostVmfsSpec
+}): Promise<HostVmfsVolume> {
+    const result = await this.connection.exec<{
+  createSpec: HostVmfsSpec
+} & { _this: ObjectReference }, HostVmfsVolume>(
+      "FormatVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostVmfsVolume");
+  }
+  async markAsLocal(args: {
+  scsiDiskUuid: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  scsiDiskUuid: string
+} & { _this: ObjectReference }, Task>(
+      "MarkAsLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async markAsNonLocal(args: {
+  scsiDiskUuid: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  scsiDiskUuid: string
+} & { _this: ObjectReference }, Task>(
+      "MarkAsNonLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async markAsNonSsd(args: {
+  scsiDiskUuid: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  scsiDiskUuid: string
+} & { _this: ObjectReference }, Task>(
+      "MarkAsNonSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async markAsSsd(args: {
+  scsiDiskUuid: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  scsiDiskUuid: string
+} & { _this: ObjectReference }, Task>(
+      "MarkAsSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async markForRemoval(args: {
+  hbaName: string;
+    remove: boolean
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  hbaName: string;
+    remove: boolean
+} & { _this: ObjectReference }, void>(
+      "MarkForRemoval", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async markPerenniallyReserved(args: {
+  lunUuid: string;
+    state: boolean
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunUuid: string;
+    state: boolean
+} & { _this: ObjectReference }, void>(
+      "MarkPerenniallyReserved", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async markPerenniallyReservedEx(args: {
+  lunUuid?: string[];
+    state: boolean
+}): Promise<Task | undefined> {
+    const result = await this.connection.exec<{
+  lunUuid?: string[];
+    state: boolean
+} & { _this: ObjectReference }, Task | undefined>(
+      "MarkPerenniallyReservedEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async mountVffsVolume(args: {
+  vffsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vffsUuid: string
+} & { _this: ObjectReference }, void>(
+      "MountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async mountVmfsVolume(args: {
+  vmfsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string
+} & { _this: ObjectReference }, void>(
+      "MountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async mountVmfsVolumeEx(args: {
+  vmfsUuid: string[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string[]
+} & { _this: ObjectReference }, Task>(
+      "MountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async queryAvailableSsds(args: {
+  vffsPath?: string
+}): Promise<HostScsiDisk[] | undefined> {
+    const result = await this.connection.exec<{
+  vffsPath?: string
+} & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
+      "QueryAvailableSsds", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostScsiDisk[]");
+  }
+  async queryNFSUser(): Promise<HostNasVolumeUserInfo | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostNasVolumeUserInfo | undefined>(
+      "QueryNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostNasVolumeUserInfo");
+  }
+  async queryPathSelectionPolicyOptions(): Promise<HostPathSelectionPolicyOption[] | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostPathSelectionPolicyOption[] | undefined>(
+      "QueryPathSelectionPolicyOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostPathSelectionPolicyOption[]");
+  }
+  async queryStorageArrayTypePolicyOptions(): Promise<HostStorageArrayTypePolicyOption[] | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostStorageArrayTypePolicyOption[] | undefined>(
+      "QueryStorageArrayTypePolicyOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostStorageArrayTypePolicyOption[]");
+  }
+  async queryUnresolvedVmfsVolume(): Promise<HostUnresolvedVmfsVolume[] | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostUnresolvedVmfsVolume[] | undefined>(
+      "QueryUnresolvedVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostUnresolvedVmfsVolume[]");
+  }
+  async queryVmfsConfigOption(): Promise<VmfsConfigOption[] | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, VmfsConfigOption[] | undefined>(
+      "QueryVmfsConfigOption", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "VmfsConfigOption[]");
+  }
+  async refresh(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "RefreshStorageSystem", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async removeInternetScsiSendTargets(args: {
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaSendTarget[];
+    force?: boolean
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaSendTarget[];
+    force?: boolean
+} & { _this: ObjectReference }, void>(
+      "RemoveInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async removeInternetScsiStaticTargets(args: {
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaStaticTarget[]
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targets: HostInternetScsiHbaStaticTarget[]
+} & { _this: ObjectReference }, void>(
+      "RemoveInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async removeNvmeOverRdmaAdapter(args: {
+  hbaDeviceName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  hbaDeviceName: string
+} & { _this: ObjectReference }, void>(
+      "RemoveNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async rescanAllHba(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "RescanAllHba", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async rescanHba(args: {
+  hbaDevice: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  hbaDevice: string
+} & { _this: ObjectReference }, void>(
+      "RescanHba", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async rescanVffs(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "RescanVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async rescanVmfs(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "RescanVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async resolveMultipleUnresolvedVmfsVolumes(args: {
+  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+}): Promise<HostUnresolvedVmfsResolutionResult[] | undefined> {
+    const result = await this.connection.exec<{
+  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+} & { _this: ObjectReference }, HostUnresolvedVmfsResolutionResult[] | undefined>(
+      "ResolveMultipleUnresolvedVmfsVolumes", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostUnresolvedVmfsResolutionResult[]");
+  }
+  async resolveMultipleUnresolvedVmfsVolumesEx(args: {
+  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+}): Promise<Task | undefined> {
+    const result = await this.connection.exec<{
+  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+} & { _this: ObjectReference }, Task | undefined>(
+      "ResolveMultipleUnresolvedVmfsVolumesEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async retrieveDiskPartitionInfo(args: {
+  devicePath: string[]
+}): Promise<HostDiskPartitionInfo[] | undefined> {
+    const result = await this.connection.exec<{
+  devicePath: string[]
+} & { _this: ObjectReference }, HostDiskPartitionInfo[] | undefined>(
+      "RetrieveDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo[]");
+  }
+  async setMultipathLunPolicy(args: {
+  lunId: string;
+    policy: HostMultipathInfoLogicalUnitPolicy
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunId: string;
+    policy: HostMultipathInfoLogicalUnitPolicy
+} & { _this: ObjectReference }, void>(
+      "SetMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async setNFSUser(args: {
+  user: string;
+    password: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  user: string;
+    password: string
+} & { _this: ObjectReference }, void>(
+      "SetNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async turnDiskLocatorLedOff(args: {
+  scsiDiskUuids: string[]
+}): Promise<Task | undefined> {
+    const result = await this.connection.exec<{
+  scsiDiskUuids: string[]
+} & { _this: ObjectReference }, Task | undefined>(
+      "TurnDiskLocatorLedOff_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async turnDiskLocatorLedOn(args: {
+  scsiDiskUuids: string[]
+}): Promise<Task | undefined> {
+    const result = await this.connection.exec<{
+  scsiDiskUuids: string[]
+} & { _this: ObjectReference }, Task | undefined>(
+      "TurnDiskLocatorLedOn_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async unmapVmfsVolumeEx(args: {
+  vmfsUuid: string[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string[]
+} & { _this: ObjectReference }, Task>(
+      "UnmapVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async unmountForceMountedVmfsVolume(args: {
+  vmfsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string
+} & { _this: ObjectReference }, void>(
+      "UnmountForceMountedVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async unmountVffsVolume(args: {
+  vffsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vffsUuid: string
+} & { _this: ObjectReference }, void>(
+      "UnmountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async unmountVmfsVolume(args: {
+  vmfsUuid: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string
+} & { _this: ObjectReference }, void>(
+      "UnmountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async unmountVmfsVolumeEx(args: {
+  vmfsUuid: string[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string[]
+} & { _this: ObjectReference }, Task>(
+      "UnmountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async updateDiskPartitions(args: {
+  devicePath: string;
+    spec: HostDiskPartitionSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  devicePath: string;
+    spec: HostDiskPartitionSpec
+} & { _this: ObjectReference }, void>(
+      "UpdateDiskPartitions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateHppMultipathLunPolicy(args: {
+  lunId: string;
+    policy: HostMultipathInfoHppLogicalUnitPolicy
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunId: string;
+    policy: HostMultipathInfoHppLogicalUnitPolicy
+} & { _this: ObjectReference }, void>(
+      "UpdateHppMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiAdvancedOptions(args: {
+  iScsiHbaDevice: string;
+    targetSet?: HostInternetScsiHbaTargetSet;
+    options: HostInternetScsiHbaParamValue[]
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targetSet?: HostInternetScsiHbaTargetSet;
+    options: HostInternetScsiHbaParamValue[]
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiAdvancedOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiAlias(args: {
+  iScsiHbaDevice: string;
+    iScsiAlias: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    iScsiAlias: string
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiAlias", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiAuthenticationProperties(args: {
+  iScsiHbaDevice: string;
+    authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
+    targetSet?: HostInternetScsiHbaTargetSet
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
+    targetSet?: HostInternetScsiHbaTargetSet
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiAuthenticationProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiDigestProperties(args: {
+  iScsiHbaDevice: string;
+    targetSet?: HostInternetScsiHbaTargetSet;
+    digestProperties: HostInternetScsiHbaDigestProperties
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    targetSet?: HostInternetScsiHbaTargetSet;
+    digestProperties: HostInternetScsiHbaDigestProperties
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiDigestProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiDiscoveryProperties(args: {
+  iScsiHbaDevice: string;
+    discoveryProperties: HostInternetScsiHbaDiscoveryProperties
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    discoveryProperties: HostInternetScsiHbaDiscoveryProperties
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiDiscoveryProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiIPProperties(args: {
+  iScsiHbaDevice: string;
+    ipProperties: HostInternetScsiHbaIPProperties
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    ipProperties: HostInternetScsiHbaIPProperties
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiIPProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateInternetScsiName(args: {
+  iScsiHbaDevice: string;
+    iScsiName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  iScsiHbaDevice: string;
+    iScsiName: string
+} & { _this: ObjectReference }, void>(
+      "UpdateInternetScsiName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateScsiLunDisplayName(args: {
+  lunUuid: string;
+    displayName: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  lunUuid: string;
+    displayName: string
+} & { _this: ObjectReference }, void>(
+      "UpdateScsiLunDisplayName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateSoftwareInternetScsiEnabled(args: {
+  enabled: boolean
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  enabled: boolean
+} & { _this: ObjectReference }, void>(
+      "UpdateSoftwareInternetScsiEnabled", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateVmfsUnmapBandwidth(args: {
+  vmfsUuid: string;
+    unmapBandwidthSpec: VmfsUnmapBandwidthSpec
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string;
+    unmapBandwidthSpec: VmfsUnmapBandwidthSpec
+} & { _this: ObjectReference }, void>(
+      "UpdateVmfsUnmapBandwidth", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async updateVmfsUnmapPriority(args: {
+  vmfsUuid: string;
+    unmapPriority: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsUuid: string;
+    unmapPriority: string
+} & { _this: ObjectReference }, void>(
+      "UpdateVmfsUnmapPriority", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async upgradeVmLayout(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "UpgradeVmLayout", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async upgradeVmfs(args: {
+  vmfsPath: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  vmfsPath: string
+} & { _this: ObjectReference }, void>(
+      "UpgradeVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  };
+}
+export class ContainerView extends ManagedObjectView {
+  container!: ManagedEntity;
+  type?: string[];
+  recursive!: boolean;
+  constructor(
+    public connection: Connection,
+    init?: Partial<ContainerView>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  
+}
+export class InventoryView extends ManagedObjectView {
+  
+  constructor(
+    public connection: Connection,
+    init?: Partial<InventoryView>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async closeFolder(args: {
+  entity: ManagedEntity[]
+}): Promise<ManagedEntity[] | undefined> {
+    const result = await this.connection.exec<{
+  entity: ManagedEntity[]
+} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      "CloseInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
+  }
+  async openFolder(args: {
+  entity: ManagedEntity[]
+}): Promise<ManagedEntity[] | undefined> {
+    const result = await this.connection.exec<{
+  entity: ManagedEntity[]
+} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      "OpenInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ManagedEntity[]");
+  };
+}
+export class ListView extends ManagedObjectView {
+  
+  constructor(
+    public connection: Connection,
+    init?: Partial<ListView>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async modify(args: {
+  add?: ManagedObject[];
+    remove?: ManagedObject[]
+}): Promise<ManagedObject[] | undefined> {
+    const result = await this.connection.exec<{
+  add?: ManagedObject[];
+    remove?: ManagedObject[]
+} & { _this: ObjectReference }, ManagedObject[] | undefined>(
+      "ModifyListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ManagedObject[]");
+  }
+  async reset(args: {
+  obj?: ManagedObject[]
+}): Promise<ManagedObject[] | undefined> {
+    const result = await this.connection.exec<{
+  obj?: ManagedObject[]
+} & { _this: ObjectReference }, ManagedObject[] | undefined>(
+      "ResetListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ManagedObject[]");
+  }
+  async resetFromView(args: {
+  view: View
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  view: View
+} & { _this: ObjectReference }, void>(
+      "ResetListViewFromView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  };
+}
+export class ClusterComputeResource extends ComputeResource {
+  configuration!: ClusterConfigInfo;
+  recommendation?: ClusterRecommendation[];
+  drsRecommendation?: ClusterDrsRecommendation[];
+  hciConfig?: ClusterComputeResourceHCIConfigInfo;
+  migrationHistory?: ClusterDrsMigration[];
+  actionHistory?: ClusterActionHistory[];
+  drsFault?: ClusterDrsFaults[];
+  constructor(
+    public connection: Connection,
+    init?: Partial<ClusterComputeResource>
+  ) {
+    super(connection, init);
+    if (init) {
+      Object.assign(this, constructHelperObjects(connection, init, this.constructor.name, { fromConstructor: true }));
+    }
+  }
+  async AbandonHciWorkflow(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "AbandonHciWorkflow", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async addHost(args: {
+  spec: HostConnectSpec;
+    asConnected: boolean;
+    resourcePool?: ResourcePool;
+    license?: string
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  spec: HostConnectSpec;
+    asConnected: boolean;
+    resourcePool?: ResourcePool;
+    license?: string
+} & { _this: ObjectReference }, Task>(
+      "AddHost_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async applyRecommendation(args: {
+  key: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  key: string
+} & { _this: ObjectReference }, void>(
+      "ApplyRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async cancelRecommendation(args: {
+  key: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  key: string
+} & { _this: ObjectReference }, void>(
+      "CancelRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async enterMaintenanceMode(args: {
+  host: HostSystem[];
+    option?: OptionValue[]
+}): Promise<ClusterEnterMaintenanceResult> {
+    const result = await this.connection.exec<{
+  host: HostSystem[];
+    option?: OptionValue[]
+} & { _this: ObjectReference }, ClusterEnterMaintenanceResult>(
+      "ClusterEnterMaintenanceMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterEnterMaintenanceResult");
+  }
+  async configureHCI(args: {
+  clusterSpec: ClusterComputeResourceHCIConfigSpec;
+    hostInputs?: ClusterComputeResourceHostConfigurationInput[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  clusterSpec: ClusterComputeResourceHCIConfigSpec;
+    hostInputs?: ClusterComputeResourceHostConfigurationInput[]
+} & { _this: ObjectReference }, Task>(
+      "ConfigureHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async evcManager(): Promise<ClusterEVCManager | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterEVCManager | undefined>(
+      "EvcManager", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterEVCManager");
+  }
+  async extendHCI(args: {
+  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
+    vSanConfigSpec?: SDDCBase
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
+    vSanConfigSpec?: SDDCBase
+} & { _this: ObjectReference }, Task>(
+      "ExtendHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async findRulesForVm(args: {
+  vm: VirtualMachine
+}): Promise<ClusterRuleInfo[] | undefined> {
+    const result = await this.connection.exec<{
+  vm: VirtualMachine
+} & { _this: ObjectReference }, ClusterRuleInfo[] | undefined>(
+      "FindRulesForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterRuleInfo[]");
+  }
+  async getResourceUsage(): Promise<ClusterResourceUsageSummary> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterResourceUsageSummary>(
+      "GetResourceUsage", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterResourceUsageSummary");
+  }
+  async moveHostInto(args: {
+  host: HostSystem;
+    resourcePool?: ResourcePool
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  host: HostSystem;
+    resourcePool?: ResourcePool
+} & { _this: ObjectReference }, Task>(
+      "MoveHostInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async moveInto(args: {
+  host: HostSystem[]
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  host: HostSystem[]
+} & { _this: ObjectReference }, Task>(
+      "MoveInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async placeVm(args: {
+  placementSpec: PlacementSpec
+}): Promise<PlacementResult> {
+    const result = await this.connection.exec<{
+  placementSpec: PlacementSpec
+} & { _this: ObjectReference }, PlacementResult>(
+      "PlaceVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "PlacementResult");
+  }
+  async recommendHostsForVm(args: {
+  vm: VirtualMachine;
+    pool?: ResourcePool
+}): Promise<ClusterHostRecommendation[] | undefined> {
+    const result = await this.connection.exec<{
+  vm: VirtualMachine;
+    pool?: ResourcePool
+} & { _this: ObjectReference }, ClusterHostRecommendation[] | undefined>(
+      "RecommendHostsForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterHostRecommendation[]");
+  }
+  async reconfigure(args: {
+  spec: ClusterConfigSpec;
+    modify: boolean
+}): Promise<Task> {
+    const result = await this.connection.exec<{
+  spec: ClusterConfigSpec;
+    modify: boolean
+} & { _this: ObjectReference }, Task>(
+      "ReconfigureCluster_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async refreshRecommendation(): Promise<void> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
+      "RefreshRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async retrieveDasAdvancedRuntimeInfo(): Promise<ClusterDasAdvancedRuntimeInfo | undefined> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterDasAdvancedRuntimeInfo | undefined>(
+      "RetrieveDasAdvancedRuntimeInfo", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterDasAdvancedRuntimeInfo");
+  }
+  async setCryptoMode(args: {
+  cryptoMode: string
+}): Promise<void> {
+    const result = await this.connection.exec<{
+  cryptoMode: string
+} & { _this: ObjectReference }, void>(
+      "SetCryptoMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "void");
+  }
+  async stampAllRulesWithUuid(): Promise<Task> {
+    const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
+      "StampAllRulesWithUuid_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "Task");
+  }
+  async validateHCIConfiguration(args: {
+  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
+    hosts?: HostSystem[]
+}): Promise<ClusterComputeResourceValidationResultBase[] | undefined> {
+    const result = await this.connection.exec<{
+  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
+    hosts?: HostSystem[]
+} & { _this: ObjectReference }, ClusterComputeResourceValidationResultBase[] | undefined>(
+      "ValidateHCIConfiguration", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
+    ).then(r => r.result);
+    return constructHelperObjects(this.connection, result, "ClusterComputeResourceValidationResultBase[]");
+  };
+}
+typeNames.enums["ObjectUpdateKind"] = {};
+typeNames.enums["PropertyChangeOp"] = {};
+typeNames.enums["BatchResultResult"] = {};
+typeNames.enums["ConfigSpecOperation"] = {};
+typeNames.enums["DiagnosticManagerLogCreator"] = {};
+typeNames.enums["DiagnosticManagerLogFormat"] = {};
+typeNames.enums["DrsInjectorWorkloadCorrelationState"] = {};
+typeNames.enums["ReplicationVmState"] = {};
+typeNames.enums["QuiesceMode"] = {};
+typeNames.enums["HealthUpdateInfoComponentType"] = {};
+typeNames.enums["HttpNfcLeaseManifestEntryChecksumType"] = {};
+typeNames.enums["HttpNfcLeaseMode"] = {};
+typeNames.enums["HttpNfcLeaseState"] = {};
+typeNames.enums["IoFilterType"] = {};
+typeNames.enums["IoFilterOperation"] = {};
+typeNames.enums["LatencySensitivitySensitivityLevel"] = {};
+typeNames.enums["LicenseFeatureInfoUnit"] = {};
+typeNames.enums["LicenseFeatureInfoSourceRestriction"] = {};
+typeNames.enums["LicenseFeatureInfoState"] = {};
+typeNames.enums["HostLicensableResourceKey"] = {};
+typeNames.enums["LicenseManagerLicenseKey"] = {};
+typeNames.enums["LicenseManagerState"] = {};
+typeNames.enums["LicenseReservationInfoState"] = {};
+typeNames.enums["OvfConsumerOstNodeType"] = {};
+typeNames.enums["OvfCreateImportSpecParamsDiskProvisioningType"] = {};
+typeNames.enums["PerfSummaryType"] = {};
+typeNames.enums["PerfStatsType"] = {};
+typeNames.enums["PerformanceManagerUnit"] = {};
+typeNames.enums["PerfFormat"] = {};
+typeNames.enums["ResourceConfigSpecScaleSharesBehavior"] = {};
+typeNames.enums["SessionManagerHttpServiceRequestSpecMethod"] = {};
+typeNames.enums["SharesLevel"] = {};
+typeNames.enums["SimpleCommandEncoding"] = {};
+typeNames.enums["StorageIORMThresholdMode"] = {};
+typeNames.enums["TaskInfoState"] = {};
+typeNames.enums["VsanUpgradeSystemUpgradeHistoryDiskGroupOpType"] = {};
+typeNames.enums["ActionParameter"] = {};
+typeNames.enums["MetricAlarmOperator"] = {};
+typeNames.enums["StateAlarmOperator"] = {};
+typeNames.enums["ActionType"] = {};
+typeNames.enums["ClusterCryptoConfigInfoCryptoMode"] = {};
+typeNames.enums["ClusterDasAamNodeStateDasState"] = {};
+typeNames.enums["ClusterDasConfigInfoHBDatastoreCandidate"] = {};
+typeNames.enums["ClusterDasConfigInfoServiceState"] = {};
+typeNames.enums["ClusterDasConfigInfoVmMonitoringState"] = {};
+typeNames.enums["ClusterDasFdmAvailabilityState"] = {};
+typeNames.enums["DasVmPriority"] = {};
+typeNames.enums["ClusterDasVmSettingsIsolationResponse"] = {};
+typeNames.enums["ClusterDasVmSettingsRestartPriority"] = {};
+typeNames.enums["DpmBehavior"] = {};
+typeNames.enums["DrsBehavior"] = {};
+typeNames.enums["DrsRecommendationReasonCode"] = {};
+typeNames.enums["ClusterHostInfraUpdateHaModeActionOperationType"] = {};
+typeNames.enums["HostPowerOperationType"] = {};
+typeNames.enums["ClusterInfraUpdateHaConfigInfoBehaviorType"] = {};
+typeNames.enums["ClusterInfraUpdateHaConfigInfoRemediationType"] = {};
+typeNames.enums["ClusterPowerOnVmOption"] = {};
+typeNames.enums["RecommendationReasonCode"] = {};
+typeNames.enums["RecommendationType"] = {};
+typeNames.enums["ClusterVmComponentProtectionSettingsStorageVmReaction"] = {};
+typeNames.enums["ClusterVmComponentProtectionSettingsVmReactionOnAPDCleared"] = {};
+typeNames.enums["ClusterVmReadinessReadyCondition"] = {};
+typeNames.enums["DvsFilterOnFailure"] = {};
+typeNames.enums["DVPortStatusVmDirectPathGen2InactiveReasonNetwork"] = {};
+typeNames.enums["DVPortStatusVmDirectPathGen2InactiveReasonOther"] = {};
+typeNames.enums["EntityType"] = {};
+typeNames.enums["EntityImportType"] = {};
+typeNames.enums["DistributedVirtualSwitchHostMemberHostComponentState"] = {};
+typeNames.enums["DistributedVirtualSwitchHostMemberTransportZoneType"] = {};
+typeNames.enums["DistributedVirtualSwitchPortConnecteeConnecteeType"] = {};
+typeNames.enums["DvsNetworkRuleDirectionType"] = {};
+typeNames.enums["KmipClusterInfoKmsManagementType"] = {};
+typeNames.enums["EventEventSeverity"] = {};
+typeNames.enums["EventCategory"] = {};
+typeNames.enums["EventFilterSpecRecursionOption"] = {};
+typeNames.enums["VmFailedStartingSecondaryEventFailureReason"] = {};
+typeNames.enums["VmShutdownOnIsolationEventOperation"] = {};
+typeNames.enums["DisallowedChangeByServiceDisallowedChange"] = {};
+typeNames.enums["InvalidDasConfigArgumentEntryForInvalidArgument"] = {};
+typeNames.enums["InvalidProfileReferenceHostReason"] = {};
+typeNames.enums["LicenseAssignmentFailedReason"] = {};
+typeNames.enums["ThirdPartyLicenseAssignmentFailedReason"] = {};
+typeNames.enums["AutoStartAction"] = {};
+typeNames.enums["AutoStartWaitHeartbeatSetting"] = {};
+typeNames.enums["HostCapabilityFtUnsupportedReason"] = {};
+typeNames.enums["HostReplayUnsupportedReason"] = {};
+typeNames.enums["HostCapabilityUnmapMethodSupported"] = {};
+typeNames.enums["HostCapabilityVmDirectPathGen2UnsupportedReason"] = {};
+typeNames.enums["HostCertificateManagerCertificateInfoCertificateStatus"] = {};
+typeNames.enums["HostConfigChangeMode"] = {};
+typeNames.enums["HostConfigChangeOperation"] = {};
+typeNames.enums["HostCpuPackageVendor"] = {};
+typeNames.enums["HostCpuPowerManagementInfoPolicyType"] = {};
+typeNames.enums["HostDigestInfoDigestMethodType"] = {};
+typeNames.enums["HostDiskPartitionInfoPartitionFormat"] = {};
+typeNames.enums["HostDiskPartitionInfoType"] = {};
+typeNames.enums["HostFeatureVersionKey"] = {};
+typeNames.enums["FileSystemMountInfoVStorageSupportStatus"] = {};
+typeNames.enums["HostFileSystemVolumeFileSystemType"] = {};
+typeNames.enums["HostGraphicsConfigGraphicsType"] = {};
+typeNames.enums["HostGraphicsConfigSharedPassthruAssignmentPolicy"] = {};
+typeNames.enums["HostGraphicsInfoGraphicsType"] = {};
+typeNames.enums["HostHardwareElementStatus"] = {};
+typeNames.enums["HostAccessMode"] = {};
+typeNames.enums["HostLockdownMode"] = {};
+typeNames.enums["HostImageAcceptanceLevel"] = {};
+typeNames.enums["HostIpConfigIpV6AddressConfigType"] = {};
+typeNames.enums["HostIpConfigIpV6AddressStatus"] = {};
+typeNames.enums["IscsiPortInfoPathStatus"] = {};
+typeNames.enums["LinkDiscoveryProtocolConfigOperationType"] = {};
+typeNames.enums["LinkDiscoveryProtocolConfigProtocolType"] = {};
+typeNames.enums["HostLowLevelProvisioningManagerFileType"] = {};
+typeNames.enums["HostLowLevelProvisioningManagerReloadTarget"] = {};
+typeNames.enums["HostMaintenanceSpecPurpose"] = {};
+typeNames.enums["VirtualMachineMemoryAllocationPolicy"] = {};
+typeNames.enums["HostMountMode"] = {};
+typeNames.enums["HostMountInfoInaccessibleReason"] = {};
+typeNames.enums["MultipathState"] = {};
+typeNames.enums["HostNasVolumeSecurityType"] = {};
+typeNames.enums["HostNetStackInstanceCongestionControlAlgorithmType"] = {};
+typeNames.enums["HostNetStackInstanceSystemStackKey"] = {};
+typeNames.enums["HostNumericSensorHealthState"] = {};
+typeNames.enums["HostNumericSensorType"] = {};
+typeNames.enums["NvdimmNvdimmHealthInfoState"] = {};
+typeNames.enums["NvdimmInterleaveSetState"] = {};
+typeNames.enums["NvdimmNamespaceDetailsHealthStatus"] = {};
+typeNames.enums["NvdimmNamespaceDetailsState"] = {};
+typeNames.enums["NvdimmNamespaceHealthStatus"] = {};
+typeNames.enums["NvdimmNamespaceState"] = {};
+typeNames.enums["NvdimmNamespaceType"] = {};
+typeNames.enums["NvdimmRangeType"] = {};
+typeNames.enums["HostNvmeDiscoveryLogSubsystemType"] = {};
+typeNames.enums["HostNvmeDiscoveryLogTransportRequirements"] = {};
+typeNames.enums["HostNvmeTransportParametersNvmeAddressFamily"] = {};
+typeNames.enums["HostNvmeTransportType"] = {};
+typeNames.enums["HostOpaqueSwitchOpaqueSwitchState"] = {};
+typeNames.enums["HostPatchManagerInstallState"] = {};
+typeNames.enums["HostPatchManagerIntegrityStatus"] = {};
+typeNames.enums["HostPatchManagerReason"] = {};
+typeNames.enums["PhysicalNicResourcePoolSchedulerDisallowedReason"] = {};
+typeNames.enums["PhysicalNicVmDirectPathGen2SupportedMode"] = {};
+typeNames.enums["PortGroupConnecteeType"] = {};
+typeNames.enums["HostProtocolEndpointPEType"] = {};
+typeNames.enums["HostProtocolEndpointProtocolEndpointType"] = {};
+typeNames.enums["HostRdmaDeviceConnectionState"] = {};
+typeNames.enums["HostFirewallRuleDirection"] = {};
+typeNames.enums["HostFirewallRulePortType"] = {};
+typeNames.enums["HostFirewallRuleProtocol"] = {};
+typeNames.enums["ScsiLunDescriptorQuality"] = {};
+typeNames.enums["ScsiLunType"] = {};
+typeNames.enums["ScsiLunState"] = {};
+typeNames.enums["ScsiLunVStorageSupportStatus"] = {};
+typeNames.enums["HostServicePolicy"] = {};
+typeNames.enums["HostSevInfoSevState"] = {};
+typeNames.enums["HostSgxInfoFlcModes"] = {};
+typeNames.enums["HostSgxInfoSgxStates"] = {};
+typeNames.enums["HostSnmpAgentCapability"] = {};
+typeNames.enums["SoftwarePackageConstraint"] = {};
+typeNames.enums["SoftwarePackageVibType"] = {};
+typeNames.enums["HostStorageProtocol"] = {};
+typeNames.enums["HostSystemIdentificationInfoIdentifier"] = {};
+typeNames.enums["HostTpmAttestationInfoAcceptanceStatus"] = {};
+typeNames.enums["HostTrustAuthorityAttestationInfoAttestationStatus"] = {};
+typeNames.enums["HostUnresolvedVmfsResolutionSpecVmfsUuidResolution"] = {};
+typeNames.enums["HostVirtualNicManagerNicType"] = {};
+typeNames.enums["HostVmciAccessManagerMode"] = {};
+typeNames.enums["NetIpConfigInfoIpAddressOrigin"] = {};
+typeNames.enums["NetIpConfigInfoIpAddressStatus"] = {};
+typeNames.enums["NetIpStackInfoEntryType"] = {};
+typeNames.enums["NetIpStackInfoPreference"] = {};
+typeNames.enums["NetBIOSConfigInfoMode"] = {};
+typeNames.enums["ArrayUpdateOperation"] = {};
+typeNames.enums["ComplianceResultStatus"] = {};
+typeNames.enums["ProfileNumericComparator"] = {};
+typeNames.enums["ProfileParameterMetadataRelationType"] = {};
+typeNames.enums["ClusterProfileServiceType"] = {};
+typeNames.enums["ProfileExecuteResultStatus"] = {};
+typeNames.enums["AnswerFileValidationInfoStatus"] = {};
+typeNames.enums["PlacementAffinityRuleRuleScope"] = {};
+typeNames.enums["PlacementAffinityRuleRuleType"] = {};
+typeNames.enums["StorageDrsPodConfigInfoBehavior"] = {};
+typeNames.enums["StorageDrsSpaceLoadBalanceConfigSpaceThresholdMode"] = {};
+typeNames.enums["VAppCloneSpecProvisioningType"] = {};
+typeNames.enums["VAppAutoStartAction"] = {};
+typeNames.enums["VAppIPAssignmentInfoAllocationSchemes"] = {};
+typeNames.enums["VAppIPAssignmentInfoIpAllocationPolicy"] = {};
+typeNames.enums["VAppIPAssignmentInfoProtocols"] = {};
+typeNames.enums["VchaState"] = {};
+typeNames.enums["VchaClusterMode"] = {};
+typeNames.enums["VchaClusterState"] = {};
+typeNames.enums["VchaNodeRole"] = {};
+typeNames.enums["VchaNodeState"] = {};
+typeNames.enums["VirtualMachineBootOptionsNetworkBootProtocolType"] = {};
+typeNames.enums["VirtualMachineConfigInfoNpivWwnType"] = {};
+typeNames.enums["VirtualMachineConfigInfoSwapPlacementType"] = {};
+typeNames.enums["VirtualMachineConfigSpecEncryptedVMotionModes"] = {};
+typeNames.enums["VirtualMachineConfigSpecNpivWwnOp"] = {};
+typeNames.enums["VirtualMachinePowerOpType"] = {};
+typeNames.enums["VirtualMachineStandbyActionType"] = {};
+typeNames.enums["VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeStateVmDirectPathGen2InactiveReasonOther"] = {};
+typeNames.enums["VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeStateVmDirectPathGen2InactiveReasonVm"] = {};
+typeNames.enums["VirtualMachineFileLayoutExFileType"] = {};
+typeNames.enums["VirtualMachineHtSharing"] = {};
+typeNames.enums["VirtualMachineFlagInfoMonitorType"] = {};
+typeNames.enums["VirtualMachinePowerOffBehavior"] = {};
+typeNames.enums["VirtualMachineFlagInfoVirtualExecUsage"] = {};
+typeNames.enums["VirtualMachineFlagInfoVirtualMmuUsage"] = {};
+typeNames.enums["VirtualMachineForkConfigInfoChildType"] = {};
+typeNames.enums["GuestInfoAppStateType"] = {};
+typeNames.enums["VirtualMachineGuestState"] = {};
+typeNames.enums["VirtualMachineToolsInstallType"] = {};
+typeNames.enums["VirtualMachineToolsRunningStatus"] = {};
+typeNames.enums["VirtualMachineToolsStatus"] = {};
+typeNames.enums["VirtualMachineToolsVersionStatus"] = {};
+typeNames.enums["GuestOsDescriptorFirmwareType"] = {};
+typeNames.enums["VirtualMachineGuestOsFamily"] = {};
+typeNames.enums["VirtualMachineGuestOsIdentifier"] = {};
+typeNames.enums["GuestOsDescriptorSupportLevel"] = {};
+typeNames.enums["VirtualMachineMetadataManagerVmMetadataOp"] = {};
+typeNames.enums["VirtualMachineMetadataManagerVmMetadataOwnerOwner"] = {};
+typeNames.enums["ScheduledHardwareUpgradeInfoHardwareUpgradePolicy"] = {};
+typeNames.enums["ScheduledHardwareUpgradeInfoHardwareUpgradeStatus"] = {};
+typeNames.enums["VirtualMachineSgxInfoFlcModes"] = {};
+typeNames.enums["VirtualMachineTargetInfoConfigurationTag"] = {};
+typeNames.enums["UpgradePolicy"] = {};
+typeNames.enums["VirtualMachineUsbInfoFamily"] = {};
+typeNames.enums["VirtualMachineUsbInfoSpeed"] = {};
+typeNames.enums["VirtualMachineWindowsQuiesceSpecVssBackupContext"] = {};
+typeNames.enums["CheckTestType"] = {};
+typeNames.enums["CustomizationNetBIOSMode"] = {};
+typeNames.enums["CustomizationLicenseDataMode"] = {};
+typeNames.enums["CustomizationSysprepRebootOption"] = {};
+typeNames.enums["VirtualDeviceConnectInfoMigrateConnectOp"] = {};
+typeNames.enums["VirtualDeviceConnectInfoStatus"] = {};
+typeNames.enums["VirtualDeviceFileExtension"] = {};
+typeNames.enums["VirtualDeviceURIBackingOptionDirection"] = {};
+typeNames.enums["VirtualDeviceConfigSpecFileOperation"] = {};
+typeNames.enums["VirtualDeviceConfigSpecOperation"] = {};
+typeNames.enums["VirtualDiskDeltaDiskFormat"] = {};
+typeNames.enums["VirtualDiskDeltaDiskFormatVariant"] = {};
+typeNames.enums["VirtualDiskSharing"] = {};
+typeNames.enums["VirtualDiskVFlashCacheConfigInfoCacheConsistencyType"] = {};
+typeNames.enums["VirtualDiskVFlashCacheConfigInfoCacheMode"] = {};
+typeNames.enums["VirtualDiskCompatibilityMode"] = {};
+typeNames.enums["VirtualDiskMode"] = {};
+typeNames.enums["VirtualEthernetCardLegacyNetworkDeviceName"] = {};
+typeNames.enums["VirtualEthernetCardMacType"] = {};
+typeNames.enums["VirtualPointingDeviceHostChoice"] = {};
+typeNames.enums["VirtualSerialPortEndPoint"] = {};
+typeNames.enums["VirtualMachineVMCIDeviceAction"] = {};
+typeNames.enums["VirtualMachineVMCIDeviceDirection"] = {};
+typeNames.enums["VirtualMachineVMCIDeviceProtocol"] = {};
+typeNames.enums["VirtualMachineVideoCardUse3dRenderer"] = {};
+typeNames.enums["GuestFileType"] = {};
+typeNames.enums["GuestRegKeyWowSpec"] = {};
+typeNames.enums["VsanHostDecommissionModeObjectAction"] = {};
+typeNames.enums["VsanHostDiskResultState"] = {};
+typeNames.enums["VsanHostHealthState"] = {};
+typeNames.enums["VsanHostNodeState"] = {};
+typeNames.enums["VsanDiskIssueType"] = {};
+typeNames.enums["BaseConfigInfoDiskFileBackingInfoProvisioningType"] = {};
+typeNames.enums["VStorageObjectConsumptionType"] = {};
+typeNames.enums["vslmVStorageObjectControlFlag"] = {};
+typeNames.enums["ManagedEntityStatus"] = {};
+typeNames.enums["TaskFilterSpecRecursionOption"] = {};
+typeNames.enums["TaskFilterSpecTimeOption"] = {};
+typeNames.enums["VirtualAppVAppState"] = {};
+typeNames.enums["VirtualDiskAdapterType"] = {};
+typeNames.enums["VirtualDiskType"] = {};
+typeNames.enums["VirtualMachineAppHeartbeatStatusType"] = {};
+typeNames.enums["VirtualMachineConnectionState"] = {};
+typeNames.enums["VirtualMachineCryptoState"] = {};
+typeNames.enums["VirtualMachineFaultToleranceState"] = {};
+typeNames.enums["VirtualMachineFaultToleranceType"] = {};
+typeNames.enums["VirtualMachineMovePriority"] = {};
+typeNames.enums["VirtualMachineNeedSecondaryReason"] = {};
+typeNames.enums["VirtualMachinePowerState"] = {};
+typeNames.enums["VirtualMachineRecordReplayState"] = {};
+typeNames.enums["VirtualMachineTicketType"] = {};
+typeNames.enums["AlarmFilterSpecAlarmTypeByEntity"] = {};
+typeNames.enums["AlarmFilterSpecAlarmTypeByTrigger"] = {};
+typeNames.enums["EventAlarmExpressionComparisonOperator"] = {};
+typeNames.enums["PlacementSpecPlacementType"] = {};
+typeNames.enums["DistributedVirtualPortgroupBackingType"] = {};
+typeNames.enums["DistributedVirtualPortgroupMetaTagName"] = {};
+typeNames.enums["DistributedVirtualPortgroupPortgroupType"] = {};
+typeNames.enums["CryptoManagerKmipCryptoKeyStatusKeyUnavailableReason"] = {};
+typeNames.enums["CustomizationFailedReasonCode"] = {};
+typeNames.enums["DvsEventPortBlockState"] = {};
+typeNames.enums["HostDasErrorEventHostDasErrorReason"] = {};
+typeNames.enums["HostDisconnectedEventReasonCode"] = {};
+typeNames.enums["VmDasBeingResetEventReasonCode"] = {};
+typeNames.enums["CannotEnableVmcpForClusterReason"] = {};
+typeNames.enums["CannotMoveFaultToleranceVmMoveType"] = {};
+typeNames.enums["CannotUseNetworkReason"] = {};
+typeNames.enums["DasConfigFaultDasConfigFaultReason"] = {};
+typeNames.enums["FtIssuesOnHostHostSelectionType"] = {};
+typeNames.enums["HostHasComponentFailureHostComponentType"] = {};
+typeNames.enums["HostIncompatibleForFaultToleranceReason"] = {};
+typeNames.enums["HostIncompatibleForRecordReplayReason"] = {};
+typeNames.enums["NotSupportedDeviceForFTDeviceType"] = {};
+typeNames.enums["NumVirtualCpusIncompatibleReason"] = {};
+typeNames.enums["QuarantineModeFaultFaultType"] = {};
+typeNames.enums["ReplicationVmFaultReasonForFault"] = {};
+typeNames.enums["ReplicationVmInProgressFaultActivity"] = {};
+typeNames.enums["VFlashModuleNotSupportedReason"] = {};
+typeNames.enums["VmFaultToleranceConfigIssueReasonForIssue"] = {};
+typeNames.enums["VmFaultToleranceInvalidFileBackingDeviceType"] = {};
+typeNames.enums["WillLoseHAProtectionResolution"] = {};
+typeNames.enums["HostActiveDirectoryAuthenticationCertificateDigest"] = {};
+typeNames.enums["HostActiveDirectoryInfoDomainMembershipStatus"] = {};
+typeNames.enums["HostDateTimeInfoProtocol"] = {};
+typeNames.enums["FibreChannelPortType"] = {};
+typeNames.enums["HostInternetScsiHbaChapAuthenticationType"] = {};
+typeNames.enums["HostInternetScsiHbaDigestType"] = {};
+typeNames.enums["InternetScsiSnsDiscoveryMethod"] = {};
+typeNames.enums["SlpDiscoveryMethod"] = {};
+typeNames.enums["HostInternetScsiHbaIscsiIpv6AddressAddressConfigurationType"] = {};
+typeNames.enums["HostInternetScsiHbaIscsiIpv6AddressIPv6AddressOperation"] = {};
+typeNames.enums["HostInternetScsiHbaNetworkBindingSupportType"] = {};
+typeNames.enums["HostInternetScsiHbaStaticTargetTargetDiscoveryMethod"] = {};
+typeNames.enums["ScsiDiskType"] = {};
+typeNames.enums["HostUnresolvedVmfsExtentUnresolvedReason"] = {};
+typeNames.enums["HostVmfsVolumeUnmapBandwidthPolicy"] = {};
+typeNames.enums["HostVmfsVolumeUnmapPriority"] = {};
+typeNames.enums["HostProfileValidationFailureInfoUpdateType"] = {};
+typeNames.enums["HostProfileValidationState"] = {};
+typeNames.enums["HostProfileManagerAnswerFileStatus"] = {};
+typeNames.enums["ApplyHostProfileConfigurationResultStatus"] = {};
+typeNames.enums["HostProfileManagerCompositionResultResultElementStatus"] = {};
+typeNames.enums["HostProfileManagerCompositionValidationResultResultElementStatus"] = {};
+typeNames.enums["HostProfileManagerTaskListRequirement"] = {};
+typeNames.enums["StoragePlacementSpecPlacementType"] = {};
+typeNames.enums["VirtualDiskRuleSpecRuleType"] = {};
+typeNames.enums["VirtualMachineRelocateDiskMoveOptions"] = {};
+typeNames.enums["VirtualMachineRelocateTransformation"] = {};
+typeNames.enums["VirtualMachineScsiPassthroughType"] = {};
+typeNames.enums["VirtualSCSISharing"] = {};
+typeNames.enums["VirtualVmxnet3VrdmaOptionDeviceProtocols"] = {};
+typeNames.enums["ComputeResourceHostSPBMLicenseInfoHostSPBMLicenseState"] = {};
+typeNames.enums["DatastoreAccessible"] = {};
+typeNames.enums["DatastoreSummaryMaintenanceModeState"] = {};
+typeNames.enums["DistributedVirtualSwitchHostInfrastructureTrafficClass"] = {};
+typeNames.enums["DistributedVirtualSwitchNetworkResourceControlVersion"] = {};
+typeNames.enums["DistributedVirtualSwitchNicTeamingPolicyMode"] = {};
+typeNames.enums["DistributedVirtualSwitchProductSpecOperationType"] = {};
+typeNames.enums["FolderDesiredHostState"] = {};
+typeNames.enums["HostSystemConnectionState"] = {};
+typeNames.enums["HostCryptoState"] = {};
+typeNames.enums["HostSystemPowerState"] = {};
+typeNames.enums["HostSystemRemediationStateState"] = {};
+typeNames.enums["HostStandbyMode"] = {};
+typeNames.enums["VMotionCompatibilityType"] = {};
+typeNames.enums["ValidateMigrationTestType"] = {};
+typeNames.enums["VMwareDvsLacpApiVersion"] = {};
+typeNames.enums["VMwareDvsLacpLoadBalanceAlgorithm"] = {};
+typeNames.enums["DVSMacLimitPolicyType"] = {};
+typeNames.enums["VMwareDvsMulticastFilteringMode"] = {};
+typeNames.enums["VmwareDistributedVirtualSwitchPvlanPortType"] = {};
+typeNames.enums["VMwareDVSTeamingMatchStatus"] = {};
+typeNames.enums["VMwareUplinkLacpMode"] = {};
+typeNames.enums["VMwareDVSVspanSessionEncapType"] = {};
+typeNames.enums["VMwareDVSVspanSessionType"] = {};
+typeNames.enums["AffinityType"] = {};
+typeNames.enums["AgentInstallFailedReason"] = {};
+typeNames.enums["CannotPowerOffVmInClusterOperation"] = {};
+typeNames.enums["DeviceNotSupportedReason"] = {};
+typeNames.enums["IncompatibleHostForVmReplicationIncompatibleReason"] = {};
+typeNames.enums["ReplicationDiskConfigFaultReasonForFault"] = {};
+typeNames.enums["ReplicationVmConfigFaultReasonForFault"] = {};
+typeNames.enums["DiagnosticPartitionType"] = {};
+typeNames.enums["DiagnosticPartitionStorageType"] = {};
+typeNames.enums["HostRuntimeInfoNetStackInstanceRuntimeInfoState"] = {};
+typeNames.enums["ClusterComputeResourceHCIWorkflowState"] = {};
+typeNames.enums["DayOfWeek"] = {};
+typeNames.enums["WeekOfMonth"] = {};
+typeNames.interfaces["DynamicArray"] = {
+dynamicType: "string",
+        val: "any"
+};
+typeNames.interfaces["DynamicData"] = {
+dynamicType: "string",
+        dynamicProperty: "DynamicProperty"
+};
+typeNames.interfaces["DynamicProperty"] = {
+name: "string",
+        val: "any"
+};
+typeNames.interfaces["KeyAnyValue"] = {
+key: "string",
+        value: "any"
+};
+typeNames.interfaces["LocalizableMessage"] = {
+key: "string",
+        arg: "KeyAnyValue",
+        message: "string"
+};
+typeNames.interfaces["HostCommunication"] = {
+
+};
+typeNames.interfaces["HostNotConnected"] = {
+
+};
+typeNames.interfaces["HostNotReachable"] = {
+
+};
+typeNames.interfaces["InvalidArgument"] = {
+invalidProperty: "string"
+};
+typeNames.interfaces["InvalidRequest"] = {
+
+};
+typeNames.interfaces["InvalidType"] = {
+argument: "string"
+};
+typeNames.interfaces["ManagedObjectNotFound"] = {
+obj: "ManagedObject"
+};
+typeNames.interfaces["MethodNotFound"] = {
+receiver: "ManagedObject",
+        method: "string"
+};
+typeNames.interfaces["NotEnoughLicenses"] = {
+
+};
+typeNames.interfaces["NotImplemented"] = {
+
+};
+typeNames.interfaces["NotSupported"] = {
+
+};
+typeNames.interfaces["RequestCanceled"] = {
+
+};
+typeNames.interfaces["SecurityError"] = {
+
+};
+typeNames.interfaces["SystemError"] = {
+reason: "string"
+};
+typeNames.interfaces["UnexpectedFault"] = {
+faultName: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["InvalidCollectorVersion"] = {
+
+};
+typeNames.interfaces["InvalidProperty"] = {
+name: "string"
+};
+typeNames.interfaces["PropertyFilterSpec"] = {
+propSet: "PropertySpec",
+        objectSet: "ObjectSpec",
+        reportMissingObjectsInResults: "boolean"
+};
+typeNames.interfaces["PropertySpec"] = {
+type: "string",
+        all: "boolean",
+        pathSet: "string"
+};
+typeNames.interfaces["ObjectSpec"] = {
+obj: "ManagedObject",
+        skip: "boolean",
+        selectSet: "SelectionSpec"
+};
+typeNames.interfaces["SelectionSpec"] = {
+name: "string"
+};
+typeNames.interfaces["TraversalSpec"] = {
+type: "string",
+        path: "string",
+        skip: "boolean",
+        selectSet: "SelectionSpec"
+};
+typeNames.interfaces["ObjectContent"] = {
+obj: "ManagedObject",
+        propSet: "DynamicProperty",
+        missingSet: "MissingProperty"
+};
+typeNames.interfaces["UpdateSet"] = {
+version: "string",
+        filterSet: "PropertyFilterUpdate",
+        truncated: "boolean"
+};
+typeNames.interfaces["PropertyFilterUpdate"] = {
+filter: PropertyFilter,
+        objectSet: "ObjectUpdate",
+        missingSet: "MissingObject"
+};
+typeNames.interfaces["ObjectUpdate"] = {
+kind: "ObjectUpdateKind",
+        obj: "ManagedObject",
+        changeSet: "PropertyChange",
+        missingSet: "MissingProperty"
+};
+typeNames.interfaces["PropertyChange"] = {
+name: "string",
+        op: "PropertyChangeOp",
+        val: "any"
+};
+typeNames.interfaces["MissingProperty"] = {
+path: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["MissingObject"] = {
+obj: "ManagedObject",
+        fault: "MethodFault"
+};
+typeNames.interfaces["WaitOptions"] = {
+maxWaitSeconds: "number",
+        maxObjectUpdates: "number"
+};
+typeNames.interfaces["RetrieveOptions"] = {
+maxObjects: "number"
+};
+typeNames.interfaces["RetrieveResult"] = {
+token: "string",
+        objects: "ObjectContent"
+};
+typeNames.interfaces["AboutInfo"] = {
+name: "string",
+        fullName: "string",
+        vendor: "string",
+        version: "string",
+        build: "string",
+        localeVersion: "string",
+        localeBuild: "string",
+        osType: "string",
+        productLineId: "string",
+        apiType: "string",
+        apiVersion: "string",
+        instanceUuid: "string",
+        licenseProductName: "string",
+        licenseProductVersion: "string"
+};
+typeNames.interfaces["AuthorizationDescription"] = {
+privilege: "ElementDescription",
+        privilegeGroup: "ElementDescription"
+};
+typeNames.interfaces["BatchResult"] = {
+result: "string",
+        hostKey: "string",
+        ds: Datastore,
+        fault: "MethodFault"
+};
+typeNames.interfaces["Capability"] = {
+provisioningSupported: "boolean",
+        multiHostSupported: "boolean",
+        userShellAccessSupported: "boolean",
+        supportedEVCMode: "EVCMode",
+        supportedEVCGraphicsMode: "FeatureEVCMode",
+        networkBackupAndRestoreSupported: "boolean",
+        ftDrsWithoutEvcSupported: "boolean",
+        hciWorkflowSupported: "boolean",
+        computePolicyVersion: "number",
+        clusterPlacementSupported: "boolean",
+        lifecycleManagementSupported: "boolean",
+        scalableSharesSupported: "boolean"
+};
+typeNames.interfaces["CustomFieldDef"] = {
+key: "number",
+        name: "string",
+        type: "string",
+        managedObjectType: "string",
+        fieldDefPrivileges: "PrivilegePolicyDef",
+        fieldInstancePrivileges: "PrivilegePolicyDef"
+};
+typeNames.interfaces["CustomFieldStringValue"] = {
+value: "string"
+};
+typeNames.interfaces["CustomFieldValue"] = {
+key: "number"
+};
+typeNames.interfaces["CustomizationSpecInfo"] = {
+name: "string",
+        description: "string",
+        type: "string",
+        changeVersion: "string",
+        lastUpdateTime: "Date"
+};
+typeNames.interfaces["CustomizationSpecItem"] = {
+info: "CustomizationSpecInfo",
+        spec: "CustomizationSpec"
+};
+typeNames.interfaces["Description"] = {
+label: "string",
+        summary: "string"
+};
+typeNames.interfaces["DesiredSoftwareSpec"] = {
+baseImageSpec: "DesiredSoftwareSpecBaseImageSpec",
+        vendorAddOnSpec: "DesiredSoftwareSpecVendorAddOnSpec"
+};
+typeNames.interfaces["DesiredSoftwareSpecBaseImageSpec"] = {
+version: "string"
+};
+typeNames.interfaces["DesiredSoftwareSpecVendorAddOnSpec"] = {
+name: "string",
+        version: "string"
+};
+typeNames.interfaces["DiagnosticManagerBundleInfo"] = {
+system: HostSystem,
+        url: "string"
+};
+typeNames.interfaces["DiagnosticManagerLogDescriptor"] = {
+key: "string",
+        fileName: "string",
+        creator: "string",
+        format: "string",
+        mimeType: "string",
+        info: "Description"
+};
+typeNames.interfaces["DiagnosticManagerLogHeader"] = {
+lineStart: "number",
+        lineEnd: "number",
+        lineText: "string"
+};
+typeNames.interfaces["ElementDescription"] = {
+key: "string"
+};
+typeNames.interfaces["EnumDescription"] = {
+key: "string",
+        tags: "ElementDescription"
+};
+typeNames.interfaces["EnvironmentBrowserConfigOptionQuerySpec"] = {
+key: "string",
+        host: HostSystem,
+        guestId: "string"
+};
+typeNames.interfaces["ExtendedDescription"] = {
+messageCatalogKeyPrefix: "string",
+        messageArg: "KeyAnyValue"
+};
+typeNames.interfaces["ExtendedElementDescription"] = {
+messageCatalogKeyPrefix: "string",
+        messageArg: "KeyAnyValue"
+};
+typeNames.interfaces["Extension"] = {
+description: "Description",
+        key: "string",
+        company: "string",
+        type: "string",
+        version: "string",
+        subjectName: "string",
+        server: "ExtensionServerInfo",
+        client: "ExtensionClientInfo",
+        taskList: "ExtensionTaskTypeInfo",
+        eventList: "ExtensionEventTypeInfo",
+        faultList: "ExtensionFaultTypeInfo",
+        privilegeList: "ExtensionPrivilegeInfo",
+        resourceList: "ExtensionResourceInfo",
+        lastHeartbeatTime: "Date",
+        healthInfo: "ExtensionHealthInfo",
+        ovfConsumerInfo: "ExtensionOvfConsumerInfo",
+        extendedProductInfo: "ExtExtendedProductInfo",
+        managedEntityInfo: "ExtManagedEntityInfo",
+        shownInSolutionManager: "boolean",
+        solutionManagerInfo: "ExtSolutionManagerInfo"
+};
+typeNames.interfaces["ExtensionClientInfo"] = {
+version: "string",
+        description: "Description",
+        company: "string",
+        type: "string",
+        url: "string"
+};
+typeNames.interfaces["ExtensionEventTypeInfo"] = {
+eventID: "string",
+        eventTypeSchema: "string"
+};
+typeNames.interfaces["ExtensionFaultTypeInfo"] = {
+faultID: "string"
+};
+typeNames.interfaces["ExtensionHealthInfo"] = {
+url: "string"
+};
+typeNames.interfaces["ExtensionOvfConsumerInfo"] = {
+callbackUrl: "string",
+        sectionType: "string"
+};
+typeNames.interfaces["ExtensionPrivilegeInfo"] = {
+privID: "string",
+        privGroupName: "string"
+};
+typeNames.interfaces["ExtensionResourceInfo"] = {
+locale: "string",
+        module: "string",
+        data: "KeyValue"
+};
+typeNames.interfaces["ExtensionServerInfo"] = {
+url: "string",
+        description: "Description",
+        company: "string",
+        type: "string",
+        adminEmail: "string",
+        serverThumbprint: "string"
+};
+typeNames.interfaces["ExtensionTaskTypeInfo"] = {
+taskID: "string"
+};
+typeNames.interfaces["ExtensionManagerIpAllocationUsage"] = {
+extensionKey: "string",
+        numAddresses: "number"
+};
+typeNames.interfaces["FaultsByHost"] = {
+host: HostSystem,
+        faults: "MethodFault"
+};
+typeNames.interfaces["FaultsByVM"] = {
+vm: VirtualMachine,
+        faults: "MethodFault"
+};
+typeNames.interfaces["FeatureEVCMode"] = {
+mask: "HostFeatureMask",
+        capability: "HostFeatureCapability",
+        requirement: "VirtualMachineFeatureRequirement"
+};
+typeNames.interfaces["HbrManagerReplicationVmInfo"] = {
+state: "string",
+        progressInfo: "ReplicationVmProgressInfo",
+        imageId: "string",
+        lastError: "MethodFault"
+};
+typeNames.interfaces["ReplicationVmProgressInfo"] = {
+progress: "number",
+        bytesTransferred: "number",
+        bytesToTransfer: "number",
+        checksumTotalBytes: "number",
+        checksumComparedBytes: "number"
+};
+typeNames.interfaces["HbrManagerVmReplicationCapability"] = {
+vm: VirtualMachine,
+        supportedQuiesceMode: "string",
+        compressionSupported: "boolean",
+        maxSupportedSourceDiskCapacity: "number",
+        minRpo: "number",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HealthUpdateInfo"] = {
+id: "string",
+        componentType: "string",
+        description: "string"
+};
+typeNames.interfaces["PerfInterval"] = {
+key: "number",
+        samplingPeriod: "number",
+        name: "string",
+        length: "number",
+        level: "number",
+        enabled: "boolean"
+};
+typeNames.interfaces["HostServiceTicket"] = {
+host: "string",
+        port: "number",
+        sslThumbprint: "string",
+        service: "string",
+        serviceVersion: "string",
+        sessionId: "string"
+};
+typeNames.interfaces["HttpNfcLeaseCapabilities"] = {
+pullModeSupported: "boolean",
+        corsSupported: "boolean"
+};
+typeNames.interfaces["HttpNfcLeaseDatastoreLeaseInfo"] = {
+datastoreKey: "string",
+        hosts: "HttpNfcLeaseHostInfo"
+};
+typeNames.interfaces["HttpNfcLeaseDeviceUrl"] = {
+key: "string",
+        importKey: "string",
+        url: "string",
+        sslThumbprint: "string",
+        disk: "boolean",
+        targetId: "string",
+        datastoreKey: "string",
+        fileSize: "number"
+};
+typeNames.interfaces["HttpNfcLeaseHostInfo"] = {
+url: "string",
+        sslThumbprint: "string"
+};
+typeNames.interfaces["HttpNfcLeaseInfo"] = {
+lease: HttpNfcLease,
+        entity: ManagedEntity,
+        deviceUrl: "HttpNfcLeaseDeviceUrl",
+        totalDiskCapacityInKB: "number",
+        leaseTimeout: "number",
+        hostMap: "HttpNfcLeaseDatastoreLeaseInfo"
+};
+typeNames.interfaces["HttpNfcLeaseManifestEntry"] = {
+key: "string",
+        sha1: "string",
+        checksum: "string",
+        checksumType: "string",
+        size: "number",
+        disk: "boolean",
+        capacity: "number",
+        populatedSize: "number"
+};
+typeNames.interfaces["HttpNfcLeaseSourceFile"] = {
+targetDeviceId: "string",
+        url: "string",
+        memberName: "string",
+        create: "boolean",
+        sslThumbprint: "string",
+        httpHeaders: "KeyValue",
+        size: "number"
+};
+typeNames.interfaces["InheritablePolicy"] = {
+inherited: "boolean"
+};
+typeNames.interfaces["IntPolicy"] = {
+value: "number"
+};
+typeNames.interfaces["ClusterIoFilterInfo"] = {
+opType: "string",
+        vibUrl: "string"
+};
+typeNames.interfaces["HostIoFilterInfo"] = {
+available: "boolean"
+};
+typeNames.interfaces["IoFilterInfo"] = {
+id: "string",
+        name: "string",
+        vendor: "string",
+        version: "string",
+        type: "string",
+        summary: "string",
+        releaseDate: "string"
+};
+typeNames.interfaces["IoFilterQueryIssueResult"] = {
+opType: "string",
+        hostIssue: "IoFilterHostIssue"
+};
+typeNames.interfaces["IoFilterHostIssue"] = {
+host: HostSystem,
+        issue: "MethodFault"
+};
+typeNames.interfaces["IpPoolManagerIpAllocation"] = {
+ipAddress: "string",
+        allocationId: "string"
+};
+typeNames.interfaces["KeyValue"] = {
+key: "string",
+        value: "string"
+};
+typeNames.interfaces["LatencySensitivity"] = {
+level: "LatencySensitivitySensitivityLevel",
+        sensitivity: "number"
+};
+typeNames.interfaces["LicenseAvailabilityInfo"] = {
+feature: "LicenseFeatureInfo",
+        total: "number",
+        available: "number"
+};
+typeNames.interfaces["LicenseDiagnostics"] = {
+sourceLastChanged: "Date",
+        sourceLost: "string",
+        sourceLatency: "number",
+        licenseRequests: "string",
+        licenseRequestFailures: "string",
+        licenseFeatureUnknowns: "string",
+        opState: "LicenseManagerState",
+        lastStatusUpdate: "Date",
+        opFailureMessage: "string"
+};
+typeNames.interfaces["LicenseManagerEvaluationInfo"] = {
+properties: "KeyAnyValue"
+};
+typeNames.interfaces["EvaluationLicenseSource"] = {
+remainingHours: "number"
+};
+typeNames.interfaces["LicenseFeatureInfo"] = {
+key: "string",
+        featureName: "string",
+        featureDescription: "string",
+        state: "LicenseFeatureInfoState",
+        costUnit: "string",
+        sourceRestriction: "string",
+        dependentKey: "string",
+        edition: "boolean",
+        expiresOn: "Date"
+};
+typeNames.interfaces["HostLicensableResourceInfo"] = {
+resource: "KeyAnyValue"
+};
+typeNames.interfaces["LicenseManagerLicenseInfo"] = {
+licenseKey: "string",
+        editionKey: "string",
+        name: "string",
+        total: "number",
+        used: "number",
+        costUnit: "string",
+        properties: "KeyAnyValue",
+        labels: "KeyValue"
+};
+typeNames.interfaces["LicenseServerSource"] = {
+licenseServer: "string"
+};
+typeNames.interfaces["LicenseSource"] = {
+
+};
+typeNames.interfaces["LicenseUsageInfo"] = {
+source: "LicenseSource",
+        sourceAvailable: "boolean",
+        reservationInfo: "LicenseReservationInfo",
+        featureInfo: "LicenseFeatureInfo"
+};
+typeNames.interfaces["LocalLicenseSource"] = {
+licenseKeys: "string"
+};
+typeNames.interfaces["LicenseReservationInfo"] = {
+key: "string",
+        state: "LicenseReservationInfoState",
+        required: "number"
+};
+typeNames.interfaces["LocalizationManagerMessageCatalog"] = {
+moduleName: "string",
+        catalogName: "string",
+        locale: "string",
+        catalogUri: "string",
+        lastModified: "Date",
+        md5sum: "string",
+        version: "string"
+};
+typeNames.interfaces["LongPolicy"] = {
+value: "number"
+};
+typeNames.interfaces["MethodDescription"] = {
+key: "string"
+};
+typeNames.interfaces["NegatableExpression"] = {
+negate: "boolean"
+};
+typeNames.interfaces["NumericRange"] = {
+start: "number",
+        end: "number"
+};
+typeNames.interfaces["OvfConsumerOstNode"] = {
+id: "string",
+        type: "string",
+        section: "OvfConsumerOvfSection",
+        child: "OvfConsumerOstNode",
+        entity: ManagedEntity
+};
+typeNames.interfaces["OvfConsumerOvfSection"] = {
+lineNumber: "number",
+        xml: "string"
+};
+typeNames.interfaces["OvfManagerCommonParams"] = {
+locale: "string",
+        deploymentOption: "string",
+        msgBundle: "KeyValue",
+        importOption: "string"
+};
+typeNames.interfaces["OvfCreateDescriptorParams"] = {
+ovfFiles: "OvfFile",
+        name: "string",
+        description: "string",
+        includeImageFiles: "boolean",
+        exportOption: "string",
+        snapshot: VirtualMachineSnapshot
+};
+typeNames.interfaces["OvfCreateDescriptorResult"] = {
+ovfDescriptor: "string",
+        error: "MethodFault",
+        warning: "MethodFault",
+        includeImageFiles: "boolean"
+};
+typeNames.interfaces["OvfCreateImportSpecParams"] = {
+entityName: "string",
+        hostSystem: HostSystem,
+        networkMapping: "OvfNetworkMapping",
+        ipAllocationPolicy: "string",
+        ipProtocol: "string",
+        propertyMapping: "KeyValue",
+        resourceMapping: "OvfResourceMap",
+        diskProvisioning: "string",
+        instantiationOst: "OvfConsumerOstNode"
+};
+typeNames.interfaces["OvfCreateImportSpecResult"] = {
+importSpec: "ImportSpec",
+        fileItem: "OvfFileItem",
+        warning: "MethodFault",
+        error: "MethodFault"
+};
+typeNames.interfaces["OvfDeploymentOption"] = {
+key: "string",
+        label: "string",
+        description: "string"
+};
+typeNames.interfaces["OvfFileItem"] = {
+deviceId: "string",
+        path: "string",
+        compressionMethod: "string",
+        chunkSize: "number",
+        size: "number",
+        cimType: "number",
+        create: "boolean"
+};
+typeNames.interfaces["OvfNetworkInfo"] = {
+name: "string",
+        description: "string"
+};
+typeNames.interfaces["OvfNetworkMapping"] = {
+name: "string",
+        network: Network
+};
+typeNames.interfaces["OvfFile"] = {
+deviceId: "string",
+        path: "string",
+        compressionMethod: "string",
+        chunkSize: "number",
+        size: "number",
+        capacity: "number",
+        populatedSize: "number"
+};
+typeNames.interfaces["OvfOptionInfo"] = {
+option: "string",
+        description: "LocalizableMessage"
+};
+typeNames.interfaces["OvfParseDescriptorParams"] = {
+
+};
+typeNames.interfaces["OvfParseDescriptorResult"] = {
+eula: "string",
+        network: "OvfNetworkInfo",
+        ipAllocationScheme: "string",
+        ipProtocols: "string",
+        property: "VAppPropertyInfo",
+        productInfo: "VAppProductInfo",
+        annotation: "string",
+        approximateDownloadSize: "number",
+        approximateFlatDeploymentSize: "number",
+        approximateSparseDeploymentSize: "number",
+        defaultEntityName: "string",
+        virtualApp: "boolean",
+        deploymentOption: "OvfDeploymentOption",
+        defaultDeploymentOption: "string",
+        entityName: "KeyValue",
+        annotatedOst: "OvfConsumerOstNode",
+        error: "MethodFault",
+        warning: "MethodFault"
+};
+typeNames.interfaces["OvfResourceMap"] = {
+source: "string",
+        parent: ResourcePool,
+        resourceSpec: "ResourceConfigSpec",
+        datastore: Datastore
+};
+typeNames.interfaces["OvfValidateHostParams"] = {
+
+};
+typeNames.interfaces["OvfValidateHostResult"] = {
+downloadSize: "number",
+        flatDeploymentSize: "number",
+        sparseDeploymentSize: "number",
+        error: "MethodFault",
+        warning: "MethodFault",
+        supportedDiskProvisioning: "string"
+};
+typeNames.interfaces["PasswordField"] = {
+value: "string"
+};
+typeNames.interfaces["PerformanceDescription"] = {
+counterType: "ElementDescription",
+        statsType: "ElementDescription"
+};
+typeNames.interfaces["PerfCompositeMetric"] = {
+entity: "PerfEntityMetricBase",
+        childEntity: "PerfEntityMetricBase"
+};
+typeNames.interfaces["PerfCounterInfo"] = {
+key: "number",
+        nameInfo: "ElementDescription",
+        groupInfo: "ElementDescription",
+        unitInfo: "ElementDescription",
+        rollupType: "PerfSummaryType",
+        statsType: "PerfStatsType",
+        level: "number",
+        perDeviceLevel: "number",
+        associatedCounterId: "number"
+};
+typeNames.interfaces["PerformanceManagerCounterLevelMapping"] = {
+counterId: "number",
+        aggregateLevel: "number",
+        perDeviceLevel: "number"
+};
+typeNames.interfaces["PerfEntityMetric"] = {
+sampleInfo: "PerfSampleInfo",
+        value: "PerfMetricSeries"
+};
+typeNames.interfaces["PerfEntityMetricBase"] = {
+entity: "ManagedObject"
+};
+typeNames.interfaces["PerfEntityMetricCSV"] = {
+sampleInfoCSV: "string",
+        value: "PerfMetricSeriesCSV"
+};
+typeNames.interfaces["PerfMetricIntSeries"] = {
+value: "number"
+};
+typeNames.interfaces["PerfMetricId"] = {
+counterId: "number",
+        instance: "string"
+};
+typeNames.interfaces["PerfMetricSeries"] = {
+id: "PerfMetricId"
+};
+typeNames.interfaces["PerfMetricSeriesCSV"] = {
+value: "string"
+};
+typeNames.interfaces["PerfProviderSummary"] = {
+entity: "ManagedObject",
+        currentSupported: "boolean",
+        summarySupported: "boolean",
+        refreshRate: "number"
+};
+typeNames.interfaces["PerfQuerySpec"] = {
+entity: "ManagedObject",
+        startTime: "Date",
+        endTime: "Date",
+        maxSample: "number",
+        metricId: "PerfMetricId",
+        intervalId: "number",
+        format: "string"
+};
+typeNames.interfaces["PerfSampleInfo"] = {
+timestamp: "Date",
+        interval: "number"
+};
+typeNames.interfaces["PrivilegePolicyDef"] = {
+createPrivilege: "string",
+        readPrivilege: "string",
+        updatePrivilege: "string",
+        deletePrivilege: "string"
+};
+typeNames.interfaces["ResourceAllocationInfo"] = {
+reservation: "number",
+        expandableReservation: "boolean",
+        limit: "number",
+        shares: "SharesInfo",
+        overheadLimit: "number"
+};
+typeNames.interfaces["ResourceAllocationOption"] = {
+sharesOption: "SharesOption"
+};
+typeNames.interfaces["ResourceConfigOption"] = {
+cpuAllocationOption: "ResourceAllocationOption",
+        memoryAllocationOption: "ResourceAllocationOption"
+};
+typeNames.interfaces["ResourceConfigSpec"] = {
+entity: ManagedEntity,
+        changeVersion: "string",
+        lastModified: "Date",
+        cpuAllocation: "ResourceAllocationInfo",
+        memoryAllocation: "ResourceAllocationInfo",
+        scaleDescendantsShares: "string"
+};
+typeNames.interfaces["DatabaseSizeEstimate"] = {
+size: "number"
+};
+typeNames.interfaces["DatabaseSizeParam"] = {
+inventoryDesc: "InventoryDescription",
+        perfStatsDesc: "PerformanceStatisticsDescription"
+};
+typeNames.interfaces["InventoryDescription"] = {
+numHosts: "number",
+        numVirtualMachines: "number",
+        numResourcePools: "number",
+        numClusters: "number",
+        numCpuDev: "number",
+        numNetDev: "number",
+        numDiskDev: "number",
+        numvCpuDev: "number",
+        numvNetDev: "number",
+        numvDiskDev: "number"
+};
+typeNames.interfaces["PerformanceStatisticsDescription"] = {
+intervals: "PerfInterval"
+};
+typeNames.interfaces["SDDCBase"] = {
+
+};
+typeNames.interfaces["SelectionSet"] = {
+
+};
+typeNames.interfaces["ServiceContent"] = {
+rootFolder: Folder,
         propertyCollector: PropertyCollector,
         viewManager: ViewManager,
-        about: undefined,
+        about: "AboutInfo",
         setting: OptionManager,
         userDirectory: UserDirectory,
         sessionManager: SessionManager,
@@ -26711,1415 +28948,13237 @@ export class ServiceInstance extends ManagedObject {
         failoverClusterManager: FailoverClusterManager,
         tenantManager: TenantTenantManager,
         siteInfoManager: SiteInfoManager,
-        storageQueryManager: StorageQueryManager });
-  }
-  async validateMigration(args: {
-  vm: VirtualMachine[];
-    state?: VirtualMachinePowerState;
-    testType?: string[];
-    pool?: ResourcePool;
-    host?: HostSystem
-}): Promise<Event[] | undefined> {
-    const result = await this.connection.exec<{
-  vm: VirtualMachine[];
-    state?: VirtualMachinePowerState;
-    testType?: string[];
-    pool?: ResourcePool;
-    host?: HostSystem
-} & { _this: ObjectReference }, Event[] | undefined>(
-      "ValidateMigration", { _this: "ServiceInstance", ...args }
-    ).then(r => r.result);
-    return result;
-  };
-}
-export class StoragePod extends Folder {
-  summary?: StoragePodSummary;
-  podStorageDrsEntry?: PodStorageDrsEntry;
-  constructor(
-    public connection: Connection,
-    init?: Partial<StoragePod>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  
-}
-export class DistributedVirtualSwitchManager extends ManagedObject {
-  
-  constructor(
-    public connection: Connection,
-    init?: Partial<DistributedVirtualSwitchManager>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async exportEntity(args: {
-  selectionSet: SelectionSet[]
-}): Promise<Task | undefined> {
-    const result = await this.connection.exec<{
-  selectionSet: SelectionSet[]
-} & { _this: ObjectReference }, Task | undefined>(
-      "DVSManagerExportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async importEntity(args: {
-  entityBackup: EntityBackupConfig[];
-    importType: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  entityBackup: EntityBackupConfig[];
-    importType: string
-} & { _this: ObjectReference }, Task>(
-      "DVSManagerImportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async lookupPortgroup(args: {
-  switchUuid: string;
-    portgroupKey: string
-}): Promise<DistributedVirtualPortgroup | undefined> {
-    const result = await this.connection.exec<{
-  switchUuid: string;
-    portgroupKey: string
-} & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
-      "DVSManagerLookupDvPortGroup", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new DistributedVirtualPortgroup(this.connection, result);
-  }
-  async querySupportedSwitchSpec(args: {
-  recommended?: boolean
-}): Promise<DistributedVirtualSwitchProductSpec[] | undefined> {
-    const result = await this.connection.exec<{
-  recommended?: boolean
-} & { _this: ObjectReference }, DistributedVirtualSwitchProductSpec[] | undefined>(
-      "QueryAvailableDvsSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryCompatibleHostForExistingDvs(args: {
-  container: ManagedEntity;
-    recursive: boolean;
-    dvs: DistributedVirtualSwitch
-}): Promise<HostSystem[] | undefined> {
-    const result = await this.connection.exec<{
-  container: ManagedEntity;
-    recursive: boolean;
-    dvs: DistributedVirtualSwitch
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
-      "QueryCompatibleHostForExistingDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryCompatibleHostForNewDvs(args: {
-  container: ManagedEntity;
-    recursive: boolean;
-    switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<HostSystem[] | undefined> {
-    const result = await this.connection.exec<{
-  container: ManagedEntity;
-    recursive: boolean;
-    switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
-      "QueryCompatibleHostForNewDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async querySwitchByUuid(args: {
-  uuid: string
-}): Promise<DistributedVirtualSwitch | undefined> {
-    const result = await this.connection.exec<{
-  uuid: string
-} & { _this: ObjectReference }, DistributedVirtualSwitch | undefined>(
-      "QueryDvsByUuid", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new DistributedVirtualSwitch(this.connection, result);
-  }
-  async checkCompatibility(args: {
-  hostContainer: DistributedVirtualSwitchManagerHostContainer;
-    dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
-    hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
-}): Promise<DistributedVirtualSwitchManagerCompatibilityResult[] | undefined> {
-    const result = await this.connection.exec<{
-  hostContainer: DistributedVirtualSwitchManagerHostContainer;
-    dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
-    hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
-} & { _this: ObjectReference }, DistributedVirtualSwitchManagerCompatibilityResult[] | undefined>(
-      "QueryDvsCheckCompatibility", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryCompatibleHostSpec(args: {
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<DistributedVirtualSwitchHostProductSpec[] | undefined> {
-    const result = await this.connection.exec<{
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, DistributedVirtualSwitchHostProductSpec[] | undefined>(
-      "QueryDvsCompatibleHostSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryDvsConfigTarget(args: {
-  host?: HostSystem;
-    dvs?: DistributedVirtualSwitch
-}): Promise<DVSManagerDvsConfigTarget> {
-    const result = await this.connection.exec<{
-  host?: HostSystem;
-    dvs?: DistributedVirtualSwitch
-} & { _this: ObjectReference }, DVSManagerDvsConfigTarget>(
-      "QueryDvsConfigTarget", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { distributedVirtualPortgroup: undefined,
-        distributedVirtualSwitch: undefined });
-  }
-  async queryFeatureCapability(args: {
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<DVSFeatureCapability | undefined> {
-    const result = await this.connection.exec<{
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, DVSFeatureCapability | undefined>(
-      "QueryDvsFeatureCapability", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { networkResourceManagementSupported: undefined,
-        vmDirectPathGen2Supported: undefined,
-        nicTeamingPolicy: undefined,
-        networkResourcePoolHighShareValue: undefined,
-        networkResourceManagementCapability: undefined,
-        healthCheckCapability: undefined,
-        rollbackCapability: undefined,
-        backupRestoreCapability: undefined,
-        networkFilterSupported: undefined,
-        macLearningSupported: undefined });
-  }
-  async rectifyHost(args: {
-  hosts: HostSystem[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  hosts: HostSystem[]
-} & { _this: ObjectReference }, Task>(
-      "RectifyDvsOnHost_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  };
-}
-export class VmwareDistributedVirtualSwitch extends DistributedVirtualSwitch {
-  
-  constructor(
-    public connection: Connection,
-    init?: Partial<VmwareDistributedVirtualSwitch>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async updateLacpGroupConfig(args: {
-  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
-} & { _this: ObjectReference }, Task>(
-      "UpdateDVSLacpGroupConfig_Task", { _this: { attributes: { type: "VmwareDistributedVirtualSwitch" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  };
-}
-export class HostDiagnosticSystem extends ManagedObject {
-  activePartition?: HostDiagnosticPartition;
-  constructor(
-    public connection: Connection,
-    init?: Partial<HostDiagnosticSystem>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async createDiagnosticPartition(args: {
-  spec: HostDiagnosticPartitionCreateSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  spec: HostDiagnosticPartitionCreateSpec
-} & { _this: ObjectReference }, void>(
-      "CreateDiagnosticPartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryAvailablePartition(): Promise<HostDiagnosticPartition[] | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostDiagnosticPartition[] | undefined>(
-      "QueryAvailablePartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryPartitionCreateDesc(args: {
-  diskUuid: string;
-    diagnosticType: string
-}): Promise<HostDiagnosticPartitionCreateDescription> {
-    const result = await this.connection.exec<{
-  diskUuid: string;
-    diagnosticType: string
-} & { _this: ObjectReference }, HostDiagnosticPartitionCreateDescription>(
-      "QueryPartitionCreateDesc", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { layout: undefined,
-        diskUuid: undefined,
-        spec: undefined });
-  }
-  async queryPartitionCreateOptions(args: {
-  storageType: string;
-    diagnosticType: string
-}): Promise<HostDiagnosticPartitionCreateOption[] | undefined> {
-    const result = await this.connection.exec<{
-  storageType: string;
-    diagnosticType: string
-} & { _this: ObjectReference }, HostDiagnosticPartitionCreateOption[] | undefined>(
-      "QueryPartitionCreateOptions", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async selectActivePartition(args: {
-  partition?: HostScsiDiskPartition
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  partition?: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
-      "SelectActivePartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  };
-}
-export class HostStorageSystem extends ExtensibleManagedObject {
-  storageDeviceInfo?: HostStorageDeviceInfo;
-  fileSystemVolumeInfo!: HostFileSystemVolumeInfo;
-  systemFile?: string[];
-  multipathStateInfo?: HostMultipathStateInfo;
-  constructor(
-    public connection: Connection,
-    init?: Partial<HostStorageSystem>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async addInternetScsiSendTargets(args: {
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[]
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[]
-} & { _this: ObjectReference }, void>(
-      "AddInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async addInternetScsiStaticTargets(args: {
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-} & { _this: ObjectReference }, void>(
-      "AddInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async attachScsiLun(args: {
-  lunUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunUuid: string
-} & { _this: ObjectReference }, void>(
-      "AttachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async attachScsiLunEx(args: {
-  lunUuid: string[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  lunUuid: string[]
-} & { _this: ObjectReference }, Task>(
-      "AttachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async attachVmfsExtent(args: {
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
-      "AttachVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async changeNFSUserPassword(args: {
-  password: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  password: string
-} & { _this: ObjectReference }, void>(
-      "ChangeNFSUserPassword", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async clearNFSUser(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "ClearNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async computeDiskPartitionInfo(args: {
-  devicePath: string;
-    layout: HostDiskPartitionLayout;
-    partitionFormat?: string
-}): Promise<HostDiskPartitionInfo> {
-    const result = await this.connection.exec<{
-  devicePath: string;
-    layout: HostDiskPartitionLayout;
-    partitionFormat?: string
-} & { _this: ObjectReference }, HostDiskPartitionInfo>(
-      "ComputeDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { deviceName: undefined,
-        spec: undefined,
-        layout: undefined });
-  }
-  async computeDiskPartitionInfoForResize(args: {
-  partition: HostScsiDiskPartition;
-    blockRange: HostDiskPartitionBlockRange;
-    partitionFormat?: string
-}): Promise<HostDiskPartitionInfo> {
-    const result = await this.connection.exec<{
-  partition: HostScsiDiskPartition;
-    blockRange: HostDiskPartitionBlockRange;
-    partitionFormat?: string
-} & { _this: ObjectReference }, HostDiskPartitionInfo>(
-      "ComputeDiskPartitionInfoForResize", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { deviceName: undefined,
-        spec: undefined,
-        layout: undefined });
-  }
-  async connectNvmeController(args: {
-  connectSpec: HostNvmeConnectSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  connectSpec: HostNvmeConnectSpec
-} & { _this: ObjectReference }, void>(
-      "ConnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async createNvmeOverRdmaAdapter(args: {
-  rdmaDeviceName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  rdmaDeviceName: string
-} & { _this: ObjectReference }, void>(
-      "CreateNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async deleteScsiLunState(args: {
-  lunCanonicalName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunCanonicalName: string
-} & { _this: ObjectReference }, void>(
-      "DeleteScsiLunState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async deleteVffsVolumeState(args: {
-  vffsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
-      "DeleteVffsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async deleteVmfsVolumeState(args: {
-  vmfsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
-      "DeleteVmfsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async destroyVffs(args: {
-  vffsPath: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vffsPath: string
-} & { _this: ObjectReference }, void>(
-      "DestroyVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async detachScsiLun(args: {
-  lunUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunUuid: string
-} & { _this: ObjectReference }, void>(
-      "DetachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async detachScsiLunEx(args: {
-  lunUuid: string[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  lunUuid: string[]
-} & { _this: ObjectReference }, Task>(
-      "DetachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async disableMultipathPath(args: {
-  pathName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  pathName: string
-} & { _this: ObjectReference }, void>(
-      "DisableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async disconnectNvmeController(args: {
-  disconnectSpec: HostNvmeDisconnectSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  disconnectSpec: HostNvmeDisconnectSpec
-} & { _this: ObjectReference }, void>(
-      "DisconnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async discoverFcoeHbas(args: {
-  fcoeSpec: FcoeConfigFcoeSpecification
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  fcoeSpec: FcoeConfigFcoeSpecification
-} & { _this: ObjectReference }, void>(
-      "DiscoverFcoeHbas", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async discoverNvmeControllers(args: {
-  discoverSpec: HostNvmeDiscoverSpec
-}): Promise<HostNvmeDiscoveryLog> {
-    const result = await this.connection.exec<{
-  discoverSpec: HostNvmeDiscoverSpec
-} & { _this: ObjectReference }, HostNvmeDiscoveryLog>(
-      "DiscoverNvmeControllers", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { entry: undefined,
-        complete: undefined });
-  }
-  async enableMultipathPath(args: {
-  pathName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  pathName: string
-} & { _this: ObjectReference }, void>(
-      "EnableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async expandVmfsExtent(args: {
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
-      "ExpandVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async extendVffs(args: {
-  vffsPath: string;
-    devicePath: string;
-    spec?: HostDiskPartitionSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vffsPath: string;
-    devicePath: string;
-    spec?: HostDiskPartitionSpec
-} & { _this: ObjectReference }, void>(
-      "ExtendVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async formatVffs(args: {
-  createSpec: HostVffsSpec
-}): Promise<HostVffsVolume> {
-    const result = await this.connection.exec<{
-  createSpec: HostVffsSpec
-} & { _this: ObjectReference }, HostVffsVolume>(
-      "FormatVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { majorVersion: undefined,
-        version: undefined,
-        uuid: undefined,
-        extent: undefined });
-  }
-  async formatVmfs(args: {
-  createSpec: HostVmfsSpec
-}): Promise<HostVmfsVolume> {
-    const result = await this.connection.exec<{
-  createSpec: HostVmfsSpec
-} & { _this: ObjectReference }, HostVmfsVolume>(
-      "FormatVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { blockSizeMb: undefined,
-        blockSize: undefined,
-        unmapGranularity: undefined,
-        unmapPriority: undefined,
-        unmapBandwidthSpec: undefined,
-        maxBlocks: undefined,
-        majorVersion: undefined,
-        version: undefined,
-        uuid: undefined,
-        extent: undefined,
-        vmfsUpgradable: undefined,
-        forceMountedInfo: undefined,
-        ssd: undefined,
-        local: undefined,
-        scsiDiskType: undefined });
-  }
-  async markAsLocal(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
-      "MarkAsLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async markAsNonLocal(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
-      "MarkAsNonLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async markAsNonSsd(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
-      "MarkAsNonSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async markAsSsd(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
-      "MarkAsSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async markForRemoval(args: {
-  hbaName: string;
-    remove: boolean
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  hbaName: string;
-    remove: boolean
-} & { _this: ObjectReference }, void>(
-      "MarkForRemoval", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async markPerenniallyReserved(args: {
-  lunUuid: string;
-    state: boolean
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunUuid: string;
-    state: boolean
-} & { _this: ObjectReference }, void>(
-      "MarkPerenniallyReserved", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async markPerenniallyReservedEx(args: {
-  lunUuid?: string[];
-    state: boolean
-}): Promise<Task | undefined> {
-    const result = await this.connection.exec<{
-  lunUuid?: string[];
-    state: boolean
-} & { _this: ObjectReference }, Task | undefined>(
-      "MarkPerenniallyReservedEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async mountVffsVolume(args: {
-  vffsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
-      "MountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async mountVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
-      "MountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async mountVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
-      "MountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async queryAvailableSsds(args: {
-  vffsPath?: string
-}): Promise<HostScsiDisk[] | undefined> {
-    const result = await this.connection.exec<{
-  vffsPath?: string
-} & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
-      "QueryAvailableSsds", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryNFSUser(): Promise<HostNasVolumeUserInfo | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostNasVolumeUserInfo | undefined>(
-      "QueryNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { user: undefined });
-  }
-  async queryPathSelectionPolicyOptions(): Promise<HostPathSelectionPolicyOption[] | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostPathSelectionPolicyOption[] | undefined>(
-      "QueryPathSelectionPolicyOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryStorageArrayTypePolicyOptions(): Promise<HostStorageArrayTypePolicyOption[] | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostStorageArrayTypePolicyOption[] | undefined>(
-      "QueryStorageArrayTypePolicyOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryUnresolvedVmfsVolume(): Promise<HostUnresolvedVmfsVolume[] | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, HostUnresolvedVmfsVolume[] | undefined>(
-      "QueryUnresolvedVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async queryVmfsConfigOption(): Promise<VmfsConfigOption[] | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, VmfsConfigOption[] | undefined>(
-      "QueryVmfsConfigOption", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async refresh(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "RefreshStorageSystem", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async removeInternetScsiSendTargets(args: {
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[];
-    force?: boolean
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[];
-    force?: boolean
-} & { _this: ObjectReference }, void>(
-      "RemoveInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async removeInternetScsiStaticTargets(args: {
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-} & { _this: ObjectReference }, void>(
-      "RemoveInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async removeNvmeOverRdmaAdapter(args: {
-  hbaDeviceName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  hbaDeviceName: string
-} & { _this: ObjectReference }, void>(
-      "RemoveNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async rescanAllHba(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "RescanAllHba", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async rescanHba(args: {
-  hbaDevice: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  hbaDevice: string
-} & { _this: ObjectReference }, void>(
-      "RescanHba", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async rescanVffs(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "RescanVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async rescanVmfs(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "RescanVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async resolveMultipleUnresolvedVmfsVolumes(args: {
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-}): Promise<HostUnresolvedVmfsResolutionResult[] | undefined> {
-    const result = await this.connection.exec<{
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-} & { _this: ObjectReference }, HostUnresolvedVmfsResolutionResult[] | undefined>(
-      "ResolveMultipleUnresolvedVmfsVolumes", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async resolveMultipleUnresolvedVmfsVolumesEx(args: {
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-}): Promise<Task | undefined> {
-    const result = await this.connection.exec<{
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-} & { _this: ObjectReference }, Task | undefined>(
-      "ResolveMultipleUnresolvedVmfsVolumesEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async retrieveDiskPartitionInfo(args: {
-  devicePath: string[]
-}): Promise<HostDiskPartitionInfo[] | undefined> {
-    const result = await this.connection.exec<{
-  devicePath: string[]
-} & { _this: ObjectReference }, HostDiskPartitionInfo[] | undefined>(
-      "RetrieveDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async setMultipathLunPolicy(args: {
-  lunId: string;
-    policy: HostMultipathInfoLogicalUnitPolicy
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunId: string;
-    policy: HostMultipathInfoLogicalUnitPolicy
-} & { _this: ObjectReference }, void>(
-      "SetMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async setNFSUser(args: {
-  user: string;
-    password: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  user: string;
-    password: string
-} & { _this: ObjectReference }, void>(
-      "SetNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async turnDiskLocatorLedOff(args: {
-  scsiDiskUuids: string[]
-}): Promise<Task | undefined> {
-    const result = await this.connection.exec<{
-  scsiDiskUuids: string[]
-} & { _this: ObjectReference }, Task | undefined>(
-      "TurnDiskLocatorLedOff_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async turnDiskLocatorLedOn(args: {
-  scsiDiskUuids: string[]
-}): Promise<Task | undefined> {
-    const result = await this.connection.exec<{
-  scsiDiskUuids: string[]
-} & { _this: ObjectReference }, Task | undefined>(
-      "TurnDiskLocatorLedOn_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async unmapVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
-      "UnmapVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async unmountForceMountedVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
-      "UnmountForceMountedVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async unmountVffsVolume(args: {
-  vffsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
-      "UnmountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async unmountVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
-      "UnmountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async unmountVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
-      "UnmountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async updateDiskPartitions(args: {
-  devicePath: string;
-    spec: HostDiskPartitionSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  devicePath: string;
-    spec: HostDiskPartitionSpec
-} & { _this: ObjectReference }, void>(
-      "UpdateDiskPartitions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateHppMultipathLunPolicy(args: {
-  lunId: string;
-    policy: HostMultipathInfoHppLogicalUnitPolicy
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunId: string;
-    policy: HostMultipathInfoHppLogicalUnitPolicy
-} & { _this: ObjectReference }, void>(
-      "UpdateHppMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiAdvancedOptions(args: {
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    options: HostInternetScsiHbaParamValue[]
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    options: HostInternetScsiHbaParamValue[]
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiAdvancedOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiAlias(args: {
-  iScsiHbaDevice: string;
-    iScsiAlias: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    iScsiAlias: string
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiAlias", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiAuthenticationProperties(args: {
-  iScsiHbaDevice: string;
-    authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
-    targetSet?: HostInternetScsiHbaTargetSet
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
-    targetSet?: HostInternetScsiHbaTargetSet
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiAuthenticationProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiDigestProperties(args: {
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    digestProperties: HostInternetScsiHbaDigestProperties
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    digestProperties: HostInternetScsiHbaDigestProperties
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiDigestProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiDiscoveryProperties(args: {
-  iScsiHbaDevice: string;
-    discoveryProperties: HostInternetScsiHbaDiscoveryProperties
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    discoveryProperties: HostInternetScsiHbaDiscoveryProperties
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiDiscoveryProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiIPProperties(args: {
-  iScsiHbaDevice: string;
-    ipProperties: HostInternetScsiHbaIPProperties
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    ipProperties: HostInternetScsiHbaIPProperties
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiIPProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateInternetScsiName(args: {
-  iScsiHbaDevice: string;
-    iScsiName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    iScsiName: string
-} & { _this: ObjectReference }, void>(
-      "UpdateInternetScsiName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateScsiLunDisplayName(args: {
-  lunUuid: string;
-    displayName: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  lunUuid: string;
-    displayName: string
-} & { _this: ObjectReference }, void>(
-      "UpdateScsiLunDisplayName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateSoftwareInternetScsiEnabled(args: {
-  enabled: boolean
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  enabled: boolean
-} & { _this: ObjectReference }, void>(
-      "UpdateSoftwareInternetScsiEnabled", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateVmfsUnmapBandwidth(args: {
-  vmfsUuid: string;
-    unmapBandwidthSpec: VmfsUnmapBandwidthSpec
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string;
-    unmapBandwidthSpec: VmfsUnmapBandwidthSpec
-} & { _this: ObjectReference }, void>(
-      "UpdateVmfsUnmapBandwidth", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async updateVmfsUnmapPriority(args: {
-  vmfsUuid: string;
-    unmapPriority: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsUuid: string;
-    unmapPriority: string
-} & { _this: ObjectReference }, void>(
-      "UpdateVmfsUnmapPriority", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async upgradeVmLayout(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "UpgradeVmLayout", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async upgradeVmfs(args: {
-  vmfsPath: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  vmfsPath: string
-} & { _this: ObjectReference }, void>(
-      "UpgradeVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  };
-}
-export class ContainerView extends ManagedObjectView {
-  container!: ManagedEntity;
-  type?: string[];
-  recursive!: boolean;
-  constructor(
-    public connection: Connection,
-    init?: Partial<ContainerView>
-  ) {
-    super(connection, init);
-    if (init) {
-      constructHelperObjects(connection, init, this, { container: ManagedEntity,
-        type: undefined,
-        recursive: undefined });
-    }
-  }
-  
-}
-export class InventoryView extends ManagedObjectView {
-  
-  constructor(
-    public connection: Connection,
-    init?: Partial<InventoryView>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async closeFolder(args: {
-  entity: ManagedEntity[]
-}): Promise<ManagedEntity[] | undefined> {
-    const result = await this.connection.exec<{
-  entity: ManagedEntity[]
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
-      "CloseInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async openFolder(args: {
-  entity: ManagedEntity[]
-}): Promise<ManagedEntity[] | undefined> {
-    const result = await this.connection.exec<{
-  entity: ManagedEntity[]
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
-      "OpenInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  };
-}
-export class ListView extends ManagedObjectView {
-  
-  constructor(
-    public connection: Connection,
-    init?: Partial<ListView>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async modify(args: {
-  add?: ManagedObject[];
-    remove?: ManagedObject[]
-}): Promise<ManagedObject[] | undefined> {
-    const result = await this.connection.exec<{
-  add?: ManagedObject[];
-    remove?: ManagedObject[]
-} & { _this: ObjectReference }, ManagedObject[] | undefined>(
-      "ModifyListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async reset(args: {
-  obj?: ManagedObject[]
-}): Promise<ManagedObject[] | undefined> {
-    const result = await this.connection.exec<{
-  obj?: ManagedObject[]
-} & { _this: ObjectReference }, ManagedObject[] | undefined>(
-      "ResetListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async resetFromView(args: {
-  view: View
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  view: View
-} & { _this: ObjectReference }, void>(
-      "ResetListViewFromView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  };
-}
-export class ClusterComputeResource extends ComputeResource {
-  configuration!: ClusterConfigInfo;
-  recommendation?: ClusterRecommendation[];
-  drsRecommendation?: ClusterDrsRecommendation[];
-  hciConfig?: ClusterComputeResourceHCIConfigInfo;
-  migrationHistory?: ClusterDrsMigration[];
-  actionHistory?: ClusterActionHistory[];
-  drsFault?: ClusterDrsFaults[];
-  constructor(
-    public connection: Connection,
-    init?: Partial<ClusterComputeResource>
-  ) {
-    super(connection, init);
-    Object.assign(this, init);
-  }
-  async AbandonHciWorkflow(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "AbandonHciWorkflow", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async addHost(args: {
-  spec: HostConnectSpec;
-    asConnected: boolean;
-    resourcePool?: ResourcePool;
-    license?: string
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  spec: HostConnectSpec;
-    asConnected: boolean;
-    resourcePool?: ResourcePool;
-    license?: string
-} & { _this: ObjectReference }, Task>(
-      "AddHost_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async applyRecommendation(args: {
-  key: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  key: string
-} & { _this: ObjectReference }, void>(
-      "ApplyRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async cancelRecommendation(args: {
-  key: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  key: string
-} & { _this: ObjectReference }, void>(
-      "CancelRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async enterMaintenanceMode(args: {
-  host: HostSystem[];
-    option?: OptionValue[]
-}): Promise<ClusterEnterMaintenanceResult> {
-    const result = await this.connection.exec<{
-  host: HostSystem[];
-    option?: OptionValue[]
-} & { _this: ObjectReference }, ClusterEnterMaintenanceResult>(
-      "ClusterEnterMaintenanceMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { recommendations: undefined,
-        fault: undefined });
-  }
-  async configureHCI(args: {
-  clusterSpec: ClusterComputeResourceHCIConfigSpec;
-    hostInputs?: ClusterComputeResourceHostConfigurationInput[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  clusterSpec: ClusterComputeResourceHCIConfigSpec;
-    hostInputs?: ClusterComputeResourceHostConfigurationInput[]
-} & { _this: ObjectReference }, Task>(
-      "ConfigureHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async evcManager(): Promise<ClusterEVCManager | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterEVCManager | undefined>(
-      "EvcManager", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return new ClusterEVCManager(this.connection, result);
-  }
-  async extendHCI(args: {
-  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
-    vSanConfigSpec?: SDDCBase
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
-    vSanConfigSpec?: SDDCBase
-} & { _this: ObjectReference }, Task>(
-      "ExtendHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async findRulesForVm(args: {
-  vm: VirtualMachine
-}): Promise<ClusterRuleInfo[] | undefined> {
-    const result = await this.connection.exec<{
-  vm: VirtualMachine
-} & { _this: ObjectReference }, ClusterRuleInfo[] | undefined>(
-      "FindRulesForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async getResourceUsage(): Promise<ClusterResourceUsageSummary> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterResourceUsageSummary>(
-      "GetResourceUsage", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { cpuUsedMHz: undefined,
-        cpuCapacityMHz: undefined,
-        memUsedMB: undefined,
-        memCapacityMB: undefined,
-        pMemAvailableMB: undefined,
-        pMemCapacityMB: undefined,
-        storageUsedMB: undefined,
-        storageCapacityMB: undefined });
-  }
-  async moveHostInto(args: {
-  host: HostSystem;
-    resourcePool?: ResourcePool
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  host: HostSystem;
-    resourcePool?: ResourcePool
-} & { _this: ObjectReference }, Task>(
-      "MoveHostInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async moveInto(args: {
-  host: HostSystem[]
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
-      "MoveInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async placeVm(args: {
-  placementSpec: PlacementSpec
-}): Promise<PlacementResult> {
-    const result = await this.connection.exec<{
-  placementSpec: PlacementSpec
-} & { _this: ObjectReference }, PlacementResult>(
-      "PlaceVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { recommendations: undefined,
-        drsFault: undefined });
-  }
-  async recommendHostsForVm(args: {
-  vm: VirtualMachine;
-    pool?: ResourcePool
-}): Promise<ClusterHostRecommendation[] | undefined> {
-    const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    pool?: ResourcePool
-} & { _this: ObjectReference }, ClusterHostRecommendation[] | undefined>(
-      "RecommendHostsForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async reconfigure(args: {
-  spec: ClusterConfigSpec;
-    modify: boolean
-}): Promise<Task> {
-    const result = await this.connection.exec<{
-  spec: ClusterConfigSpec;
-    modify: boolean
-} & { _this: ObjectReference }, Task>(
-      "ReconfigureCluster_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async refreshRecommendation(): Promise<void> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, void>(
-      "RefreshRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return result;
-  }
-  async retrieveDasAdvancedRuntimeInfo(): Promise<ClusterDasAdvancedRuntimeInfo | undefined> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, ClusterDasAdvancedRuntimeInfo | undefined>(
-      "RetrieveDasAdvancedRuntimeInfo", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return constructHelperObjects(this.connection, result, {}, { dasHostInfo: undefined,
-        vmcpSupported: undefined,
-        heartbeatDatastoreInfo: undefined });
-  }
-  async setCryptoMode(args: {
-  cryptoMode: string
-}): Promise<void> {
-    const result = await this.connection.exec<{
-  cryptoMode: string
-} & { _this: ObjectReference }, void>(
-      "SetCryptoMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  }
-  async stampAllRulesWithUuid(): Promise<Task> {
-    const result = await this.connection.exec<unknown & { _this: ObjectReference }, Task>(
-      "StampAllRulesWithUuid_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value },  }
-    ).then(r => r.result);
-    return new Task(this.connection, result);
-  }
-  async validateHCIConfiguration(args: {
-  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
-    hosts?: HostSystem[]
-}): Promise<ClusterComputeResourceValidationResultBase[] | undefined> {
-    const result = await this.connection.exec<{
-  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
-    hosts?: HostSystem[]
-} & { _this: ObjectReference }, ClusterComputeResourceValidationResultBase[] | undefined>(
-      "ValidateHCIConfiguration", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
-    ).then(r => r.result);
-    return result;
-  };
+        storageQueryManager: StorageQueryManager
+};
+typeNames.interfaces["ServiceLocator"] = {
+instanceUuid: "string",
+        url: "string",
+        credential: "ServiceLocatorCredential",
+        sslThumbprint: "string"
+};
+typeNames.interfaces["ServiceLocatorCredential"] = {
+
+};
+typeNames.interfaces["ServiceLocatorNamePassword"] = {
+username: "string",
+        password: "string"
+};
+typeNames.interfaces["ServiceLocatorSAMLCredential"] = {
+token: "string"
+};
+typeNames.interfaces["ServiceManagerServiceInfo"] = {
+serviceName: "string",
+        location: "string",
+        service: "ManagedObject",
+        description: "string"
+};
+typeNames.interfaces["SessionManagerGenericServiceTicket"] = {
+id: "string",
+        hostName: "string",
+        sslThumbprint: "string"
+};
+typeNames.interfaces["SessionManagerHttpServiceRequestSpec"] = {
+method: "string",
+        url: "string"
+};
+typeNames.interfaces["SessionManagerLocalTicket"] = {
+userName: "string",
+        passwordFilePath: "string"
+};
+typeNames.interfaces["SessionManagerServiceRequestSpec"] = {
+
+};
+typeNames.interfaces["SessionManagerVmomiServiceRequestSpec"] = {
+method: "string"
+};
+typeNames.interfaces["SharesInfo"] = {
+shares: "number",
+        level: "SharesLevel"
+};
+typeNames.interfaces["SharesOption"] = {
+sharesOption: "IntOption",
+        defaultLevel: "SharesLevel"
+};
+typeNames.interfaces["SiteInfo"] = {
+
+};
+typeNames.interfaces["StorageIOAllocationInfo"] = {
+limit: "number",
+        shares: "SharesInfo",
+        reservation: "number"
+};
+typeNames.interfaces["StorageIOAllocationOption"] = {
+limitOption: "LongOption",
+        sharesOption: "SharesOption"
+};
+typeNames.interfaces["StorageIORMInfo"] = {
+enabled: "boolean",
+        congestionThresholdMode: "string",
+        congestionThreshold: "number",
+        percentOfPeakThroughput: "number",
+        statsCollectionEnabled: "boolean",
+        reservationEnabled: "boolean",
+        statsAggregationDisabled: "boolean",
+        reservableIopsThreshold: "number"
+};
+typeNames.interfaces["StorageIORMConfigOption"] = {
+enabledOption: "BoolOption",
+        congestionThresholdOption: "IntOption",
+        statsCollectionEnabledOption: "BoolOption",
+        reservationEnabledOption: "BoolOption"
+};
+typeNames.interfaces["StorageIORMConfigSpec"] = {
+enabled: "boolean",
+        congestionThresholdMode: "string",
+        congestionThreshold: "number",
+        percentOfPeakThroughput: "number",
+        statsCollectionEnabled: "boolean",
+        reservationEnabled: "boolean",
+        statsAggregationDisabled: "boolean",
+        reservableIopsThreshold: "number"
+};
+typeNames.interfaces["PodStorageDrsEntry"] = {
+storageDrsConfig: "StorageDrsConfigInfo",
+        recommendation: "ClusterRecommendation",
+        drsFault: "ClusterDrsFaults",
+        actionHistory: "ClusterActionHistory"
+};
+typeNames.interfaces["StoragePerformanceSummary"] = {
+interval: "number",
+        percentile: "number",
+        datastoreReadLatency: "number",
+        datastoreWriteLatency: "number",
+        datastoreVmLatency: "number",
+        datastoreReadIops: "number",
+        datastoreWriteIops: "number",
+        siocActivityDuration: "number"
+};
+typeNames.interfaces["StorageResourceManagerStorageProfileStatistics"] = {
+profileId: "string",
+        totalSpaceMB: "number",
+        usedSpaceMB: "number"
+};
+typeNames.interfaces["StringExpression"] = {
+value: "string"
+};
+typeNames.interfaces["StringPolicy"] = {
+value: "string"
+};
+typeNames.interfaces["Tag"] = {
+key: "string"
+};
+typeNames.interfaces["TaskDescription"] = {
+methodInfo: "ElementDescription",
+        state: "ElementDescription",
+        reason: "TypeDescription"
+};
+typeNames.interfaces["TaskInfo"] = {
+key: "string",
+        task: Task,
+        description: "LocalizableMessage",
+        name: "string",
+        descriptionId: "string",
+        entity: ManagedEntity,
+        entityName: "string",
+        locked: ManagedEntity,
+        state: "TaskInfoState",
+        cancelled: "boolean",
+        cancelable: "boolean",
+        error: "MethodFault",
+        result: "any",
+        progress: "number",
+        reason: "TaskReason",
+        queueTime: "Date",
+        startTime: "Date",
+        completeTime: "Date",
+        eventChainId: "number",
+        changeTag: "string",
+        parentTaskKey: "string",
+        rootTaskKey: "string",
+        activationId: "string"
+};
+typeNames.interfaces["TaskReason"] = {
+
+};
+typeNames.interfaces["TaskReasonAlarm"] = {
+alarmName: "string",
+        alarm: Alarm,
+        entityName: "string",
+        entity: ManagedEntity
+};
+typeNames.interfaces["TaskReasonSchedule"] = {
+name: "string",
+        scheduledTask: ScheduledTask
+};
+typeNames.interfaces["TaskReasonSystem"] = {
+
+};
+typeNames.interfaces["TaskReasonUser"] = {
+userName: "string"
+};
+typeNames.interfaces["TypeDescription"] = {
+key: "string"
+};
+typeNames.interfaces["UpdateVirtualMachineFilesResult"] = {
+failedVmFile: "UpdateVirtualMachineFilesResultFailedVmFileInfo"
+};
+typeNames.interfaces["UpdateVirtualMachineFilesResultFailedVmFileInfo"] = {
+vmFile: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["UserSearchResult"] = {
+principal: "string",
+        fullName: "string",
+        group: "boolean"
+};
+typeNames.interfaces["UserSession"] = {
+key: "string",
+        userName: "string",
+        fullName: "string",
+        loginTime: "Date",
+        lastActiveTime: "Date",
+        locale: "string",
+        messageLocale: "string",
+        extensionSession: "boolean",
+        ipAddress: "string",
+        userAgent: "string",
+        callCount: "number"
+};
+typeNames.interfaces["VVolVmConfigFileUpdateResult"] = {
+succeededVmConfigFile: "KeyValue",
+        failedVmConfigFile: "VVolVmConfigFileUpdateResultFailedVmConfigFileInfo"
+};
+typeNames.interfaces["VVolVmConfigFileUpdateResultFailedVmConfigFileInfo"] = {
+targetConfigVVolId: "string",
+        dsPath: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["VASAStorageArray"] = {
+name: "string",
+        uuid: "string",
+        vendorId: "string",
+        modelId: "string"
+};
+typeNames.interfaces["VimVasaProvider"] = {
+uid: "string",
+        url: "string",
+        name: "string",
+        selfSignedCertificate: "string"
+};
+typeNames.interfaces["VimVasaProviderStatePerArray"] = {
+priority: "number",
+        arrayId: "string",
+        active: "boolean"
+};
+typeNames.interfaces["VimVasaProviderInfo"] = {
+provider: "VimVasaProvider",
+        arrayState: "VimVasaProviderStatePerArray"
+};
+typeNames.interfaces["VsanUpgradeSystemAPIBrokenIssue"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["VsanUpgradeSystemAutoClaimEnabledOnHostsIssue"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["VsanUpgradeSystemHostsDisconnectedIssue"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["VsanUpgradeSystemMissingHostsInClusterIssue"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["VsanUpgradeSystemNetworkPartitionInfo"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["VsanUpgradeSystemNetworkPartitionIssue"] = {
+partitions: "VsanUpgradeSystemNetworkPartitionInfo"
+};
+typeNames.interfaces["VsanUpgradeSystemNotEnoughFreeCapacityIssue"] = {
+reducedRedundancyUpgradePossible: "boolean"
+};
+typeNames.interfaces["VsanUpgradeSystemPreflightCheckIssue"] = {
+msg: "string"
+};
+typeNames.interfaces["VsanUpgradeSystemPreflightCheckResult"] = {
+issues: "VsanUpgradeSystemPreflightCheckIssue",
+        diskMappingToRestore: "VsanHostDiskMapping"
+};
+typeNames.interfaces["VsanUpgradeSystemRogueHostsInClusterIssue"] = {
+uuids: "string"
+};
+typeNames.interfaces["VsanUpgradeSystemUpgradeHistoryDiskGroupOp"] = {
+operation: "string",
+        diskMapping: "VsanHostDiskMapping"
+};
+typeNames.interfaces["VsanUpgradeSystemUpgradeHistoryItem"] = {
+timestamp: "Date",
+        host: HostSystem,
+        message: "string",
+        task: Task
+};
+typeNames.interfaces["VsanUpgradeSystemUpgradeHistoryPreflightFail"] = {
+preflightResult: "VsanUpgradeSystemPreflightCheckResult"
+};
+typeNames.interfaces["VsanUpgradeSystemUpgradeStatus"] = {
+inProgress: "boolean",
+        history: "VsanUpgradeSystemUpgradeHistoryItem",
+        aborted: "boolean",
+        completed: "boolean",
+        progress: "number"
+};
+typeNames.interfaces["VsanUpgradeSystemV2ObjectsPresentDuringDowngradeIssue"] = {
+uuids: "string"
+};
+typeNames.interfaces["VsanUpgradeSystemWrongEsxVersionIssue"] = {
+hosts: HostSystem
+};
+typeNames.interfaces["Action"] = {
+
+};
+typeNames.interfaces["CreateTaskAction"] = {
+taskTypeId: "string",
+        cancelable: "boolean"
+};
+typeNames.interfaces["MethodAction"] = {
+name: "string",
+        argument: "MethodActionArgument"
+};
+typeNames.interfaces["MethodActionArgument"] = {
+value: "any"
+};
+typeNames.interfaces["RunScriptAction"] = {
+script: "string"
+};
+typeNames.interfaces["SendEmailAction"] = {
+toList: "string",
+        ccList: "string",
+        subject: "string",
+        body: "string"
+};
+typeNames.interfaces["SendSNMPAction"] = {
+
+};
+typeNames.interfaces["AlarmAction"] = {
+
+};
+typeNames.interfaces["AlarmDescription"] = {
+expr: "TypeDescription",
+        stateOperator: "ElementDescription",
+        metricOperator: "ElementDescription",
+        hostSystemConnectionState: "ElementDescription",
+        virtualMachinePowerState: "ElementDescription",
+        datastoreConnectionState: "ElementDescription",
+        hostSystemPowerState: "ElementDescription",
+        virtualMachineGuestHeartbeatStatus: "ElementDescription",
+        entityStatus: "ElementDescription",
+        action: "TypeDescription"
+};
+typeNames.interfaces["AlarmExpression"] = {
+
+};
+typeNames.interfaces["AlarmSetting"] = {
+toleranceRange: "number",
+        reportingFrequency: "number"
+};
+typeNames.interfaces["AlarmSpec"] = {
+name: "string",
+        systemName: "string",
+        description: "string",
+        enabled: "boolean",
+        expression: "AlarmExpression",
+        action: "AlarmAction",
+        actionFrequency: "number",
+        setting: "AlarmSetting"
+};
+typeNames.interfaces["AndAlarmExpression"] = {
+expression: "AlarmExpression"
+};
+typeNames.interfaces["GroupAlarmAction"] = {
+action: "AlarmAction"
+};
+typeNames.interfaces["MetricAlarmExpression"] = {
+operator: "MetricAlarmOperator",
+        type: "string",
+        metric: "PerfMetricId",
+        yellow: "number",
+        yellowInterval: "number",
+        red: "number",
+        redInterval: "number"
+};
+typeNames.interfaces["OrAlarmExpression"] = {
+expression: "AlarmExpression"
+};
+typeNames.interfaces["StateAlarmExpression"] = {
+operator: "StateAlarmOperator",
+        type: "string",
+        statePath: "string",
+        yellow: "string",
+        red: "string"
+};
+typeNames.interfaces["ClusterAction"] = {
+type: "string",
+        target: "ManagedObject"
+};
+typeNames.interfaces["ClusterActionHistory"] = {
+action: "ClusterAction",
+        time: "Date"
+};
+typeNames.interfaces["ClusterAttemptedVmInfo"] = {
+vm: VirtualMachine,
+        task: Task
+};
+typeNames.interfaces["ClusterConfigInfo"] = {
+dasConfig: "ClusterDasConfigInfo",
+        dasVmConfig: "ClusterDasVmConfigInfo",
+        drsConfig: "ClusterDrsConfigInfo",
+        drsVmConfig: "ClusterDrsVmConfigInfo",
+        rule: "ClusterRuleInfo"
+};
+typeNames.interfaces["ClusterConfigSpec"] = {
+dasConfig: "ClusterDasConfigInfo",
+        dasVmConfigSpec: "ClusterDasVmConfigSpec",
+        drsConfig: "ClusterDrsConfigInfo",
+        drsVmConfigSpec: "ClusterDrsVmConfigSpec",
+        rulesSpec: "ClusterRuleSpec"
+};
+typeNames.interfaces["ClusterCryptoConfigInfo"] = {
+cryptoMode: "string"
+};
+typeNames.interfaces["ClusterDasAamNodeState"] = {
+host: HostSystem,
+        name: "string",
+        configState: "string",
+        runtimeState: "string"
+};
+typeNames.interfaces["ClusterDasAdmissionControlInfo"] = {
+
+};
+typeNames.interfaces["ClusterDasAdmissionControlPolicy"] = {
+resourceReductionToToleratePercent: "number"
+};
+typeNames.interfaces["ClusterDasAdvancedRuntimeInfo"] = {
+dasHostInfo: "ClusterDasHostInfo",
+        vmcpSupported: "ClusterDasAdvancedRuntimeInfoVmcpCapabilityInfo",
+        heartbeatDatastoreInfo: "DasHeartbeatDatastoreInfo"
+};
+typeNames.interfaces["DasHeartbeatDatastoreInfo"] = {
+datastore: Datastore,
+        hosts: HostSystem
+};
+typeNames.interfaces["ClusterDasAdvancedRuntimeInfoVmcpCapabilityInfo"] = {
+storageAPDSupported: "boolean",
+        storagePDLSupported: "boolean"
+};
+typeNames.interfaces["ClusterDasConfigInfo"] = {
+enabled: "boolean",
+        vmMonitoring: "string",
+        hostMonitoring: "string",
+        vmComponentProtecting: "string",
+        failoverLevel: "number",
+        admissionControlPolicy: "ClusterDasAdmissionControlPolicy",
+        admissionControlEnabled: "boolean",
+        defaultVmSettings: "ClusterDasVmSettings",
+        option: "OptionValue",
+        heartbeatDatastore: Datastore,
+        hBDatastoreCandidatePolicy: "string"
+};
+typeNames.interfaces["ClusterDasData"] = {
+
+};
+typeNames.interfaces["ClusterDasDataSummary"] = {
+hostListVersion: "number",
+        clusterConfigVersion: "number",
+        compatListVersion: "number"
+};
+typeNames.interfaces["ClusterDasFailoverLevelAdvancedRuntimeInfo"] = {
+slotInfo: "ClusterDasFailoverLevelAdvancedRuntimeInfoSlotInfo",
+        totalSlots: "number",
+        usedSlots: "number",
+        unreservedSlots: "number",
+        totalVms: "number",
+        totalHosts: "number",
+        totalGoodHosts: "number",
+        hostSlots: "ClusterDasFailoverLevelAdvancedRuntimeInfoHostSlots",
+        vmsRequiringMultipleSlots: "ClusterDasFailoverLevelAdvancedRuntimeInfoVmSlots"
+};
+typeNames.interfaces["ClusterDasFailoverLevelAdvancedRuntimeInfoHostSlots"] = {
+host: HostSystem,
+        slots: "number"
+};
+typeNames.interfaces["ClusterDasFailoverLevelAdvancedRuntimeInfoSlotInfo"] = {
+numVcpus: "number",
+        cpuMHz: "number",
+        memoryMB: "number"
+};
+typeNames.interfaces["ClusterDasFailoverLevelAdvancedRuntimeInfoVmSlots"] = {
+vm: VirtualMachine,
+        slots: "number"
+};
+typeNames.interfaces["ClusterDasFdmHostState"] = {
+state: "string",
+        stateReporter: HostSystem
+};
+typeNames.interfaces["ClusterDasHostInfo"] = {
+
+};
+typeNames.interfaces["ClusterDasHostRecommendation"] = {
+host: HostSystem,
+        drsRating: "number"
+};
+typeNames.interfaces["ClusterDasVmConfigInfo"] = {
+key: VirtualMachine,
+        restartPriority: "DasVmPriority",
+        powerOffOnIsolation: "boolean",
+        dasSettings: "ClusterDasVmSettings"
+};
+typeNames.interfaces["ClusterDasVmSettings"] = {
+restartPriority: "string",
+        restartPriorityTimeout: "number",
+        isolationResponse: "string",
+        vmToolsMonitoringSettings: "ClusterVmToolsMonitoringSettings",
+        vmComponentProtectionSettings: "ClusterVmComponentProtectionSettings"
+};
+typeNames.interfaces["ClusterDpmConfigInfo"] = {
+enabled: "boolean",
+        defaultDpmBehavior: "DpmBehavior",
+        hostPowerActionRate: "number",
+        option: "OptionValue"
+};
+typeNames.interfaces["ClusterDpmHostConfigInfo"] = {
+key: HostSystem,
+        enabled: "boolean",
+        behavior: "DpmBehavior"
+};
+typeNames.interfaces["ClusterDrsConfigInfo"] = {
+enabled: "boolean",
+        enableVmBehaviorOverrides: "boolean",
+        defaultVmBehavior: "DrsBehavior",
+        vmotionRate: "number",
+        scaleDescendantsShares: "string",
+        option: "OptionValue"
+};
+typeNames.interfaces["ClusterDrsFaults"] = {
+reason: "string",
+        faultsByVm: "ClusterDrsFaultsFaultsByVm"
+};
+typeNames.interfaces["ClusterDrsFaultsFaultsByVirtualDisk"] = {
+disk: "VirtualDiskId"
+};
+typeNames.interfaces["ClusterDrsFaultsFaultsByVm"] = {
+vm: VirtualMachine,
+        fault: "MethodFault"
+};
+typeNames.interfaces["ClusterDrsMigration"] = {
+key: "string",
+        time: "Date",
+        vm: VirtualMachine,
+        cpuLoad: "number",
+        memoryLoad: "number",
+        source: HostSystem,
+        sourceCpuLoad: "number",
+        sourceMemoryLoad: "number",
+        destination: HostSystem,
+        destinationCpuLoad: "number",
+        destinationMemoryLoad: "number"
+};
+typeNames.interfaces["ClusterDrsRecommendation"] = {
+key: "string",
+        rating: "number",
+        reason: "string",
+        reasonText: "string",
+        migrationList: "ClusterDrsMigration"
+};
+typeNames.interfaces["ClusterDrsVmConfigInfo"] = {
+key: VirtualMachine,
+        enabled: "boolean",
+        behavior: "DrsBehavior"
+};
+typeNames.interfaces["ClusterEVCManagerCheckResult"] = {
+evcModeKey: "string",
+        error: "MethodFault",
+        host: HostSystem
+};
+typeNames.interfaces["ClusterEVCManagerEVCState"] = {
+supportedEVCMode: "EVCMode",
+        currentEVCModeKey: "string",
+        guaranteedCPUFeatures: "HostCpuIdInfo",
+        featureCapability: "HostFeatureCapability",
+        featureMask: "HostFeatureMask",
+        featureRequirement: "VirtualMachineFeatureRequirement"
+};
+typeNames.interfaces["ClusterEnterMaintenanceResult"] = {
+recommendations: "ClusterRecommendation",
+        fault: "ClusterDrsFaults"
+};
+typeNames.interfaces["ClusterFailoverHostAdmissionControlPolicy"] = {
+failoverHosts: HostSystem,
+        failoverLevel: "number"
+};
+typeNames.interfaces["ClusterFailoverLevelAdmissionControlInfo"] = {
+currentFailoverLevel: "number"
+};
+typeNames.interfaces["ClusterFailoverLevelAdmissionControlPolicy"] = {
+failoverLevel: "number",
+        slotPolicy: "ClusterSlotPolicy"
+};
+typeNames.interfaces["ClusterFailoverResourcesAdmissionControlInfo"] = {
+currentCpuFailoverResourcesPercent: "number",
+        currentMemoryFailoverResourcesPercent: "number"
+};
+typeNames.interfaces["ClusterFailoverResourcesAdmissionControlPolicy"] = {
+cpuFailoverResourcesPercent: "number",
+        memoryFailoverResourcesPercent: "number",
+        failoverLevel: "number",
+        autoComputePercentages: "boolean"
+};
+typeNames.interfaces["ClusterGroupInfo"] = {
+name: "string",
+        userCreated: "boolean",
+        uniqueID: "string"
+};
+typeNames.interfaces["ClusterHostGroup"] = {
+host: HostSystem
+};
+typeNames.interfaces["ClusterHostInfraUpdateHaModeAction"] = {
+operationType: "string"
+};
+typeNames.interfaces["ClusterHostPowerAction"] = {
+operationType: "HostPowerOperationType",
+        powerConsumptionWatt: "number",
+        cpuCapacityMHz: "number",
+        memCapacityMB: "number"
+};
+typeNames.interfaces["ClusterHostRecommendation"] = {
+host: HostSystem,
+        rating: "number"
+};
+typeNames.interfaces["ClusterInfraUpdateHaConfigInfo"] = {
+enabled: "boolean",
+        behavior: "string",
+        moderateRemediation: "string",
+        severeRemediation: "string",
+        providers: "string"
+};
+typeNames.interfaces["ClusterInitialPlacementAction"] = {
+targetHost: HostSystem,
+        pool: ResourcePool
+};
+typeNames.interfaces["ClusterMigrationAction"] = {
+drsMigration: "ClusterDrsMigration"
+};
+typeNames.interfaces["ClusterNotAttemptedVmInfo"] = {
+vm: VirtualMachine,
+        fault: "MethodFault"
+};
+typeNames.interfaces["ClusterOrchestrationInfo"] = {
+defaultVmReadiness: "ClusterVmReadiness"
+};
+typeNames.interfaces["PlacementAction"] = {
+vm: VirtualMachine,
+        targetHost: HostSystem,
+        relocateSpec: "VirtualMachineRelocateSpec"
+};
+typeNames.interfaces["PlacementResult"] = {
+recommendations: "ClusterRecommendation",
+        drsFault: "ClusterDrsFaults"
+};
+typeNames.interfaces["ClusterPowerOnVmResult"] = {
+attempted: "ClusterAttemptedVmInfo",
+        notAttempted: "ClusterNotAttemptedVmInfo",
+        recommendations: "ClusterRecommendation"
+};
+typeNames.interfaces["ClusterProactiveDrsConfigInfo"] = {
+enabled: "boolean"
+};
+typeNames.interfaces["ClusterRecommendation"] = {
+key: "string",
+        type: "string",
+        time: "Date",
+        rating: "number",
+        reason: "string",
+        reasonText: "string",
+        warningText: "string",
+        warningDetails: "LocalizableMessage",
+        prerequisite: "string",
+        action: "ClusterAction",
+        target: "ManagedObject"
+};
+typeNames.interfaces["ClusterResourceUsageSummary"] = {
+cpuUsedMHz: "number",
+        cpuCapacityMHz: "number",
+        memUsedMB: "number",
+        memCapacityMB: "number",
+        pMemAvailableMB: "number",
+        pMemCapacityMB: "number",
+        storageUsedMB: "number",
+        storageCapacityMB: "number"
+};
+typeNames.interfaces["ClusterSlotPolicy"] = {
+
+};
+typeNames.interfaces["ClusterUsageSummary"] = {
+totalCpuCapacityMhz: "number",
+        totalMemCapacityMB: "number",
+        cpuReservationMhz: "number",
+        memReservationMB: "number",
+        poweredOffCpuReservationMhz: "number",
+        poweredOffMemReservationMB: "number",
+        cpuDemandMhz: "number",
+        memDemandMB: "number",
+        statsGenNumber: "number",
+        cpuEntitledMhz: "number",
+        memEntitledMB: "number",
+        poweredOffVmCount: "number",
+        totalVmCount: "number"
+};
+typeNames.interfaces["ClusterVmComponentProtectionSettings"] = {
+vmStorageProtectionForAPD: "string",
+        enableAPDTimeoutForHosts: "boolean",
+        vmTerminateDelayForAPDSec: "number",
+        vmReactionOnAPDCleared: "string",
+        vmStorageProtectionForPDL: "string"
+};
+typeNames.interfaces["ClusterVmGroup"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["ClusterVmOrchestrationInfo"] = {
+vm: VirtualMachine,
+        vmReadiness: "ClusterVmReadiness"
+};
+typeNames.interfaces["ClusterVmReadiness"] = {
+readyCondition: "string",
+        postReadyDelay: "number"
+};
+typeNames.interfaces["ClusterVmToolsMonitoringSettings"] = {
+enabled: "boolean",
+        vmMonitoring: "string",
+        clusterSettings: "boolean",
+        failureInterval: "number",
+        minUpTime: "number",
+        maxFailures: "number",
+        maxFailureWindow: "number"
+};
+typeNames.interfaces["DistributedVirtualPort"] = {
+key: "string",
+        config: "DVPortConfigInfo",
+        dvsUuid: "string",
+        portgroupKey: "string",
+        proxyHost: HostSystem,
+        connectee: "DistributedVirtualSwitchPortConnectee",
+        conflict: "boolean",
+        conflictPortKey: "string",
+        state: "DVPortState",
+        connectionCookie: "number",
+        lastStatusChange: "Date",
+        hostLocalPort: "boolean",
+        externalId: "string",
+        segmentPortId: "string"
+};
+typeNames.interfaces["DVPortConfigInfo"] = {
+name: "string",
+        scope: ManagedEntity,
+        description: "string",
+        setting: "DVPortSetting",
+        configVersion: "string"
+};
+typeNames.interfaces["DVPortConfigSpec"] = {
+operation: "string",
+        key: "string",
+        name: "string",
+        scope: ManagedEntity,
+        description: "string",
+        setting: "DVPortSetting",
+        configVersion: "string"
+};
+typeNames.interfaces["DvsFilterConfig"] = {
+key: "string",
+        agentName: "string",
+        slotNumber: "string",
+        parameters: "DvsFilterParameter",
+        onFailure: "string"
+};
+typeNames.interfaces["DvsFilterConfigSpec"] = {
+operation: "string"
+};
+typeNames.interfaces["DvsFilterParameter"] = {
+parameters: "string"
+};
+typeNames.interfaces["DvsFilterPolicy"] = {
+filterConfig: "DvsFilterConfig"
+};
+typeNames.interfaces["DVSHostLocalPortInfo"] = {
+switchUuid: "string",
+        portKey: "string",
+        setting: "DVPortSetting",
+        vnic: "string"
+};
+typeNames.interfaces["DVPortStatus"] = {
+linkUp: "boolean",
+        blocked: "boolean",
+        vlanIds: "NumericRange",
+        trunkingMode: "boolean",
+        mtu: "number",
+        linkPeer: "string",
+        macAddress: "string",
+        statusDetail: "string",
+        vmDirectPathGen2Active: "boolean",
+        vmDirectPathGen2InactiveReasonNetwork: "string",
+        vmDirectPathGen2InactiveReasonOther: "string",
+        vmDirectPathGen2InactiveReasonExtended: "string"
+};
+typeNames.interfaces["DVPortSetting"] = {
+blocked: "BoolPolicy",
+        vmDirectPathGen2Allowed: "BoolPolicy",
+        inShapingPolicy: "DVSTrafficShapingPolicy",
+        outShapingPolicy: "DVSTrafficShapingPolicy",
+        vendorSpecificConfig: "DVSVendorSpecificConfig",
+        networkResourcePoolKey: "StringPolicy",
+        filterPolicy: "DvsFilterPolicy"
+};
+typeNames.interfaces["DVPortState"] = {
+runtimeInfo: "DVPortStatus",
+        stats: "DistributedVirtualSwitchPortStatistics",
+        vendorSpecificState: "DistributedVirtualSwitchKeyedOpaqueBlob"
+};
+typeNames.interfaces["DvsTrafficFilterConfig"] = {
+trafficRuleset: "DvsTrafficRuleset"
+};
+typeNames.interfaces["DvsTrafficFilterConfigSpec"] = {
+operation: "string"
+};
+typeNames.interfaces["DVSTrafficShapingPolicy"] = {
+enabled: "BoolPolicy",
+        averageBandwidth: "LongPolicy",
+        peakBandwidth: "LongPolicy",
+        burstSize: "LongPolicy"
+};
+typeNames.interfaces["DVSVendorSpecificConfig"] = {
+keyValue: "DistributedVirtualSwitchKeyedOpaqueBlob"
+};
+typeNames.interfaces["DistributedVirtualPortgroupInfo"] = {
+switchName: "string",
+        switchUuid: "string",
+        portgroupName: "string",
+        portgroupKey: "string",
+        portgroupType: "string",
+        uplinkPortgroup: "boolean",
+        portgroup: DistributedVirtualPortgroup,
+        networkReservationSupported: "boolean",
+        backingType: "string",
+        logicalSwitchUuid: "string",
+        segmentId: "string"
+};
+typeNames.interfaces["DVPortgroupSelection"] = {
+dvsUuid: "string",
+        portgroupKey: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchInfo"] = {
+switchName: "string",
+        switchUuid: "string",
+        distributedVirtualSwitch: DistributedVirtualSwitch,
+        networkReservationSupported: "boolean"
+};
+typeNames.interfaces["DVSSelection"] = {
+dvsUuid: "string"
+};
+typeNames.interfaces["EntityBackup"] = {
+
+};
+typeNames.interfaces["EntityBackupConfig"] = {
+entityType: "string",
+        configBlob: "Buffer",
+        key: "string",
+        name: "string",
+        container: ManagedEntity,
+        configVersion: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMember"] = {
+runtimeState: "DistributedVirtualSwitchHostMemberRuntimeState",
+        config: "DistributedVirtualSwitchHostMemberConfigInfo",
+        productInfo: "DistributedVirtualSwitchProductSpec",
+        uplinkPortKey: "string",
+        status: "string",
+        statusDetail: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberBacking"] = {
+
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberConfigInfo"] = {
+host: HostSystem,
+        maxProxySwitchPorts: "number",
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob",
+        backing: "DistributedVirtualSwitchHostMemberBacking",
+        nsxSwitch: "boolean",
+        ensEnabled: "boolean",
+        ensInterruptEnabled: "boolean",
+        transportZones: "DistributedVirtualSwitchHostMemberTransportZoneInfo",
+        nsxtUsedUplinkNames: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberConfigSpec"] = {
+operation: "string",
+        host: HostSystem,
+        backing: "DistributedVirtualSwitchHostMemberBacking",
+        maxProxySwitchPorts: "number",
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob"
+};
+typeNames.interfaces["HostMemberHealthCheckResult"] = {
+summary: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberPnicBacking"] = {
+pnicSpec: "DistributedVirtualSwitchHostMemberPnicSpec"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberPnicSpec"] = {
+pnicDevice: "string",
+        uplinkPortKey: "string",
+        uplinkPortgroupKey: "string",
+        connectionCookie: "number"
+};
+typeNames.interfaces["HostMemberRuntimeInfo"] = {
+host: HostSystem,
+        status: "string",
+        statusDetail: "string",
+        nsxtStatus: "string",
+        nsxtStatusDetail: "string",
+        healthCheckResult: "HostMemberHealthCheckResult"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberRuntimeState"] = {
+currentMaxProxySwitchPorts: "number"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostMemberTransportZoneInfo"] = {
+uuid: "string",
+        type: "string"
+};
+typeNames.interfaces["HostMemberUplinkHealthCheckResult"] = {
+uplinkPortKey: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchHostProductSpec"] = {
+productLineId: "string",
+        version: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchKeyedOpaqueBlob"] = {
+key: "string",
+        opaqueData: "string"
+};
+typeNames.interfaces["DVSNetworkResourcePool"] = {
+key: "string",
+        name: "string",
+        description: "string",
+        configVersion: "string",
+        allocationInfo: "DVSNetworkResourcePoolAllocationInfo"
+};
+typeNames.interfaces["DVSNetworkResourcePoolAllocationInfo"] = {
+limit: "number",
+        shares: "SharesInfo",
+        priorityTag: "number"
+};
+typeNames.interfaces["DVSNetworkResourcePoolConfigSpec"] = {
+key: "string",
+        configVersion: "string",
+        allocationInfo: "DVSNetworkResourcePoolAllocationInfo",
+        name: "string",
+        description: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchPortConnectee"] = {
+connectedEntity: ManagedEntity,
+        nicKey: "string",
+        type: "string",
+        addressHint: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchPortConnection"] = {
+switchUuid: "string",
+        portgroupKey: "string",
+        portKey: "string",
+        connectionCookie: "number"
+};
+typeNames.interfaces["DistributedVirtualSwitchPortCriteria"] = {
+connected: "boolean",
+        active: "boolean",
+        uplinkPort: "boolean",
+        nsxPort: "boolean",
+        scope: ManagedEntity,
+        portgroupKey: "string",
+        inside: "boolean",
+        portKey: "string",
+        host: HostSystem
+};
+typeNames.interfaces["DistributedVirtualSwitchPortStatistics"] = {
+packetsInMulticast: "number",
+        packetsOutMulticast: "number",
+        bytesInMulticast: "number",
+        bytesOutMulticast: "number",
+        packetsInUnicast: "number",
+        packetsOutUnicast: "number",
+        bytesInUnicast: "number",
+        bytesOutUnicast: "number",
+        packetsInBroadcast: "number",
+        packetsOutBroadcast: "number",
+        bytesInBroadcast: "number",
+        bytesOutBroadcast: "number",
+        packetsInDropped: "number",
+        packetsOutDropped: "number",
+        packetsInException: "number",
+        packetsOutException: "number",
+        bytesInFromPnic: "number",
+        bytesOutToPnic: "number"
+};
+typeNames.interfaces["DistributedVirtualSwitchProductSpec"] = {
+name: "string",
+        vendor: "string",
+        version: "string",
+        build: "string",
+        forwardingClass: "string",
+        bundleId: "string",
+        bundleUrl: "string"
+};
+typeNames.interfaces["DvsTrafficRule"] = {
+key: "string",
+        description: "string",
+        sequence: "number",
+        qualifier: "DvsNetworkRuleQualifier",
+        action: "DvsNetworkRuleAction",
+        direction: "string"
+};
+typeNames.interfaces["DvsAcceptNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsCopyNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsDropNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsGreEncapNetworkRuleAction"] = {
+encapsulationIp: "SingleIp"
+};
+typeNames.interfaces["DvsIpPort"] = {
+
+};
+typeNames.interfaces["DvsIpPortRange"] = {
+startPortNumber: "number",
+        endPortNumber: "number"
+};
+typeNames.interfaces["DvsIpNetworkRuleQualifier"] = {
+sourceAddress: "IpAddress",
+        destinationAddress: "IpAddress",
+        protocol: "IntExpression",
+        sourceIpPort: "DvsIpPort",
+        destinationIpPort: "DvsIpPort",
+        tcpFlags: "IntExpression"
+};
+typeNames.interfaces["DvsLogNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsMacNetworkRuleQualifier"] = {
+sourceAddress: "MacAddress",
+        destinationAddress: "MacAddress",
+        protocol: "IntExpression",
+        vlanId: "IntExpression"
+};
+typeNames.interfaces["DvsMacRewriteNetworkRuleAction"] = {
+rewriteMac: "string"
+};
+typeNames.interfaces["DvsPuntNetworkRuleAction"] = {
+
+};
+typeNames.interfaces["DvsNetworkRuleQualifier"] = {
+key: "string"
+};
+typeNames.interfaces["DvsRateLimitNetworkRuleAction"] = {
+packetsPerSecond: "number"
+};
+typeNames.interfaces["DvsSingleIpPort"] = {
+portNumber: "number"
+};
+typeNames.interfaces["DvsSystemTrafficNetworkRuleQualifier"] = {
+typeOfSystemTraffic: "StringExpression"
+};
+typeNames.interfaces["DvsUpdateTagNetworkRuleAction"] = {
+qosTag: "number",
+        dscpTag: "number"
+};
+typeNames.interfaces["DvsTrafficRuleset"] = {
+key: "string",
+        enabled: "boolean",
+        precedence: "number",
+        rules: "DvsTrafficRule"
+};
+typeNames.interfaces["DVSVmVnicNetworkResourcePool"] = {
+key: "string",
+        name: "string",
+        description: "string",
+        configVersion: "string",
+        allocationInfo: "DvsVmVnicResourceAllocation"
+};
+typeNames.interfaces["DvsVmVnicResourcePoolConfigSpec"] = {
+operation: "string",
+        key: "string",
+        configVersion: "string",
+        allocationInfo: "DvsVmVnicResourceAllocation",
+        name: "string",
+        description: "string"
+};
+typeNames.interfaces["DvsVmVnicResourceAllocation"] = {
+reservationQuota: "number"
+};
+typeNames.interfaces["DvsVmVnicNetworkResourcePoolRuntimeInfo"] = {
+key: "string",
+        name: "string",
+        capacity: "number",
+        usage: "number",
+        available: "number",
+        status: "string",
+        allocatedResource: "DvsVnicAllocatedResource"
+};
+typeNames.interfaces["DvsVnicAllocatedResource"] = {
+vm: VirtualMachine,
+        vnicKey: "string",
+        reservation: "number"
+};
+typeNames.interfaces["CryptoKeyId"] = {
+keyId: "string",
+        providerId: "KeyProviderId"
+};
+typeNames.interfaces["CryptoKeyPlain"] = {
+keyId: "CryptoKeyId",
+        algorithm: "string",
+        keyData: "string"
+};
+typeNames.interfaces["CryptoKeyResult"] = {
+keyId: "CryptoKeyId",
+        success: "boolean",
+        reason: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["CryptoSpec"] = {
+
+};
+typeNames.interfaces["CryptoSpecDecrypt"] = {
+
+};
+typeNames.interfaces["CryptoSpecDeepRecrypt"] = {
+newKeyId: "CryptoKeyId"
+};
+typeNames.interfaces["CryptoSpecEncrypt"] = {
+cryptoKeyId: "CryptoKeyId"
+};
+typeNames.interfaces["CryptoSpecNoOp"] = {
+
+};
+typeNames.interfaces["CryptoSpecRegister"] = {
+cryptoKeyId: "CryptoKeyId"
+};
+typeNames.interfaces["CryptoSpecShallowRecrypt"] = {
+newKeyId: "CryptoKeyId"
+};
+typeNames.interfaces["KeyProviderId"] = {
+id: "string"
+};
+typeNames.interfaces["KmipClusterInfo"] = {
+clusterId: "KeyProviderId",
+        servers: "KmipServerInfo",
+        useAsDefault: "boolean",
+        managementType: "string",
+        useAsEntityDefault: ManagedEntity
+};
+typeNames.interfaces["KmipServerInfo"] = {
+name: "string",
+        address: "string",
+        port: "number",
+        proxyAddress: "string",
+        proxyPort: "number",
+        reconnect: "number",
+        protocol: "string",
+        nbio: "number",
+        timeout: "number",
+        userName: "string"
+};
+typeNames.interfaces["KmipServerSpec"] = {
+clusterId: "KeyProviderId",
+        info: "KmipServerInfo",
+        password: "string"
+};
+typeNames.interfaces["ChangesInfoEventArgument"] = {
+modified: "string",
+        added: "string",
+        deleted: "string"
+};
+typeNames.interfaces["DvsOutOfSyncHostArgument"] = {
+outOfSyncHost: "HostEventArgument",
+        configParamters: "string"
+};
+typeNames.interfaces["Event"] = {
+key: "number",
+        chainId: "number",
+        createdTime: "Date",
+        userName: "string",
+        datacenter: "DatacenterEventArgument",
+        computeResource: "ComputeResourceEventArgument",
+        host: "HostEventArgument",
+        vm: "VmEventArgument",
+        ds: "DatastoreEventArgument",
+        net: "NetworkEventArgument",
+        dvs: "DvsEventArgument",
+        fullFormattedMessage: "string",
+        changeTag: "string"
+};
+typeNames.interfaces["EventArgument"] = {
+
+};
+typeNames.interfaces["EventDescription"] = {
+category: "ElementDescription",
+        eventInfo: "EventDescriptionEventDetail",
+        enumeratedTypes: "EnumDescription"
+};
+typeNames.interfaces["EventArgDesc"] = {
+name: "string",
+        type: "string",
+        description: "ElementDescription"
+};
+typeNames.interfaces["EventDescriptionEventDetail"] = {
+key: "string",
+        description: "string",
+        category: "string",
+        formatOnDatacenter: "string",
+        formatOnComputeResource: "string",
+        formatOnHost: "string",
+        formatOnVm: "string",
+        fullFormat: "string",
+        longDescription: "string"
+};
+typeNames.interfaces["EventEx"] = {
+eventTypeId: "string",
+        severity: "string",
+        message: "string",
+        arguments: "KeyAnyValue",
+        objectId: "string",
+        objectType: "string",
+        objectName: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["EventFilterSpec"] = {
+entity: "EventFilterSpecByEntity",
+        time: "EventFilterSpecByTime",
+        userName: "EventFilterSpecByUsername",
+        eventChainId: "number",
+        alarm: Alarm,
+        scheduledTask: ScheduledTask,
+        disableFullMessage: "boolean",
+        category: "string",
+        type: "string",
+        tag: "string",
+        eventTypeId: "string",
+        maxCount: "number"
+};
+typeNames.interfaces["EventFilterSpecByEntity"] = {
+entity: ManagedEntity,
+        recursion: "EventFilterSpecRecursionOption"
+};
+typeNames.interfaces["EventFilterSpecByTime"] = {
+beginTime: "Date",
+        endTime: "Date"
+};
+typeNames.interfaces["EventFilterSpecByUsername"] = {
+systemUser: "boolean",
+        userList: "string"
+};
+typeNames.interfaces["GeneralEvent"] = {
+message: "string"
+};
+typeNames.interfaces["GeneralHostErrorEvent"] = {
+
+};
+typeNames.interfaces["GeneralHostInfoEvent"] = {
+
+};
+typeNames.interfaces["GeneralHostWarningEvent"] = {
+
+};
+typeNames.interfaces["GeneralUserEvent"] = {
+entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["GeneralVmErrorEvent"] = {
+
+};
+typeNames.interfaces["GeneralVmInfoEvent"] = {
+
+};
+typeNames.interfaces["GeneralVmWarningEvent"] = {
+
+};
+typeNames.interfaces["HealthStatusChangedEvent"] = {
+componentId: "string",
+        oldStatus: "string",
+        newStatus: "string",
+        componentName: "string",
+        serviceId: "string"
+};
+typeNames.interfaces["HostEvent"] = {
+
+};
+typeNames.interfaces["HostGetShortNameFailedEvent"] = {
+
+};
+typeNames.interfaces["HostInAuditModeEvent"] = {
+
+};
+typeNames.interfaces["HostInventoryUnreadableEvent"] = {
+
+};
+typeNames.interfaces["HostIpChangedEvent"] = {
+oldIP: "string",
+        newIP: "string"
+};
+typeNames.interfaces["HostIpInconsistentEvent"] = {
+ipAddress: "string",
+        ipAddress2: "string"
+};
+typeNames.interfaces["HostIpToShortNameFailedEvent"] = {
+
+};
+typeNames.interfaces["HostNonCompliantEvent"] = {
+
+};
+typeNames.interfaces["HostProfileAppliedEvent"] = {
+profile: "ProfileEventArgument"
+};
+typeNames.interfaces["HostReconnectionFailedEvent"] = {
+
+};
+typeNames.interfaces["HostRemovedEvent"] = {
+
+};
+typeNames.interfaces["HostShortNameToIpFailedEvent"] = {
+shortName: "string"
+};
+typeNames.interfaces["HostShutdownEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["HostSpecificationChangedEvent"] = {
+
+};
+typeNames.interfaces["HostSpecificationRequireEvent"] = {
+
+};
+typeNames.interfaces["HostSpecificationUpdateEvent"] = {
+hostSpec: "HostSpecification"
+};
+typeNames.interfaces["HostSubSpecificationDeleteEvent"] = {
+subSpecName: "string"
+};
+typeNames.interfaces["HostSubSpecificationUpdateEvent"] = {
+hostSubSpec: "HostSubSpecification"
+};
+typeNames.interfaces["HostSyncFailedEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["HostUpgradeFailedEvent"] = {
+
+};
+typeNames.interfaces["HostUserWorldSwapNotEnabledEvent"] = {
+
+};
+typeNames.interfaces["HostVnicConnectedToCustomizedDVPortEvent"] = {
+vnic: "VnicPortArgument",
+        prevPortKey: "string"
+};
+typeNames.interfaces["HostWwnChangedEvent"] = {
+oldNodeWwns: "number",
+        oldPortWwns: "number",
+        newNodeWwns: "number",
+        newPortWwns: "number"
+};
+typeNames.interfaces["HostWwnConflictEvent"] = {
+conflictedVms: "VmEventArgument",
+        conflictedHosts: "HostEventArgument",
+        wwn: "number"
+};
+typeNames.interfaces["LicenseEvent"] = {
+
+};
+typeNames.interfaces["LicenseExpiredEvent"] = {
+feature: "LicenseFeatureInfo"
+};
+typeNames.interfaces["LicenseNonComplianceEvent"] = {
+url: "string"
+};
+typeNames.interfaces["LicenseRestrictedEvent"] = {
+
+};
+typeNames.interfaces["LicenseServerAvailableEvent"] = {
+licenseServer: "string"
+};
+typeNames.interfaces["LicenseServerUnavailableEvent"] = {
+licenseServer: "string"
+};
+typeNames.interfaces["LocalDatastoreCreatedEvent"] = {
+datastore: "DatastoreEventArgument",
+        datastoreUrl: "string"
+};
+typeNames.interfaces["LocalTSMEnabledEvent"] = {
+
+};
+typeNames.interfaces["LockerMisconfiguredEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["LockerReconfiguredEvent"] = {
+oldDatastore: "DatastoreEventArgument",
+        newDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["NASDatastoreCreatedEvent"] = {
+datastore: "DatastoreEventArgument",
+        datastoreUrl: "string"
+};
+typeNames.interfaces["NetworkRollbackEvent"] = {
+methodName: "string",
+        transactionId: "string"
+};
+typeNames.interfaces["NoDatastoresConfiguredEvent"] = {
+
+};
+typeNames.interfaces["NoLicenseEvent"] = {
+feature: "LicenseFeatureInfo"
+};
+typeNames.interfaces["ProfileEvent"] = {
+profile: "ProfileEventArgument"
+};
+typeNames.interfaces["ProfileEventArgument"] = {
+profile: Profile,
+        name: "string"
+};
+typeNames.interfaces["ProfileReferenceHostChangedEvent"] = {
+referenceHost: HostSystem,
+        referenceHostName: "string",
+        prevReferenceHostName: "string"
+};
+typeNames.interfaces["ProfileRemovedEvent"] = {
+
+};
+typeNames.interfaces["RemoteTSMEnabledEvent"] = {
+
+};
+typeNames.interfaces["ResourcePoolEvent"] = {
+resourcePool: "ResourcePoolEventArgument"
+};
+typeNames.interfaces["ResourcePoolMovedEvent"] = {
+oldParent: "ResourcePoolEventArgument",
+        newParent: "ResourcePoolEventArgument"
+};
+typeNames.interfaces["ResourcePoolReconfiguredEvent"] = {
+configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["ResourceViolatedEvent"] = {
+
+};
+typeNames.interfaces["RoleEventArgument"] = {
+roleId: "number",
+        name: "string"
+};
+typeNames.interfaces["ScheduledTaskEvent"] = {
+scheduledTask: "ScheduledTaskEventArgument",
+        entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["ScheduledTaskFailedEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["ScheduledTaskReconfiguredEvent"] = {
+configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["ScheduledTaskRemovedEvent"] = {
+
+};
+typeNames.interfaces["ScheduledTaskStartedEvent"] = {
+
+};
+typeNames.interfaces["ServerLicenseExpiredEvent"] = {
+product: "string"
+};
+typeNames.interfaces["SessionEvent"] = {
+
+};
+typeNames.interfaces["SessionTerminatedEvent"] = {
+sessionId: "string",
+        terminatedUsername: "string"
+};
+typeNames.interfaces["TaskEvent"] = {
+info: "TaskInfo"
+};
+typeNames.interfaces["TaskTimeoutEvent"] = {
+
+};
+typeNames.interfaces["TemplateUpgradeEvent"] = {
+legacyTemplate: "string"
+};
+typeNames.interfaces["TemplateUpgradeFailedEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["TemplateUpgradedEvent"] = {
+
+};
+typeNames.interfaces["TimedOutHostOperationEvent"] = {
+
+};
+typeNames.interfaces["UnlicensedVirtualMachinesEvent"] = {
+unlicensed: "number",
+        available: "number"
+};
+typeNames.interfaces["UnlicensedVirtualMachinesFoundEvent"] = {
+available: "number"
+};
+typeNames.interfaces["UpdatedAgentBeingRestartedEvent"] = {
+
+};
+typeNames.interfaces["UpgradeEvent"] = {
+message: "string"
+};
+typeNames.interfaces["UserAssignedToGroup"] = {
+userLogin: "string",
+        group: "string"
+};
+typeNames.interfaces["UserLoginSessionEvent"] = {
+ipAddress: "string",
+        userAgent: "string",
+        locale: "string",
+        sessionId: "string"
+};
+typeNames.interfaces["UserLogoutSessionEvent"] = {
+ipAddress: "string",
+        userAgent: "string",
+        callCount: "number",
+        sessionId: "string",
+        loginTime: "Date"
+};
+typeNames.interfaces["UserPasswordChanged"] = {
+userLogin: "string"
+};
+typeNames.interfaces["UserUnassignedFromGroup"] = {
+userLogin: "string",
+        group: "string"
+};
+typeNames.interfaces["UserUpgradeEvent"] = {
+
+};
+typeNames.interfaces["VMFSDatastoreCreatedEvent"] = {
+datastore: "DatastoreEventArgument",
+        datastoreUrl: "string"
+};
+typeNames.interfaces["VMFSDatastoreExpandedEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VMFSDatastoreExtendedEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VMotionLicenseExpiredEvent"] = {
+
+};
+typeNames.interfaces["VcAgentUninstallFailedEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VcAgentUninstalledEvent"] = {
+
+};
+typeNames.interfaces["VcAgentUpgradeFailedEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VcAgentUpgradedEvent"] = {
+
+};
+typeNames.interfaces["VimAccountPasswordChangedEvent"] = {
+
+};
+typeNames.interfaces["VmEvent"] = {
+template: "boolean"
+};
+typeNames.interfaces["VmFailedMigrateEvent"] = {
+destHost: "HostEventArgument",
+        reason: "MethodFault",
+        destDatacenter: "DatacenterEventArgument",
+        destDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmFailedRelayoutEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedRelayoutOnVmfs2DatastoreEvent"] = {
+
+};
+typeNames.interfaces["VmFailedStartingSecondaryEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VmFailedToPowerOffEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToPowerOnEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToRebootGuestEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToResetEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToShutdownGuestEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToStandbyGuestEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedToSuspendEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFailedUpdatingSecondaryConfig"] = {
+
+};
+typeNames.interfaces["VmFailoverFailed"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmFaultToleranceTurnedOffEvent"] = {
+
+};
+typeNames.interfaces["VmFaultToleranceVmTerminatedEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VmGuestOSCrashedEvent"] = {
+
+};
+typeNames.interfaces["VmGuestRebootEvent"] = {
+
+};
+typeNames.interfaces["VmGuestShutdownEvent"] = {
+
+};
+typeNames.interfaces["VmGuestStandbyEvent"] = {
+
+};
+typeNames.interfaces["VmInstanceUuidAssignedEvent"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["VmInstanceUuidChangedEvent"] = {
+oldInstanceUuid: "string",
+        newInstanceUuid: "string"
+};
+typeNames.interfaces["VmInstanceUuidConflictEvent"] = {
+conflictedVm: "VmEventArgument",
+        instanceUuid: "string"
+};
+typeNames.interfaces["VmMacAssignedEvent"] = {
+adapter: "string",
+        mac: "string"
+};
+typeNames.interfaces["VmMacChangedEvent"] = {
+adapter: "string",
+        oldMac: "string",
+        newMac: "string"
+};
+typeNames.interfaces["VmMacConflictEvent"] = {
+conflictedVm: "VmEventArgument",
+        mac: "string"
+};
+typeNames.interfaces["VmMaxFTRestartCountReached"] = {
+
+};
+typeNames.interfaces["VmMaxRestartCountReached"] = {
+
+};
+typeNames.interfaces["VmMessageErrorEvent"] = {
+message: "string",
+        messageInfo: "VirtualMachineMessage"
+};
+typeNames.interfaces["VmMessageEvent"] = {
+message: "string",
+        messageInfo: "VirtualMachineMessage"
+};
+typeNames.interfaces["VmMessageWarningEvent"] = {
+message: "string",
+        messageInfo: "VirtualMachineMessage"
+};
+typeNames.interfaces["VmMigratedEvent"] = {
+sourceHost: "HostEventArgument",
+        sourceDatacenter: "DatacenterEventArgument",
+        sourceDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmNoCompatibleHostForSecondaryEvent"] = {
+
+};
+typeNames.interfaces["VmNoNetworkAccessEvent"] = {
+destHost: "HostEventArgument"
+};
+typeNames.interfaces["VmOrphanedEvent"] = {
+
+};
+typeNames.interfaces["VmPoweredOffEvent"] = {
+
+};
+typeNames.interfaces["VmPoweredOnEvent"] = {
+
+};
+typeNames.interfaces["VmPoweringOnWithCustomizedDVPortEvent"] = {
+vnic: "VnicPortArgument"
+};
+typeNames.interfaces["VmPrimaryFailoverEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VmReconfiguredEvent"] = {
+configSpec: "VirtualMachineConfigSpec",
+        configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["VmRegisteredEvent"] = {
+
+};
+typeNames.interfaces["VmRelayoutSuccessfulEvent"] = {
+
+};
+typeNames.interfaces["VmRelayoutUpToDateEvent"] = {
+
+};
+typeNames.interfaces["VmReloadFromPathEvent"] = {
+configPath: "string"
+};
+typeNames.interfaces["VmReloadFromPathFailedEvent"] = {
+configPath: "string"
+};
+typeNames.interfaces["VmRelocateSpecEvent"] = {
+
+};
+typeNames.interfaces["VmRelocatedEvent"] = {
+sourceHost: "HostEventArgument",
+        sourceDatacenter: "DatacenterEventArgument",
+        sourceDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmRemoteConsoleConnectedEvent"] = {
+
+};
+typeNames.interfaces["VmRemoteConsoleDisconnectedEvent"] = {
+
+};
+typeNames.interfaces["VmRemovedEvent"] = {
+
+};
+typeNames.interfaces["VmRenamedEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["VmRequirementsExceedCurrentEVCModeEvent"] = {
+
+};
+typeNames.interfaces["VmResettingEvent"] = {
+
+};
+typeNames.interfaces["VmResourcePoolMovedEvent"] = {
+oldParent: "ResourcePoolEventArgument",
+        newParent: "ResourcePoolEventArgument"
+};
+typeNames.interfaces["VmResourceReallocatedEvent"] = {
+configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["VmRestartedOnAlternateHostEvent"] = {
+sourceHost: "HostEventArgument"
+};
+typeNames.interfaces["VmResumingEvent"] = {
+
+};
+typeNames.interfaces["VmSecondaryAddedEvent"] = {
+
+};
+typeNames.interfaces["VmSecondaryDisabledBySystemEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["VmSecondaryDisabledEvent"] = {
+
+};
+typeNames.interfaces["VmSecondaryEnabledEvent"] = {
+
+};
+typeNames.interfaces["VmSecondaryStartedEvent"] = {
+
+};
+typeNames.interfaces["VmShutdownOnIsolationEvent"] = {
+isolatedHost: "HostEventArgument",
+        shutdownResult: "string"
+};
+typeNames.interfaces["VmStartRecordingEvent"] = {
+
+};
+typeNames.interfaces["VmStartReplayingEvent"] = {
+
+};
+typeNames.interfaces["VmStartingEvent"] = {
+
+};
+typeNames.interfaces["VmStartingSecondaryEvent"] = {
+
+};
+typeNames.interfaces["VmStaticMacConflictEvent"] = {
+conflictedVm: "VmEventArgument",
+        mac: "string"
+};
+typeNames.interfaces["VmStoppingEvent"] = {
+
+};
+typeNames.interfaces["VmSuspendedEvent"] = {
+
+};
+typeNames.interfaces["VmSuspendingEvent"] = {
+
+};
+typeNames.interfaces["VmTimedoutStartingSecondaryEvent"] = {
+timeout: "number"
+};
+typeNames.interfaces["VmUnsupportedStartingEvent"] = {
+guestId: "string"
+};
+typeNames.interfaces["VmUpgradeCompleteEvent"] = {
+version: "string"
+};
+typeNames.interfaces["VmUpgradeFailedEvent"] = {
+
+};
+typeNames.interfaces["VmUpgradingEvent"] = {
+version: "string"
+};
+typeNames.interfaces["VmUuidAssignedEvent"] = {
+uuid: "string"
+};
+typeNames.interfaces["VmUuidChangedEvent"] = {
+oldUuid: "string",
+        newUuid: "string"
+};
+typeNames.interfaces["VmUuidConflictEvent"] = {
+conflictedVm: "VmEventArgument",
+        uuid: "string"
+};
+typeNames.interfaces["VmWwnAssignedEvent"] = {
+nodeWwns: "number",
+        portWwns: "number"
+};
+typeNames.interfaces["VmWwnChangedEvent"] = {
+oldNodeWwns: "number",
+        oldPortWwns: "number",
+        newNodeWwns: "number",
+        newPortWwns: "number"
+};
+typeNames.interfaces["VmWwnConflictEvent"] = {
+conflictedVms: "VmEventArgument",
+        conflictedHosts: "HostEventArgument",
+        wwn: "number"
+};
+typeNames.interfaces["VnicPortArgument"] = {
+vnic: "string",
+        port: "DistributedVirtualSwitchPortConnection"
+};
+typeNames.interfaces["WarningUpgradeEvent"] = {
+
+};
+typeNames.interfaces["IScsiBootFailureEvent"] = {
+
+};
+typeNames.interfaces["ExtExtendedProductInfo"] = {
+companyUrl: "string",
+        productUrl: "string",
+        managementUrl: "string",
+        self: ManagedEntity
+};
+typeNames.interfaces["ManagedByInfo"] = {
+extensionKey: "string",
+        type: "string"
+};
+typeNames.interfaces["ExtManagedEntityInfo"] = {
+type: "string",
+        smallIconUrl: "string",
+        iconUrl: "string",
+        description: "string"
+};
+typeNames.interfaces["ExtSolutionManagerInfo"] = {
+tab: "ExtSolutionManagerInfoTabInfo",
+        smallIconUrl: "string"
+};
+typeNames.interfaces["ExtSolutionManagerInfoTabInfo"] = {
+label: "string",
+        url: "string"
+};
+typeNames.interfaces["CannotDisableDrsOnClustersWithVApps"] = {
+
+};
+typeNames.interfaces["ConflictingDatastoreFound"] = {
+name: "string",
+        url: "string"
+};
+typeNames.interfaces["DatabaseError"] = {
+
+};
+typeNames.interfaces["DisallowedChangeByService"] = {
+serviceName: "string",
+        disallowedChange: "string"
+};
+typeNames.interfaces["DisallowedOperationOnFailoverHost"] = {
+host: HostSystem,
+        hostname: "string"
+};
+typeNames.interfaces["ExpiredFeatureLicense"] = {
+feature: "string",
+        count: "number",
+        expirationDate: "Date"
+};
+typeNames.interfaces["FailToLockFaultToleranceVMs"] = {
+vmName: "string",
+        vm: VirtualMachine,
+        alreadyLockedVm: VirtualMachine
+};
+typeNames.interfaces["HostAccessRestrictedToManagementServer"] = {
+managementServer: "string"
+};
+typeNames.interfaces["HostInventoryFull"] = {
+capacity: "number"
+};
+typeNames.interfaces["InUseFeatureManipulationDisallowed"] = {
+
+};
+typeNames.interfaces["IncompatibleSetting"] = {
+conflictingProperty: "string"
+};
+typeNames.interfaces["IncorrectHostInformation"] = {
+
+};
+typeNames.interfaces["InvalidDasConfigArgument"] = {
+entry: "string",
+        clusterName: "string"
+};
+typeNames.interfaces["InvalidDasRestartPriorityForFtVm"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["InvalidDrsBehaviorForFtVm"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["InvalidEditionLicense"] = {
+feature: "string"
+};
+typeNames.interfaces["InvalidIndexArgument"] = {
+key: "string"
+};
+typeNames.interfaces["InvalidProfileReferenceHost"] = {
+reason: "string",
+        host: HostSystem,
+        profile: Profile,
+        profileName: "string"
+};
+typeNames.interfaces["InventoryHasStandardAloneHosts"] = {
+hosts: "string"
+};
+typeNames.interfaces["LicenseAssignmentFailed"] = {
+reason: "string"
+};
+typeNames.interfaces["LicenseDowngradeDisallowed"] = {
+edition: "string",
+        entityId: "string",
+        features: "KeyAnyValue"
+};
+typeNames.interfaces["LicenseExpired"] = {
+licenseKey: "string"
+};
+typeNames.interfaces["LicenseKeyEntityMismatch"] = {
+
+};
+typeNames.interfaces["LicenseRestricted"] = {
+
+};
+typeNames.interfaces["LicenseSourceUnavailable"] = {
+licenseSource: "LicenseSource"
+};
+typeNames.interfaces["MethodAlreadyDisabledFault"] = {
+sourceId: "string"
+};
+typeNames.interfaces["MethodDisabled"] = {
+source: "string"
+};
+typeNames.interfaces["NoLicenseServerConfigured"] = {
+
+};
+typeNames.interfaces["NoPermission"] = {
+object: "ManagedObject",
+        privilegeId: "string"
+};
+typeNames.interfaces["NotAuthenticated"] = {
+
+};
+typeNames.interfaces["OperationDisallowedOnHost"] = {
+
+};
+typeNames.interfaces["RestrictedByAdministrator"] = {
+details: "string"
+};
+typeNames.interfaces["RestrictedVersion"] = {
+
+};
+typeNames.interfaces["SolutionUserRequired"] = {
+
+};
+typeNames.interfaces["ThirdPartyLicenseAssignmentFailed"] = {
+host: HostSystem,
+        module: "string",
+        reason: "string"
+};
+typeNames.interfaces["VAppOperationInProgress"] = {
+
+};
+typeNames.interfaces["VimFault"] = {
+
+};
+typeNames.interfaces["VmConfigFault"] = {
+
+};
+typeNames.interfaces["VmConfigIncompatibleForFaultTolerance"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["VmConfigIncompatibleForRecordReplay"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["VmFaultToleranceIssue"] = {
+
+};
+typeNames.interfaces["VmFaultToleranceOpIssuesList"] = {
+errors: "MethodFault",
+        warnings: "MethodFault"
+};
+typeNames.interfaces["VmHostAffinityRuleViolation"] = {
+vmName: "string",
+        hostName: "string"
+};
+typeNames.interfaces["VmLimitLicense"] = {
+limit: "number"
+};
+typeNames.interfaces["VmMetadataManagerFault"] = {
+
+};
+typeNames.interfaces["VmMonitorIncompatibleForFaultTolerance"] = {
+
+};
+typeNames.interfaces["VmToolsUpgradeFault"] = {
+
+};
+typeNames.interfaces["VmValidateMaxDevice"] = {
+device: "string",
+        max: "number",
+        count: "number"
+};
+typeNames.interfaces["VramLimitLicense"] = {
+limit: "number"
+};
+typeNames.interfaces["VsanFault"] = {
+
+};
+typeNames.interfaces["WipeDiskFault"] = {
+
+};
+typeNames.interfaces["HostActiveDirectory"] = {
+changeOperation: "string",
+        spec: "HostActiveDirectorySpec"
+};
+typeNames.interfaces["HostActiveDirectorySpec"] = {
+domainName: "string",
+        userName: "string",
+        password: "string",
+        camServer: "string",
+        thumbprint: "string",
+        smartCardAuthenticationEnabled: "boolean",
+        smartCardTrustAnchors: "string"
+};
+typeNames.interfaces["HostAssignableHardwareBinding"] = {
+instanceId: "string",
+        vm: VirtualMachine
+};
+typeNames.interfaces["HostAssignableHardwareConfig"] = {
+attributeOverride: "HostAssignableHardwareConfigAttributeOverride"
+};
+typeNames.interfaces["HostAssignableHardwareConfigAttributeOverride"] = {
+instanceId: "string",
+        name: "string",
+        value: "any"
+};
+typeNames.interfaces["HostAuthenticationManagerInfo"] = {
+authConfig: "HostAuthenticationStoreInfo"
+};
+typeNames.interfaces["HostAuthenticationStoreInfo"] = {
+enabled: "boolean"
+};
+typeNames.interfaces["AutoStartPowerInfo"] = {
+key: VirtualMachine,
+        startOrder: "number",
+        startDelay: "number",
+        waitForHeartbeat: "AutoStartWaitHeartbeatSetting",
+        startAction: "string",
+        stopDelay: "number",
+        stopAction: "string"
+};
+typeNames.interfaces["HostAutoStartManagerConfig"] = {
+defaults: "AutoStartDefaults",
+        powerInfo: "AutoStartPowerInfo"
+};
+typeNames.interfaces["AutoStartDefaults"] = {
+enabled: "boolean",
+        startDelay: "number",
+        stopDelay: "number",
+        waitForHeartbeat: "boolean",
+        stopAction: "string"
+};
+typeNames.interfaces["HostBIOSInfo"] = {
+biosVersion: "string",
+        releaseDate: "Date",
+        vendor: "string",
+        majorRelease: "number",
+        minorRelease: "number",
+        firmwareMajorRelease: "number",
+        firmwareMinorRelease: "number"
+};
+typeNames.interfaces["HostBootDevice"] = {
+key: "string",
+        description: "string"
+};
+typeNames.interfaces["HostCacheConfigurationInfo"] = {
+key: Datastore,
+        swapSize: "number"
+};
+typeNames.interfaces["HostCacheConfigurationSpec"] = {
+datastore: Datastore,
+        swapSize: "number"
+};
+typeNames.interfaces["HostCapability"] = {
+recursiveResourcePoolsSupported: "boolean",
+        cpuMemoryResourceConfigurationSupported: "boolean",
+        rebootSupported: "boolean",
+        shutdownSupported: "boolean",
+        vmotionSupported: "boolean",
+        standbySupported: "boolean",
+        ipmiSupported: "boolean",
+        maxSupportedVMs: "number",
+        maxRunningVMs: "number",
+        maxSupportedVcpus: "number",
+        maxRegisteredVMs: "number",
+        datastorePrincipalSupported: "boolean",
+        sanSupported: "boolean",
+        nfsSupported: "boolean",
+        iscsiSupported: "boolean",
+        vlanTaggingSupported: "boolean",
+        nicTeamingSupported: "boolean",
+        highGuestMemSupported: "boolean",
+        maintenanceModeSupported: "boolean",
+        suspendedRelocateSupported: "boolean",
+        restrictedSnapshotRelocateSupported: "boolean",
+        perVmSwapFiles: "boolean",
+        localSwapDatastoreSupported: "boolean",
+        unsharedSwapVMotionSupported: "boolean",
+        backgroundSnapshotsSupported: "boolean",
+        preAssignedPCIUnitNumbersSupported: "boolean",
+        screenshotSupported: "boolean",
+        scaledScreenshotSupported: "boolean",
+        storageVMotionSupported: "boolean",
+        vmotionWithStorageVMotionSupported: "boolean",
+        vmotionAcrossNetworkSupported: "boolean",
+        maxNumDisksSVMotion: "number",
+        hbrNicSelectionSupported: "boolean",
+        vrNfcNicSelectionSupported: "boolean",
+        recordReplaySupported: "boolean",
+        ftSupported: "boolean",
+        replayUnsupportedReason: "string",
+        replayCompatibilityIssues: "string",
+        smpFtSupported: "boolean",
+        ftCompatibilityIssues: "string",
+        smpFtCompatibilityIssues: "string",
+        maxVcpusPerFtVm: "number",
+        loginBySSLThumbprintSupported: "boolean",
+        cloneFromSnapshotSupported: "boolean",
+        deltaDiskBackingsSupported: "boolean",
+        perVMNetworkTrafficShapingSupported: "boolean",
+        tpmSupported: "boolean",
+        tpmVersion: "string",
+        txtEnabled: "boolean",
+        supportedCpuFeature: "HostCpuIdInfo",
+        virtualExecUsageSupported: "boolean",
+        storageIORMSupported: "boolean",
+        vmDirectPathGen2Supported: "boolean",
+        vmDirectPathGen2UnsupportedReason: "string",
+        vmDirectPathGen2UnsupportedReasonExtended: "string",
+        supportedVmfsMajorVersion: "number",
+        vStorageCapable: "boolean",
+        snapshotRelayoutSupported: "boolean",
+        firewallIpRulesSupported: "boolean",
+        servicePackageInfoSupported: "boolean",
+        maxHostRunningVms: "number",
+        maxHostSupportedVcpus: "number",
+        vmfsDatastoreMountCapable: "boolean",
+        eightPlusHostVmfsSharedAccessSupported: "boolean",
+        nestedHVSupported: "boolean",
+        vPMCSupported: "boolean",
+        interVMCommunicationThroughVMCISupported: "boolean",
+        scheduledHardwareUpgradeSupported: "boolean",
+        featureCapabilitiesSupported: "boolean",
+        latencySensitivitySupported: "boolean",
+        storagePolicySupported: "boolean",
+        accel3dSupported: "boolean",
+        reliableMemoryAware: "boolean",
+        multipleNetworkStackInstanceSupported: "boolean",
+        messageBusProxySupported: "boolean",
+        vsanSupported: "boolean",
+        vFlashSupported: "boolean",
+        hostAccessManagerSupported: "boolean",
+        provisioningNicSelectionSupported: "boolean",
+        nfs41Supported: "boolean",
+        nfs41Krb5iSupported: "boolean",
+        turnDiskLocatorLedSupported: "boolean",
+        virtualVolumeDatastoreSupported: "boolean",
+        markAsSsdSupported: "boolean",
+        markAsLocalSupported: "boolean",
+        smartCardAuthenticationSupported: "boolean",
+        pMemSupported: "boolean",
+        pMemSnapshotSupported: "boolean",
+        cryptoSupported: "boolean",
+        oneKVolumeAPIsSupported: "boolean",
+        gatewayOnNicSupported: "boolean",
+        upitSupported: "boolean",
+        cpuHwMmuSupported: "boolean",
+        encryptedVMotionSupported: "boolean",
+        encryptionChangeOnAddRemoveSupported: "boolean",
+        encryptionHotOperationSupported: "boolean",
+        encryptionWithSnapshotsSupported: "boolean",
+        encryptionFaultToleranceSupported: "boolean",
+        encryptionMemorySaveSupported: "boolean",
+        encryptionRDMSupported: "boolean",
+        encryptionVFlashSupported: "boolean",
+        encryptionCBRCSupported: "boolean",
+        encryptionHBRSupported: "boolean",
+        ftEfiSupported: "boolean",
+        unmapMethodSupported: "string",
+        maxMemMBPerFtVm: "number",
+        virtualMmuUsageIgnored: "boolean",
+        virtualExecUsageIgnored: "boolean",
+        vmCreateDateSupported: "boolean",
+        vmfs3EOLSupported: "boolean",
+        ftVmcpSupported: "boolean",
+        quickBootSupported: "boolean",
+        assignableHardwareSupported: "boolean",
+        useFeatureReqsForOldHWv: "boolean",
+        markPerenniallyReservedSupported: "boolean",
+        hppPspSupported: "boolean",
+        deviceRebindWithoutRebootSupported: "boolean",
+        storagePolicyChangeSupported: "boolean",
+        precisionTimeProtocolSupported: "boolean",
+        remoteDeviceVMotionSupported: "boolean",
+        maxSupportedVmMemory: "number"
+};
+typeNames.interfaces["HostCertificateManagerCertificateInfo"] = {
+issuer: "string",
+        notBefore: "Date",
+        notAfter: "Date",
+        subject: "string",
+        status: "string"
+};
+typeNames.interfaces["HostConfigChange"] = {
+
+};
+typeNames.interfaces["HostConfigManager"] = {
+cpuScheduler: HostCpuSchedulerSystem,
+        datastoreSystem: HostDatastoreSystem,
+        memoryManager: HostMemorySystem,
+        storageSystem: HostStorageSystem,
+        networkSystem: HostNetworkSystem,
+        vmotionSystem: HostVMotionSystem,
+        virtualNicManager: HostVirtualNicManager,
+        serviceSystem: HostServiceSystem,
+        firewallSystem: HostFirewallSystem,
+        advancedOption: OptionManager,
+        diagnosticSystem: HostDiagnosticSystem,
+        autoStartManager: HostAutoStartManager,
+        snmpSystem: HostSnmpSystem,
+        dateTimeSystem: HostDateTimeSystem,
+        patchManager: HostPatchManager,
+        imageConfigManager: HostImageConfigManager,
+        bootDeviceSystem: HostBootDeviceSystem,
+        firmwareSystem: HostFirmwareSystem,
+        healthStatusSystem: HostHealthStatusSystem,
+        pciPassthruSystem: HostPciPassthruSystem,
+        licenseManager: LicenseManager,
+        kernelModuleSystem: HostKernelModuleSystem,
+        authenticationManager: HostAuthenticationManager,
+        powerSystem: HostPowerSystem,
+        cacheConfigurationManager: HostCacheConfigurationManager,
+        esxAgentHostManager: HostEsxAgentHostManager,
+        iscsiManager: IscsiManager,
+        vFlashManager: HostVFlashManager,
+        vsanSystem: HostVsanSystem,
+        messageBusProxy: MessageBusProxy,
+        userDirectory: UserDirectory,
+        accountManager: HostLocalAccountManager,
+        hostAccessManager: HostAccessManager,
+        graphicsManager: HostGraphicsManager,
+        vsanInternalSystem: HostVsanInternalSystem,
+        certificateManager: HostCertificateManager,
+        cryptoManager: CryptoManager,
+        nvdimmSystem: HostNvdimmSystem,
+        assignableHardwareManager: HostAssignableHardwareManager
+};
+typeNames.interfaces["HostCpuIdInfo"] = {
+level: "number",
+        vendor: "string",
+        eax: "string",
+        ebx: "string",
+        ecx: "string",
+        edx: "string"
+};
+typeNames.interfaces["HostCpuInfo"] = {
+numCpuPackages: "number",
+        numCpuCores: "number",
+        numCpuThreads: "number",
+        hz: "number"
+};
+typeNames.interfaces["HostCpuPackage"] = {
+index: "number",
+        vendor: "string",
+        hz: "number",
+        busHz: "number",
+        description: "string",
+        threadId: "number",
+        cpuFeature: "HostCpuIdInfo"
+};
+typeNames.interfaces["HostCpuPowerManagementInfo"] = {
+currentPolicy: "string",
+        hardwareSupport: "string"
+};
+typeNames.interfaces["HostHyperThreadScheduleInfo"] = {
+available: "boolean",
+        active: "boolean",
+        config: "boolean"
+};
+typeNames.interfaces["FileInfo"] = {
+path: "string",
+        friendlyName: "string",
+        fileSize: "number",
+        modification: "Date",
+        owner: "string"
+};
+typeNames.interfaces["FileQueryFlags"] = {
+fileType: "boolean",
+        fileSize: "boolean",
+        modification: "boolean",
+        fileOwner: "boolean"
+};
+typeNames.interfaces["FloppyImageFileInfo"] = {
+
+};
+typeNames.interfaces["FloppyImageFileQuery"] = {
+
+};
+typeNames.interfaces["FolderFileInfo"] = {
+
+};
+typeNames.interfaces["FolderFileQuery"] = {
+
+};
+typeNames.interfaces["IsoImageFileInfo"] = {
+
+};
+typeNames.interfaces["IsoImageFileQuery"] = {
+
+};
+typeNames.interfaces["FileQuery"] = {
+
+};
+typeNames.interfaces["HostDatastoreBrowserSearchResults"] = {
+datastore: Datastore,
+        folderPath: "string",
+        file: "FileInfo"
+};
+typeNames.interfaces["HostDatastoreBrowserSearchSpec"] = {
+query: "FileQuery",
+        details: "FileQueryFlags",
+        searchCaseInsensitive: "boolean",
+        matchPattern: "string",
+        sortFoldersFirst: "boolean"
+};
+typeNames.interfaces["TemplateConfigFileInfo"] = {
+
+};
+typeNames.interfaces["TemplateConfigFileQuery"] = {
+
+};
+typeNames.interfaces["VmConfigFileInfo"] = {
+configVersion: "number",
+        encryption: "VmConfigFileEncryptionInfo"
+};
+typeNames.interfaces["VmConfigFileEncryptionInfo"] = {
+keyId: "CryptoKeyId"
+};
+typeNames.interfaces["VmConfigFileQuery"] = {
+filter: "VmConfigFileQueryFilter",
+        details: "VmConfigFileQueryFlags"
+};
+typeNames.interfaces["VmConfigFileQueryFlags"] = {
+configVersion: "boolean",
+        encryption: "boolean"
+};
+typeNames.interfaces["VmConfigFileQueryFilter"] = {
+matchConfigVersion: "number",
+        encrypted: "boolean"
+};
+typeNames.interfaces["VmDiskFileInfo"] = {
+diskType: "string",
+        capacityKb: "number",
+        hardwareVersion: "number",
+        controllerType: "string",
+        diskExtents: "string",
+        thin: "boolean",
+        encryption: "VmDiskFileEncryptionInfo"
+};
+typeNames.interfaces["VmDiskFileEncryptionInfo"] = {
+keyId: "CryptoKeyId"
+};
+typeNames.interfaces["VmDiskFileQuery"] = {
+filter: "VmDiskFileQueryFilter",
+        details: "VmDiskFileQueryFlags"
+};
+typeNames.interfaces["VmDiskFileQueryFlags"] = {
+diskType: "boolean",
+        capacityKb: "boolean",
+        hardwareVersion: "boolean",
+        controllerType: "boolean",
+        diskExtents: "boolean",
+        thin: "boolean",
+        encryption: "boolean"
+};
+typeNames.interfaces["VmDiskFileQueryFilter"] = {
+diskType: "string",
+        matchHardwareVersion: "number",
+        controllerType: "string",
+        thin: "boolean",
+        encrypted: "boolean"
+};
+typeNames.interfaces["VmLogFileInfo"] = {
+
+};
+typeNames.interfaces["VmLogFileQuery"] = {
+
+};
+typeNames.interfaces["VmNvramFileInfo"] = {
+
+};
+typeNames.interfaces["VmNvramFileQuery"] = {
+
+};
+typeNames.interfaces["VmSnapshotFileInfo"] = {
+
+};
+typeNames.interfaces["VmSnapshotFileQuery"] = {
+
+};
+typeNames.interfaces["HostDateTimeConfig"] = {
+timeZone: "string",
+        ntpConfig: "HostNtpConfig"
+};
+typeNames.interfaces["HostDateTimeSystemTimeZone"] = {
+key: "string",
+        name: "string",
+        description: "string",
+        gmtOffset: "number"
+};
+typeNames.interfaces["HostDeploymentInfo"] = {
+bootedFromStatelessCache: "boolean"
+};
+typeNames.interfaces["HostDevice"] = {
+deviceName: "string",
+        deviceType: "string"
+};
+typeNames.interfaces["HostDhcpService"] = {
+key: "string",
+        spec: "HostDhcpServiceSpec"
+};
+typeNames.interfaces["HostDhcpServiceConfig"] = {
+changeOperation: "string",
+        key: "string",
+        spec: "HostDhcpServiceSpec"
+};
+typeNames.interfaces["HostDhcpServiceSpec"] = {
+virtualSwitch: "string",
+        defaultLeaseDuration: "number",
+        leaseBeginIp: "string",
+        leaseEndIp: "string",
+        maxLeaseDuration: "number",
+        unlimitedLease: "boolean",
+        ipSubnetAddr: "string",
+        ipSubnetMask: "string"
+};
+typeNames.interfaces["HostDigestInfo"] = {
+digestMethod: "string",
+        digestValue: "number",
+        objectName: "string"
+};
+typeNames.interfaces["HostDirectoryStoreInfo"] = {
+
+};
+typeNames.interfaces["HostDiskConfigurationResult"] = {
+devicePath: "string",
+        success: "boolean",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostDiskDimensions"] = {
+
+};
+typeNames.interfaces["HostDiskDimensionsChs"] = {
+cylinder: "number",
+        head: "number",
+        sector: "number"
+};
+typeNames.interfaces["HostDiskDimensionsLba"] = {
+blockSize: "number",
+        block: "number"
+};
+typeNames.interfaces["HostDiskPartitionInfo"] = {
+deviceName: "string",
+        spec: "HostDiskPartitionSpec",
+        layout: "HostDiskPartitionLayout"
+};
+typeNames.interfaces["HostDiskPartitionBlockRange"] = {
+partition: "number",
+        type: "string",
+        start: "HostDiskDimensionsLba",
+        end: "HostDiskDimensionsLba"
+};
+typeNames.interfaces["HostDiskPartitionLayout"] = {
+total: "HostDiskDimensionsLba",
+        partition: "HostDiskPartitionBlockRange"
+};
+typeNames.interfaces["HostDiskPartitionAttributes"] = {
+partition: "number",
+        startSector: "number",
+        endSector: "number",
+        type: "string",
+        guid: "string",
+        logical: "boolean",
+        attributes: "number",
+        partitionAlignment: "number"
+};
+typeNames.interfaces["HostDiskPartitionSpec"] = {
+partitionFormat: "string",
+        chs: "HostDiskDimensionsChs",
+        totalSectors: "number",
+        partition: "HostDiskPartitionAttributes"
+};
+typeNames.interfaces["HostDnsConfig"] = {
+dhcp: "boolean",
+        virtualNicDevice: "string",
+        ipv6VirtualNicDevice: "string",
+        hostName: "string",
+        domainName: "string",
+        address: "string",
+        searchDomain: "string"
+};
+typeNames.interfaces["HostDnsConfigSpec"] = {
+virtualNicConnection: "HostVirtualNicConnection",
+        virtualNicConnectionV6: "HostVirtualNicConnection"
+};
+typeNames.interfaces["HostEnterMaintenanceResult"] = {
+vmFaults: "FaultsByVM",
+        hostFaults: "FaultsByHost"
+};
+typeNames.interfaces["HostEsxAgentHostManagerConfigInfo"] = {
+agentVmDatastore: Datastore,
+        agentVmNetwork: Network
+};
+typeNames.interfaces["HostFaultToleranceManagerComponentHealthInfo"] = {
+isStorageHealthy: "boolean",
+        isNetworkHealthy: "boolean"
+};
+typeNames.interfaces["FcoeConfig"] = {
+priorityClass: "number",
+        sourceMac: "string",
+        vlanRange: "FcoeConfigVlanRange",
+        capabilities: "FcoeConfigFcoeCapabilities",
+        fcoeActive: "boolean"
+};
+typeNames.interfaces["FcoeConfigFcoeCapabilities"] = {
+priorityClass: "boolean",
+        sourceMacAddress: "boolean",
+        vlanRange: "boolean"
+};
+typeNames.interfaces["FcoeConfigFcoeSpecification"] = {
+underlyingPnic: "string",
+        priorityClass: "number",
+        sourceMac: "string",
+        vlanRange: "FcoeConfigVlanRange"
+};
+typeNames.interfaces["FcoeConfigVlanRange"] = {
+vlanLow: "number",
+        vlanHigh: "number"
+};
+typeNames.interfaces["HostFeatureCapability"] = {
+key: "string",
+        featureName: "string",
+        value: "string"
+};
+typeNames.interfaces["HostFeatureMask"] = {
+key: "string",
+        featureName: "string",
+        value: "string"
+};
+typeNames.interfaces["HostFeatureVersionInfo"] = {
+key: "string",
+        value: "string"
+};
+typeNames.interfaces["HostFileAccess"] = {
+who: "string",
+        what: "string"
+};
+typeNames.interfaces["ModeInfo"] = {
+browse: "string",
+        read: "string",
+        modify: "string",
+        use: "string",
+        admin: "string",
+        full: "string"
+};
+typeNames.interfaces["HostFileSystemMountInfo"] = {
+mountInfo: "HostMountInfo",
+        volume: "HostFileSystemVolume",
+        vStorageSupport: "string"
+};
+typeNames.interfaces["HostFileSystemVolume"] = {
+type: "string",
+        name: "string",
+        capacity: "number"
+};
+typeNames.interfaces["HostFileSystemVolumeInfo"] = {
+volumeTypeList: "string",
+        mountInfo: "HostFileSystemMountInfo"
+};
+typeNames.interfaces["HostFirewallInfo"] = {
+defaultPolicy: "HostFirewallDefaultPolicy",
+        ruleset: "HostFirewallRuleset"
+};
+typeNames.interfaces["HostFirewallDefaultPolicy"] = {
+incomingBlocked: "boolean",
+        outgoingBlocked: "boolean"
+};
+typeNames.interfaces["HostFlagInfo"] = {
+backgroundSnapshotsEnabled: "boolean"
+};
+typeNames.interfaces["HostForceMountedInfo"] = {
+persist: "boolean",
+        mounted: "boolean"
+};
+typeNames.interfaces["HostGatewaySpec"] = {
+gatewayType: "string",
+        gatewayId: "string",
+        trustVerificationToken: "string",
+        hostAuthParams: "KeyValue"
+};
+typeNames.interfaces["HostGraphicsConfig"] = {
+hostDefaultGraphicsType: "string",
+        sharedPassthruAssignmentPolicy: "string",
+        deviceType: "HostGraphicsConfigDeviceType"
+};
+typeNames.interfaces["HostGraphicsConfigDeviceType"] = {
+deviceId: "string",
+        graphicsType: "string"
+};
+typeNames.interfaces["HostGraphicsInfo"] = {
+deviceName: "string",
+        vendorName: "string",
+        pciId: "string",
+        graphicsType: "string",
+        memorySizeInKB: "number",
+        vm: VirtualMachine
+};
+typeNames.interfaces["HostHardwareInfo"] = {
+systemInfo: "HostSystemInfo",
+        cpuPowerManagementInfo: "HostCpuPowerManagementInfo",
+        cpuInfo: "HostCpuInfo",
+        cpuPkg: "HostCpuPackage",
+        memorySize: "number",
+        numaInfo: "HostNumaInfo",
+        smcPresent: "boolean",
+        pciDevice: "HostPciDevice",
+        cpuFeature: "HostCpuIdInfo",
+        biosInfo: "HostBIOSInfo",
+        reliableMemoryInfo: "HostReliableMemoryInfo",
+        persistentMemoryInfo: "HostPersistentMemoryInfo",
+        sgxInfo: "HostSgxInfo",
+        sevInfo: "HostSevInfo"
+};
+typeNames.interfaces["HostHardwareStatusInfo"] = {
+memoryStatusInfo: "HostHardwareElementInfo",
+        cpuStatusInfo: "HostHardwareElementInfo",
+        storageStatusInfo: "HostStorageElementInfo"
+};
+typeNames.interfaces["HostHardwareElementInfo"] = {
+name: "string",
+        status: "ElementDescription"
+};
+typeNames.interfaces["HostStorageElementInfo"] = {
+operationalInfo: "HostStorageOperationalInfo"
+};
+typeNames.interfaces["HostStorageOperationalInfo"] = {
+property: "string",
+        value: "string"
+};
+typeNames.interfaces["HealthSystemRuntime"] = {
+systemHealthInfo: "HostSystemHealthInfo",
+        hardwareStatusInfo: "HostHardwareStatusInfo"
+};
+typeNames.interfaces["HostAccessControlEntry"] = {
+principal: "string",
+        group: "boolean",
+        accessMode: "HostAccessMode"
+};
+typeNames.interfaces["HostHostBusAdapter"] = {
+key: "string",
+        device: "string",
+        bus: "number",
+        status: "string",
+        model: "string",
+        driver: "string",
+        pci: "string",
+        storageProtocol: "string"
+};
+typeNames.interfaces["HostProxySwitch"] = {
+dvsUuid: "string",
+        dvsName: "string",
+        key: "string",
+        numPorts: "number",
+        configNumPorts: "number",
+        numPortsAvailable: "number",
+        uplinkPort: "KeyValue",
+        mtu: "number",
+        pnic: "PhysicalNic",
+        spec: "HostProxySwitchSpec",
+        hostLag: "HostProxySwitchHostLagConfig",
+        networkReservationSupported: "boolean",
+        nsxtEnabled: "boolean",
+        ensEnabled: "boolean",
+        ensInterruptEnabled: "boolean",
+        transportZones: "DistributedVirtualSwitchHostMemberTransportZoneInfo",
+        nsxUsedUplinkPort: "string",
+        nsxtStatus: "string",
+        nsxtStatusDetail: "string"
+};
+typeNames.interfaces["HostProxySwitchConfig"] = {
+changeOperation: "string",
+        uuid: "string",
+        spec: "HostProxySwitchSpec"
+};
+typeNames.interfaces["HostProxySwitchHostLagConfig"] = {
+lagKey: "string",
+        lagName: "string",
+        uplinkPort: "KeyValue"
+};
+typeNames.interfaces["HostProxySwitchSpec"] = {
+backing: "DistributedVirtualSwitchHostMemberBacking"
+};
+typeNames.interfaces["HostImageProfileSummary"] = {
+name: "string",
+        vendor: "string"
+};
+typeNames.interfaces["HostIpConfig"] = {
+dhcp: "boolean",
+        ipAddress: "string",
+        subnetMask: "string",
+        ipV6Config: "HostIpConfigIpV6AddressConfiguration"
+};
+typeNames.interfaces["HostIpConfigIpV6Address"] = {
+ipAddress: "string",
+        prefixLength: "number",
+        origin: "string",
+        dadState: "string",
+        lifetime: "Date",
+        operation: "string"
+};
+typeNames.interfaces["HostIpConfigIpV6AddressConfiguration"] = {
+ipV6Address: "HostIpConfigIpV6Address",
+        autoConfigurationEnabled: "boolean",
+        dhcpV6Enabled: "boolean"
+};
+typeNames.interfaces["HostIpRouteConfig"] = {
+defaultGateway: "string",
+        gatewayDevice: "string",
+        ipV6DefaultGateway: "string",
+        ipV6GatewayDevice: "string"
+};
+typeNames.interfaces["HostIpRouteConfigSpec"] = {
+gatewayDeviceConnection: "HostVirtualNicConnection",
+        ipV6GatewayDeviceConnection: "HostVirtualNicConnection"
+};
+typeNames.interfaces["HostIpRouteEntry"] = {
+network: "string",
+        prefixLength: "number",
+        gateway: "string",
+        deviceName: "string"
+};
+typeNames.interfaces["HostIpRouteOp"] = {
+changeOperation: "string",
+        route: "HostIpRouteEntry"
+};
+typeNames.interfaces["HostIpRouteTableConfig"] = {
+ipRoute: "HostIpRouteOp",
+        ipv6Route: "HostIpRouteOp"
+};
+typeNames.interfaces["HostIpRouteTableInfo"] = {
+ipRoute: "HostIpRouteEntry",
+        ipv6Route: "HostIpRouteEntry"
+};
+typeNames.interfaces["HostIpmiInfo"] = {
+bmcIpAddress: "string",
+        bmcMacAddress: "string",
+        login: "string",
+        password: "string"
+};
+typeNames.interfaces["IscsiDependencyEntity"] = {
+pnicDevice: "string",
+        vnicDevice: "string",
+        vmhbaName: "string"
+};
+typeNames.interfaces["IscsiMigrationDependency"] = {
+migrationAllowed: "boolean",
+        disallowReason: "IscsiStatus",
+        dependency: "IscsiDependencyEntity"
+};
+typeNames.interfaces["IscsiPortInfo"] = {
+vnicDevice: "string",
+        vnic: "HostVirtualNic",
+        pnicDevice: "string",
+        pnic: "PhysicalNic",
+        switchName: "string",
+        switchUuid: "string",
+        portgroupName: "string",
+        portgroupKey: "string",
+        portKey: "string",
+        opaqueNetworkId: "string",
+        opaqueNetworkType: "string",
+        opaqueNetworkName: "string",
+        externalId: "string",
+        complianceStatus: "IscsiStatus",
+        pathStatus: "string"
+};
+typeNames.interfaces["IscsiStatus"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["KernelModuleInfo"] = {
+id: "number",
+        name: "string",
+        version: "string",
+        filename: "string",
+        optionString: "string",
+        loaded: "boolean",
+        enabled: "boolean",
+        useCount: "number",
+        readOnlySection: "KernelModuleSectionInfo",
+        writableSection: "KernelModuleSectionInfo",
+        textSection: "KernelModuleSectionInfo",
+        dataSection: "KernelModuleSectionInfo",
+        bssSection: "KernelModuleSectionInfo"
+};
+typeNames.interfaces["KernelModuleSectionInfo"] = {
+address: "number",
+        length: "number"
+};
+typeNames.interfaces["HostLicenseSpec"] = {
+source: "LicenseSource",
+        editionKey: "string",
+        disabledFeatureKey: "string",
+        enabledFeatureKey: "string"
+};
+typeNames.interfaces["LinkDiscoveryProtocolConfig"] = {
+protocol: "string",
+        operation: "string"
+};
+typeNames.interfaces["HostAccountSpec"] = {
+id: "string",
+        password: "string",
+        description: "string"
+};
+typeNames.interfaces["HostPosixAccountSpec"] = {
+posixId: "number",
+        shellAccess: "boolean"
+};
+typeNames.interfaces["HostLocalAuthenticationInfo"] = {
+
+};
+typeNames.interfaces["HostLocalFileSystemVolume"] = {
+device: "string"
+};
+typeNames.interfaces["HostLocalFileSystemVolumeSpec"] = {
+device: "string",
+        localPath: "string"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerDiskLayoutSpec"] = {
+controllerType: "string",
+        busNumber: "number",
+        unitNumber: "number",
+        srcFilename: "string",
+        dstFilename: "string"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerFileDeleteResult"] = {
+fileName: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerFileDeleteSpec"] = {
+fileName: "string",
+        fileType: "string"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerFileReserveResult"] = {
+baseName: "string",
+        parentDir: "string",
+        reservedName: "string"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerFileReserveSpec"] = {
+baseName: "string",
+        parentDir: "string",
+        fileType: "string",
+        storageProfile: "string"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerSnapshotLayoutSpec"] = {
+id: "number",
+        srcFilename: "string",
+        dstFilename: "string",
+        disk: "HostLowLevelProvisioningManagerDiskLayoutSpec"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerVmMigrationStatus"] = {
+migrationId: "number",
+        type: "string",
+        source: "boolean",
+        consideredSuccessful: "boolean"
+};
+typeNames.interfaces["HostLowLevelProvisioningManagerVmRecoveryInfo"] = {
+version: "string",
+        biosUUID: "string",
+        instanceUUID: "string",
+        ftInfo: "FaultToleranceConfigInfo"
+};
+typeNames.interfaces["HostMaintenanceSpec"] = {
+vsanMode: "VsanHostDecommissionMode",
+        purpose: "string"
+};
+typeNames.interfaces["ServiceConsoleReservationInfo"] = {
+serviceConsoleReservedCfg: "number",
+        serviceConsoleReserved: "number",
+        unreserved: "number"
+};
+typeNames.interfaces["VirtualMachineMemoryReservationInfo"] = {
+virtualMachineMin: "number",
+        virtualMachineMax: "number",
+        virtualMachineReserved: "number",
+        allocationPolicy: "string"
+};
+typeNames.interfaces["VirtualMachineMemoryReservationSpec"] = {
+virtualMachineReserved: "number",
+        allocationPolicy: "string"
+};
+typeNames.interfaces["HostMemorySpec"] = {
+serviceConsoleReservation: "number"
+};
+typeNames.interfaces["HostMountInfo"] = {
+path: "string",
+        accessMode: "string",
+        mounted: "boolean",
+        accessible: "boolean",
+        inaccessibleReason: "string"
+};
+typeNames.interfaces["HostMultipathInfo"] = {
+lun: "HostMultipathInfoLogicalUnit"
+};
+typeNames.interfaces["HostMultipathInfoFixedLogicalUnitPolicy"] = {
+prefer: "string"
+};
+typeNames.interfaces["HostMultipathInfoHppLogicalUnitPolicy"] = {
+bytes: "number",
+        iops: "number",
+        path: "string",
+        latencyEvalTime: "number",
+        samplingIosPerPath: "number"
+};
+typeNames.interfaces["HostMultipathInfoLogicalUnit"] = {
+key: "string",
+        id: "string",
+        lun: "ScsiLun",
+        path: "HostMultipathInfoPath",
+        policy: "HostMultipathInfoLogicalUnitPolicy",
+        storageArrayTypePolicy: "HostMultipathInfoLogicalUnitStorageArrayTypePolicy"
+};
+typeNames.interfaces["HostMultipathInfoLogicalUnitPolicy"] = {
+policy: "string"
+};
+typeNames.interfaces["HostMultipathInfoLogicalUnitStorageArrayTypePolicy"] = {
+policy: "string"
+};
+typeNames.interfaces["HostMultipathInfoPath"] = {
+key: "string",
+        name: "string",
+        pathState: "string",
+        state: "string",
+        isWorkingPath: "boolean",
+        adapter: "HostHostBusAdapter",
+        lun: "HostMultipathInfoLogicalUnit",
+        transport: "HostTargetTransport"
+};
+typeNames.interfaces["HostMultipathStateInfo"] = {
+path: "HostMultipathStateInfoPath"
+};
+typeNames.interfaces["HostMultipathStateInfoPath"] = {
+name: "string",
+        pathState: "string"
+};
+typeNames.interfaces["HostNasVolume"] = {
+remoteHost: "string",
+        remotePath: "string",
+        userName: "string",
+        remoteHostNames: "string",
+        securityType: "string",
+        protocolEndpoint: "boolean"
+};
+typeNames.interfaces["HostNasVolumeConfig"] = {
+changeOperation: "string",
+        spec: "HostNasVolumeSpec"
+};
+typeNames.interfaces["HostNasVolumeSpec"] = {
+remoteHost: "string",
+        remotePath: "string",
+        localPath: "string",
+        accessMode: "string",
+        type: "string",
+        userName: "string",
+        password: "string",
+        remoteHostNames: "string",
+        securityType: "string"
+};
+typeNames.interfaces["HostNasVolumeUserInfo"] = {
+user: "string"
+};
+typeNames.interfaces["HostNatService"] = {
+key: "string",
+        spec: "HostNatServiceSpec"
+};
+typeNames.interfaces["HostNatServiceConfig"] = {
+changeOperation: "string",
+        key: "string",
+        spec: "HostNatServiceSpec"
+};
+typeNames.interfaces["HostNatServiceNameServiceSpec"] = {
+dnsAutoDetect: "boolean",
+        dnsPolicy: "string",
+        dnsRetries: "number",
+        dnsTimeout: "number",
+        dnsNameServer: "string",
+        nbdsTimeout: "number",
+        nbnsRetries: "number",
+        nbnsTimeout: "number"
+};
+typeNames.interfaces["HostNatServicePortForwardSpec"] = {
+type: "string",
+        name: "string",
+        hostPort: "number",
+        guestPort: "number",
+        guestIpAddress: "string"
+};
+typeNames.interfaces["HostNatServiceSpec"] = {
+virtualSwitch: "string",
+        activeFtp: "boolean",
+        allowAnyOui: "boolean",
+        configPort: "boolean",
+        ipGatewayAddress: "string",
+        udpTimeout: "number",
+        portForward: "HostNatServicePortForwardSpec",
+        nameService: "HostNatServiceNameServiceSpec"
+};
+typeNames.interfaces["HostNetCapabilities"] = {
+canSetPhysicalNicLinkSpeed: "boolean",
+        supportsNicTeaming: "boolean",
+        nicTeamingPolicy: "string",
+        supportsVlan: "boolean",
+        usesServiceConsoleNic: "boolean",
+        supportsNetworkHints: "boolean",
+        maxPortGroupsPerVswitch: "number",
+        vswitchConfigSupported: "boolean",
+        vnicConfigSupported: "boolean",
+        ipRouteConfigSupported: "boolean",
+        dnsConfigSupported: "boolean",
+        dhcpOnVnicSupported: "boolean",
+        ipV6Supported: "boolean",
+        backupNfcNiocSupported: "boolean"
+};
+typeNames.interfaces["HostNetOffloadCapabilities"] = {
+csumOffload: "boolean",
+        tcpSegmentation: "boolean",
+        zeroCopyXmit: "boolean"
+};
+typeNames.interfaces["HostNetStackInstance"] = {
+key: "string",
+        name: "string",
+        dnsConfig: "HostDnsConfig",
+        ipRouteConfig: "HostIpRouteConfig",
+        requestedMaxNumberOfConnections: "number",
+        congestionControlAlgorithm: "string",
+        ipV6Enabled: "boolean",
+        routeTableConfig: "HostIpRouteTableConfig"
+};
+typeNames.interfaces["HostNetworkInfo"] = {
+vswitch: "HostVirtualSwitch",
+        proxySwitch: "HostProxySwitch",
+        portgroup: "HostPortGroup",
+        pnic: "PhysicalNic",
+        rdmaDevice: "HostRdmaDevice",
+        vnic: "HostVirtualNic",
+        consoleVnic: "HostVirtualNic",
+        dnsConfig: "HostDnsConfig",
+        ipRouteConfig: "HostIpRouteConfig",
+        consoleIpRouteConfig: "HostIpRouteConfig",
+        routeTableInfo: "HostIpRouteTableInfo",
+        dhcp: "HostDhcpService",
+        nat: "HostNatService",
+        ipV6Enabled: "boolean",
+        atBootIpV6Enabled: "boolean",
+        netStackInstance: "HostNetStackInstance",
+        opaqueSwitch: "HostOpaqueSwitch",
+        opaqueNetwork: "HostOpaqueNetworkInfo",
+        nsxTransportNodeId: "string"
+};
+typeNames.interfaces["HostNetworkPolicy"] = {
+security: "HostNetworkSecurityPolicy",
+        nicTeaming: "HostNicTeamingPolicy",
+        offloadPolicy: "HostNetOffloadCapabilities",
+        shapingPolicy: "HostNetworkTrafficShapingPolicy"
+};
+typeNames.interfaces["HostNicFailureCriteria"] = {
+checkSpeed: "string",
+        speed: "number",
+        checkDuplex: "boolean",
+        fullDuplex: "boolean",
+        checkErrorPercent: "boolean",
+        percentage: "number",
+        checkBeacon: "boolean"
+};
+typeNames.interfaces["HostNicOrderPolicy"] = {
+activeNic: "string",
+        standbyNic: "string"
+};
+typeNames.interfaces["HostNicTeamingPolicy"] = {
+policy: "string",
+        reversePolicy: "boolean",
+        notifySwitches: "boolean",
+        rollingOrder: "boolean",
+        failureCriteria: "HostNicFailureCriteria",
+        nicOrder: "HostNicOrderPolicy"
+};
+typeNames.interfaces["HostNetworkSecurityPolicy"] = {
+allowPromiscuous: "boolean",
+        macChanges: "boolean",
+        forgedTransmits: "boolean"
+};
+typeNames.interfaces["HostNetworkTrafficShapingPolicy"] = {
+enabled: "boolean",
+        averageBandwidth: "number",
+        peakBandwidth: "number",
+        burstSize: "number"
+};
+typeNames.interfaces["HostNtpConfig"] = {
+server: "string",
+        configFile: "string"
+};
+typeNames.interfaces["HostNumaInfo"] = {
+type: "string",
+        numNodes: "number",
+        numaNode: "HostNumaNode"
+};
+typeNames.interfaces["HostNumaNode"] = {
+typeId: "number",
+        cpuID: "number",
+        memoryRangeBegin: "number",
+        memoryRangeLength: "number",
+        pciId: "string"
+};
+typeNames.interfaces["HostNumericSensorInfo"] = {
+name: "string",
+        healthState: "ElementDescription",
+        currentReading: "number",
+        unitModifier: "number",
+        baseUnits: "string",
+        rateUnits: "string",
+        sensorType: "string",
+        id: "string",
+        timeStamp: "string"
+};
+typeNames.interfaces["NvdimmDimmInfo"] = {
+dimmHandle: "number",
+        healthInfo: "NvdimmHealthInfo",
+        totalCapacity: "number",
+        persistentCapacity: "number",
+        availablePersistentCapacity: "number",
+        volatileCapacity: "number",
+        availableVolatileCapacity: "number",
+        blockCapacity: "number",
+        regionInfo: "NvdimmRegionInfo",
+        representationString: "string"
+};
+typeNames.interfaces["NvdimmGuid"] = {
+uuid: "string"
+};
+typeNames.interfaces["NvdimmHealthInfo"] = {
+healthStatus: "string",
+        healthInformation: "string",
+        stateFlagInfo: "string",
+        dimmTemperature: "number",
+        dimmTemperatureThreshold: "number",
+        spareBlocksPercentage: "number",
+        spareBlockThreshold: "number",
+        dimmLifespanPercentage: "number",
+        esTemperature: "number",
+        esTemperatureThreshold: "number",
+        esLifespanPercentage: "number"
+};
+typeNames.interfaces["NvdimmInterleaveSetInfo"] = {
+setId: "number",
+        rangeType: "string",
+        baseAddress: "number",
+        size: "number",
+        availableSize: "number",
+        deviceList: "number",
+        state: "string"
+};
+typeNames.interfaces["NvdimmNamespaceCreateSpec"] = {
+friendlyName: "string",
+        blockSize: "number",
+        blockCount: "number",
+        type: "string",
+        locationID: "number"
+};
+typeNames.interfaces["NvdimmNamespaceDeleteSpec"] = {
+uuid: "string"
+};
+typeNames.interfaces["NvdimmNamespaceDetails"] = {
+uuid: "string",
+        friendlyName: "string",
+        size: "number",
+        type: "string",
+        namespaceHealthStatus: "string",
+        interleavesetID: "number",
+        state: "string"
+};
+typeNames.interfaces["NvdimmNamespaceInfo"] = {
+uuid: "string",
+        friendlyName: "string",
+        blockSize: "number",
+        blockCount: "number",
+        type: "string",
+        namespaceHealthStatus: "string",
+        locationID: "number",
+        state: "string"
+};
+typeNames.interfaces["NvdimmSystemInfo"] = {
+summary: "NvdimmSummary",
+        dimms: "number",
+        dimmInfo: "NvdimmDimmInfo",
+        interleaveSet: "number",
+        iSetInfo: "NvdimmInterleaveSetInfo",
+        namespace: "NvdimmGuid",
+        nsInfo: "NvdimmNamespaceInfo",
+        nsDetails: "NvdimmNamespaceDetails"
+};
+typeNames.interfaces["NvdimmPMemNamespaceCreateSpec"] = {
+friendlyName: "string",
+        size: "number",
+        interleavesetID: "number"
+};
+typeNames.interfaces["NvdimmRegionInfo"] = {
+regionId: "number",
+        setId: "number",
+        rangeType: "string",
+        startAddr: "number",
+        size: "number",
+        offset: "number"
+};
+typeNames.interfaces["NvdimmSummary"] = {
+numDimms: "number",
+        healthStatus: "string",
+        totalCapacity: "number",
+        persistentCapacity: "number",
+        blockCapacity: "number",
+        availableCapacity: "number",
+        numInterleavesets: "number",
+        numNamespaces: "number"
+};
+typeNames.interfaces["HostNvmeController"] = {
+key: "string",
+        controllerNumber: "number",
+        subnqn: "string",
+        name: "string",
+        associatedAdapter: "HostHostBusAdapter",
+        transportType: "string",
+        fusedOperationSupported: "boolean",
+        numberOfQueues: "number",
+        queueSize: "number",
+        attachedNamespace: "HostNvmeNamespace",
+        vendorId: "string",
+        model: "string",
+        serialNumber: "string",
+        firmwareVersion: "string"
+};
+typeNames.interfaces["HostNvmeDisconnectSpec"] = {
+hbaName: "string",
+        subnqn: "string",
+        controllerNumber: "number"
+};
+typeNames.interfaces["HostNvmeDiscoveryLog"] = {
+entry: "HostNvmeDiscoveryLogEntry",
+        complete: "boolean"
+};
+typeNames.interfaces["HostNvmeDiscoveryLogEntry"] = {
+subnqn: "string",
+        subsystemType: "string",
+        subsystemPortId: "number",
+        controllerId: "number",
+        adminQueueMaxSize: "number",
+        transportParameters: "HostNvmeTransportParameters",
+        transportRequirements: "string",
+        connected: "boolean"
+};
+typeNames.interfaces["HostNvmeNamespace"] = {
+key: "string",
+        name: "string",
+        id: "number",
+        blockSize: "number",
+        capacityInBlocks: "number"
+};
+typeNames.interfaces["HostNvmeSpec"] = {
+hbaName: "string",
+        transportParameters: "HostNvmeTransportParameters"
+};
+typeNames.interfaces["HostNvmeTopology"] = {
+adapter: "HostNvmeTopologyInterface"
+};
+typeNames.interfaces["HostNvmeTopologyInterface"] = {
+key: "string",
+        adapter: "HostHostBusAdapter",
+        connectedController: "HostNvmeController"
+};
+typeNames.interfaces["HostNvmeTransportParameters"] = {
+
+};
+typeNames.interfaces["HostOpaqueSwitch"] = {
+key: "string",
+        name: "string",
+        pnic: "PhysicalNic",
+        pnicZone: "HostOpaqueSwitchPhysicalNicZone",
+        status: "string",
+        vtep: "HostVirtualNic",
+        extraConfig: "OptionValue",
+        featureCapability: "HostFeatureCapability"
+};
+typeNames.interfaces["HostOpaqueSwitchPhysicalNicZone"] = {
+key: "string",
+        pnicDevice: "string"
+};
+typeNames.interfaces["HostPMemVolume"] = {
+uuid: "string",
+        version: "string"
+};
+typeNames.interfaces["HostParallelScsiHba"] = {
+
+};
+typeNames.interfaces["HostPatchManagerLocator"] = {
+url: "string",
+        proxy: "string"
+};
+typeNames.interfaces["HostPatchManagerPatchManagerOperationSpec"] = {
+proxy: "string",
+        port: "number",
+        userName: "string",
+        password: "string",
+        cmdOption: "string"
+};
+typeNames.interfaces["HostPatchManagerResult"] = {
+version: "string",
+        status: "HostPatchManagerStatus",
+        xmlResult: "string"
+};
+typeNames.interfaces["HostPatchManagerStatus"] = {
+id: "string",
+        applicable: "boolean",
+        reason: "string",
+        integrity: "string",
+        installed: "boolean",
+        installState: "string",
+        prerequisitePatch: "HostPatchManagerStatusPrerequisitePatch",
+        restartRequired: "boolean",
+        reconnectRequired: "boolean",
+        vmOffRequired: "boolean",
+        supersededPatchIds: "string"
+};
+typeNames.interfaces["HostPatchManagerStatusPrerequisitePatch"] = {
+id: "string",
+        installState: "string"
+};
+typeNames.interfaces["HostPathSelectionPolicyOption"] = {
+policy: "ElementDescription"
+};
+typeNames.interfaces["HostPciDevice"] = {
+id: "string",
+        classId: "number",
+        bus: "number",
+        slot: "number",
+        function: "number",
+        vendorId: "number",
+        subVendorId: "number",
+        vendorName: "string",
+        deviceId: "number",
+        subDeviceId: "number",
+        parentBridge: "string",
+        deviceName: "string"
+};
+typeNames.interfaces["HostPciPassthruConfig"] = {
+id: "string",
+        passthruEnabled: "boolean",
+        applyNow: "boolean"
+};
+typeNames.interfaces["HostPciPassthruInfo"] = {
+id: "string",
+        dependentDevice: "string",
+        passthruEnabled: "boolean",
+        passthruCapable: "boolean",
+        passthruActive: "boolean"
+};
+typeNames.interfaces["HostPcieHba"] = {
+
+};
+typeNames.interfaces["HostPersistentMemoryInfo"] = {
+capacityInMB: "number",
+        volumeUUID: "string"
+};
+typeNames.interfaces["PhysicalNic"] = {
+key: "string",
+        device: "string",
+        pci: "string",
+        driver: "string",
+        linkSpeed: "PhysicalNicLinkInfo",
+        validLinkSpecification: "PhysicalNicLinkInfo",
+        spec: "PhysicalNicSpec",
+        wakeOnLanSupported: "boolean",
+        mac: "string",
+        fcoeConfiguration: "FcoeConfig",
+        vmDirectPathGen2Supported: "boolean",
+        vmDirectPathGen2SupportedMode: "string",
+        resourcePoolSchedulerAllowed: "boolean",
+        resourcePoolSchedulerDisallowedReason: "string",
+        autoNegotiateSupported: "boolean",
+        enhancedNetworkingStackSupported: "boolean",
+        ensInterruptSupported: "boolean",
+        rdmaDevice: "HostRdmaDevice"
+};
+typeNames.interfaces["PhysicalNicCdpDeviceCapability"] = {
+router: "boolean",
+        transparentBridge: "boolean",
+        sourceRouteBridge: "boolean",
+        networkSwitch: "boolean",
+        host: "boolean",
+        igmpEnabled: "boolean",
+        repeater: "boolean"
+};
+typeNames.interfaces["PhysicalNicCdpInfo"] = {
+cdpVersion: "number",
+        timeout: "number",
+        ttl: "number",
+        samples: "number",
+        devId: "string",
+        address: "string",
+        portId: "string",
+        deviceCapability: "PhysicalNicCdpDeviceCapability",
+        softwareVersion: "string",
+        hardwarePlatform: "string",
+        ipPrefix: "string",
+        ipPrefixLen: "number",
+        vlan: "number",
+        fullDuplex: "boolean",
+        mtu: "number",
+        systemName: "string",
+        systemOID: "string",
+        mgmtAddr: "string",
+        location: "string"
+};
+typeNames.interfaces["PhysicalNicConfig"] = {
+device: "string",
+        spec: "PhysicalNicSpec"
+};
+typeNames.interfaces["PhysicalNicLinkInfo"] = {
+speedMb: "number",
+        duplex: "boolean"
+};
+typeNames.interfaces["LinkLayerDiscoveryProtocolInfo"] = {
+chassisId: "string",
+        portId: "string",
+        timeToLive: "number",
+        parameter: "KeyAnyValue"
+};
+typeNames.interfaces["PhysicalNicHintInfo"] = {
+device: "string",
+        subnet: "PhysicalNicIpHint",
+        network: "PhysicalNicNameHint",
+        connectedSwitchPort: "PhysicalNicCdpInfo",
+        lldpInfo: "LinkLayerDiscoveryProtocolInfo"
+};
+typeNames.interfaces["PhysicalNicHint"] = {
+vlanId: "number"
+};
+typeNames.interfaces["PhysicalNicIpHint"] = {
+ipSubnet: "string"
+};
+typeNames.interfaces["PhysicalNicNameHint"] = {
+network: "string"
+};
+typeNames.interfaces["PhysicalNicSpec"] = {
+ip: "HostIpConfig",
+        linkSpeed: "PhysicalNicLinkInfo",
+        enableEnhancedNetworkingStack: "boolean",
+        ensInterruptEnabled: "boolean"
+};
+typeNames.interfaces["HostPlugStoreTopology"] = {
+adapter: "HostPlugStoreTopologyAdapter",
+        path: "HostPlugStoreTopologyPath",
+        target: "HostPlugStoreTopologyTarget",
+        device: "HostPlugStoreTopologyDevice",
+        plugin: "HostPlugStoreTopologyPlugin"
+};
+typeNames.interfaces["HostPlugStoreTopologyAdapter"] = {
+key: "string",
+        adapter: "HostHostBusAdapter",
+        path: "HostPlugStoreTopologyPath"
+};
+typeNames.interfaces["HostPlugStoreTopologyDevice"] = {
+key: "string",
+        lun: "ScsiLun",
+        path: "HostPlugStoreTopologyPath"
+};
+typeNames.interfaces["HostPlugStoreTopologyPath"] = {
+key: "string",
+        name: "string",
+        channelNumber: "number",
+        targetNumber: "number",
+        lunNumber: "number",
+        adapter: "HostPlugStoreTopologyAdapter",
+        target: "HostPlugStoreTopologyTarget",
+        device: "HostPlugStoreTopologyDevice"
+};
+typeNames.interfaces["HostPlugStoreTopologyPlugin"] = {
+key: "string",
+        name: "string",
+        device: "HostPlugStoreTopologyDevice",
+        claimedPath: "HostPlugStoreTopologyPath"
+};
+typeNames.interfaces["HostPlugStoreTopologyTarget"] = {
+key: "string",
+        transport: "HostTargetTransport"
+};
+typeNames.interfaces["HostPortGroup"] = {
+key: "string",
+        port: "HostPortGroupPort",
+        vswitch: "HostVirtualSwitch",
+        computedPolicy: "HostNetworkPolicy",
+        spec: "HostPortGroupSpec"
+};
+typeNames.interfaces["HostPortGroupConfig"] = {
+changeOperation: "string",
+        spec: "HostPortGroupSpec"
+};
+typeNames.interfaces["HostPortGroupPort"] = {
+key: "string",
+        mac: "string",
+        type: "string"
+};
+typeNames.interfaces["HostPortGroupSpec"] = {
+name: "string",
+        vlanId: "number",
+        vswitchName: "string",
+        policy: "HostNetworkPolicy"
+};
+typeNames.interfaces["PowerSystemCapability"] = {
+availablePolicy: "HostPowerPolicy"
+};
+typeNames.interfaces["PowerSystemInfo"] = {
+currentPolicy: "HostPowerPolicy"
+};
+typeNames.interfaces["HostPowerPolicy"] = {
+key: "number",
+        name: "string",
+        shortName: "string",
+        description: "string"
+};
+typeNames.interfaces["HostProtocolEndpoint"] = {
+peType: "string",
+        type: "string",
+        uuid: "string",
+        hostKey: HostSystem,
+        storageArray: "string",
+        nfsServer: "string",
+        nfsDir: "string",
+        nfsServerScope: "string",
+        nfsServerMajor: "string",
+        nfsServerAuthType: "string",
+        nfsServerUser: "string",
+        deviceId: "string"
+};
+typeNames.interfaces["HostRdmaDevice"] = {
+key: "string",
+        device: "string",
+        driver: "string",
+        description: "string",
+        backing: "HostRdmaDeviceBacking",
+        connectionInfo: "HostRdmaDeviceConnectionInfo",
+        capability: "HostRdmaDeviceCapability"
+};
+typeNames.interfaces["HostRdmaDeviceBacking"] = {
+
+};
+typeNames.interfaces["HostRdmaDeviceCapability"] = {
+roceV1Capable: "boolean",
+        roceV2Capable: "boolean",
+        iWarpCapable: "boolean"
+};
+typeNames.interfaces["HostRdmaDeviceConnectionInfo"] = {
+state: "string",
+        mtu: "number",
+        speedInMbps: "number"
+};
+typeNames.interfaces["HostRdmaDevicePnicBacking"] = {
+pairedUplink: "PhysicalNic"
+};
+typeNames.interfaces["HostRdmaHba"] = {
+associatedRdmaDevice: "string"
+};
+typeNames.interfaces["HostReliableMemoryInfo"] = {
+memorySize: "number"
+};
+typeNames.interfaces["HostResignatureRescanResult"] = {
+rescan: "HostVmfsRescanResult",
+        result: Datastore
+};
+typeNames.interfaces["HostFirewallRuleset"] = {
+key: "string",
+        label: "string",
+        required: "boolean",
+        rule: "HostFirewallRule",
+        service: "string",
+        enabled: "boolean",
+        allowedHosts: "HostFirewallRulesetIpList"
+};
+typeNames.interfaces["HostFirewallRulesetIpList"] = {
+ipAddress: "string",
+        ipNetwork: "HostFirewallRulesetIpNetwork",
+        allIp: "boolean"
+};
+typeNames.interfaces["HostFirewallRulesetIpNetwork"] = {
+network: "string",
+        prefixLength: "number"
+};
+typeNames.interfaces["HostFirewallRule"] = {
+port: "number",
+        endPort: "number",
+        direction: "HostFirewallRuleDirection",
+        portType: "HostFirewallRulePortType",
+        protocol: "string"
+};
+typeNames.interfaces["HostFirewallRulesetRulesetSpec"] = {
+allowedHosts: "HostFirewallRulesetIpList"
+};
+typeNames.interfaces["ScsiLun"] = {
+key: "string",
+        uuid: "string",
+        descriptor: "ScsiLunDescriptor",
+        canonicalName: "string",
+        displayName: "string",
+        lunType: "string",
+        vendor: "string",
+        model: "string",
+        revision: "string",
+        scsiLevel: "number",
+        serialNumber: "string",
+        durableName: "ScsiLunDurableName",
+        alternateName: "ScsiLunDurableName",
+        standardInquiry: "number",
+        queueDepth: "number",
+        operationalState: "string",
+        capabilities: "ScsiLunCapabilities",
+        vStorageSupport: "string",
+        protocolEndpoint: "boolean",
+        perenniallyReserved: "boolean",
+        clusteredVmdkSupported: "boolean"
+};
+typeNames.interfaces["ScsiLunCapabilities"] = {
+updateDisplayNameSupported: "boolean"
+};
+typeNames.interfaces["ScsiLunDescriptor"] = {
+quality: "string",
+        id: "string"
+};
+typeNames.interfaces["ScsiLunDurableName"] = {
+namespace: "string",
+        namespaceId: "number",
+        data: "number"
+};
+typeNames.interfaces["HostScsiTopology"] = {
+adapter: "HostScsiTopologyInterface"
+};
+typeNames.interfaces["HostScsiTopologyInterface"] = {
+key: "string",
+        adapter: "HostHostBusAdapter",
+        target: "HostScsiTopologyTarget"
+};
+typeNames.interfaces["HostScsiTopologyLun"] = {
+key: "string",
+        lun: "number",
+        scsiLun: "ScsiLun"
+};
+typeNames.interfaces["HostScsiTopologyTarget"] = {
+key: "string",
+        target: "number",
+        lun: "HostScsiTopologyLun",
+        transport: "HostTargetTransport"
+};
+typeNames.interfaces["HostSerialAttachedHba"] = {
+nodeWorldWideName: "string"
+};
+typeNames.interfaces["HostService"] = {
+key: "string",
+        label: "string",
+        required: "boolean",
+        uninstallable: "boolean",
+        running: "boolean",
+        ruleset: "string",
+        policy: "string",
+        sourcePackage: "HostServiceSourcePackage"
+};
+typeNames.interfaces["HostServiceSourcePackage"] = {
+sourcePackageName: "string",
+        description: "string"
+};
+typeNames.interfaces["HostServiceConfig"] = {
+serviceId: "string",
+        startupPolicy: "string"
+};
+typeNames.interfaces["HostServiceInfo"] = {
+service: "HostService"
+};
+typeNames.interfaces["HostSevInfo"] = {
+sevState: "string",
+        maxSevEsGuests: "number"
+};
+typeNames.interfaces["HostSgxInfo"] = {
+sgxState: "string",
+        totalEpcMemory: "number",
+        flcMode: "string",
+        lePubKeyHash: "string"
+};
+typeNames.interfaces["HostSharedGpuCapabilities"] = {
+vgpu: "string",
+        diskSnapshotSupported: "boolean",
+        memorySnapshotSupported: "boolean",
+        suspendSupported: "boolean",
+        migrateSupported: "boolean"
+};
+typeNames.interfaces["HostSnmpSystemAgentLimits"] = {
+maxReadOnlyCommunities: "number",
+        maxTrapDestinations: "number",
+        maxCommunityLength: "number",
+        maxBufferSize: "number",
+        capability: "HostSnmpAgentCapability"
+};
+typeNames.interfaces["HostSnmpConfigSpec"] = {
+enabled: "boolean",
+        port: "number",
+        readOnlyCommunities: "string",
+        trapTargets: "HostSnmpDestination",
+        option: "KeyValue"
+};
+typeNames.interfaces["HostSnmpDestination"] = {
+hostName: "string",
+        port: "number",
+        community: "string"
+};
+typeNames.interfaces["SoftwarePackage"] = {
+name: "string",
+        version: "string",
+        type: "string",
+        vendor: "string",
+        acceptanceLevel: "string",
+        summary: "string",
+        description: "string",
+        referenceURL: "string",
+        creationDate: "Date",
+        depends: "Relation",
+        conflicts: "Relation",
+        replaces: "Relation",
+        provides: "string",
+        maintenanceModeRequired: "boolean",
+        hardwarePlatformsRequired: "string",
+        capability: "SoftwarePackageCapability",
+        tag: "string",
+        payload: "string"
+};
+typeNames.interfaces["SoftwarePackageCapability"] = {
+liveInstallAllowed: "boolean",
+        liveRemoveAllowed: "boolean",
+        statelessReady: "boolean",
+        overlay: "boolean"
+};
+typeNames.interfaces["Relation"] = {
+constraint: "string",
+        name: "string",
+        version: "string"
+};
+typeNames.interfaces["HostSriovConfig"] = {
+sriovEnabled: "boolean",
+        numVirtualFunction: "number"
+};
+typeNames.interfaces["HostSriovDevicePoolInfo"] = {
+key: "string"
+};
+typeNames.interfaces["HostSriovInfo"] = {
+sriovEnabled: "boolean",
+        sriovCapable: "boolean",
+        sriovActive: "boolean",
+        numVirtualFunctionRequested: "number",
+        numVirtualFunction: "number",
+        maxVirtualFunctionSupported: "number"
+};
+typeNames.interfaces["HostSriovNetworkDevicePoolInfo"] = {
+switchKey: "string",
+        switchUuid: "string",
+        pnic: "PhysicalNic"
+};
+typeNames.interfaces["HostSslThumbprintInfo"] = {
+principal: "string",
+        ownerTag: "string",
+        sslThumbprints: "string"
+};
+typeNames.interfaces["HostStorageArrayTypePolicyOption"] = {
+policy: "ElementDescription"
+};
+typeNames.interfaces["HostStorageDeviceInfo"] = {
+hostBusAdapter: "HostHostBusAdapter",
+        scsiLun: "ScsiLun",
+        scsiTopology: "HostScsiTopology",
+        nvmeTopology: "HostNvmeTopology",
+        multipathInfo: "HostMultipathInfo",
+        plugStoreTopology: "HostPlugStoreTopology",
+        softwareInternetScsiEnabled: "boolean"
+};
+typeNames.interfaces["SystemEventInfo"] = {
+recordId: "number",
+        when: "string",
+        selType: "number",
+        message: "string",
+        sensorNumber: "number"
+};
+typeNames.interfaces["HostSystemHealthInfo"] = {
+numericSensorInfo: "HostNumericSensorInfo"
+};
+typeNames.interfaces["HostSystemIdentificationInfo"] = {
+identifierValue: "string",
+        identifierType: "ElementDescription"
+};
+typeNames.interfaces["HostSystemInfo"] = {
+vendor: "string",
+        model: "string",
+        uuid: "string",
+        otherIdentifyingInfo: "HostSystemIdentificationInfo",
+        serialNumber: "string"
+};
+typeNames.interfaces["HostSystemResourceInfo"] = {
+key: "string",
+        config: "ResourceConfigSpec",
+        child: "HostSystemResourceInfo"
+};
+typeNames.interfaces["HostSystemSwapConfiguration"] = {
+option: "HostSystemSwapConfigurationSystemSwapOption"
+};
+typeNames.interfaces["HostSystemSwapConfigurationDatastoreOption"] = {
+datastore: "string"
+};
+typeNames.interfaces["HostSystemSwapConfigurationDisabledOption"] = {
+
+};
+typeNames.interfaces["HostSystemSwapConfigurationHostCacheOption"] = {
+
+};
+typeNames.interfaces["HostSystemSwapConfigurationHostLocalSwapOption"] = {
+
+};
+typeNames.interfaces["HostSystemSwapConfigurationSystemSwapOption"] = {
+key: "number"
+};
+typeNames.interfaces["HostTargetTransport"] = {
+
+};
+typeNames.interfaces["HostTpmAttestationInfo"] = {
+time: "Date",
+        status: "HostTpmAttestationInfoAcceptanceStatus",
+        message: "LocalizableMessage"
+};
+typeNames.interfaces["HostTpmAttestationReport"] = {
+tpmPcrValues: "HostTpmDigestInfo",
+        tpmEvents: "HostTpmEventLogEntry",
+        tpmLogReliable: "boolean"
+};
+typeNames.interfaces["HostTpmDigestInfo"] = {
+pcrNumber: "number"
+};
+typeNames.interfaces["HostTpmEventDetails"] = {
+dataHash: "number",
+        dataHashMethod: "string"
+};
+typeNames.interfaces["HostTpmEventLogEntry"] = {
+pcrIndex: "number",
+        eventDetails: "HostTpmEventDetails"
+};
+typeNames.interfaces["HostTpmOptionEventDetails"] = {
+optionsFileName: "string",
+        bootOptions: "number"
+};
+typeNames.interfaces["HostTpmSoftwareComponentEventDetails"] = {
+componentName: "string",
+        vibName: "string",
+        vibVersion: "string",
+        vibVendor: "string"
+};
+typeNames.interfaces["HostTrustAuthorityAttestationInfo"] = {
+attestationStatus: "string",
+        serviceId: "string",
+        attestedAt: "Date",
+        attestedUntil: "Date",
+        messages: "LocalizableMessage"
+};
+typeNames.interfaces["HostUnresolvedVmfsResignatureSpec"] = {
+extentDevicePath: "string"
+};
+typeNames.interfaces["HostUnresolvedVmfsResolutionResult"] = {
+spec: "HostUnresolvedVmfsResolutionSpec",
+        vmfs: "HostVmfsVolume",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostUnresolvedVmfsResolutionSpec"] = {
+extentDevicePath: "string",
+        uuidResolution: "string"
+};
+typeNames.interfaces["HostUnresolvedVmfsVolume"] = {
+extent: "HostUnresolvedVmfsExtent",
+        vmfsLabel: "string",
+        vmfsUuid: "string",
+        totalBlocks: "number",
+        resolveStatus: "HostUnresolvedVmfsVolumeResolveStatus"
+};
+typeNames.interfaces["HostUnresolvedVmfsVolumeResolveStatus"] = {
+resolvable: "boolean",
+        incompleteExtents: "boolean",
+        multipleCopies: "boolean"
+};
+typeNames.interfaces["HostVFlashResourceConfigurationResult"] = {
+devicePath: "string",
+        vffs: "HostVffsVolume",
+        diskConfigurationResult: "HostDiskConfigurationResult"
+};
+typeNames.interfaces["HostVMotionConfig"] = {
+vmotionNicKey: "string",
+        enabled: "boolean"
+};
+typeNames.interfaces["HostVMotionNetConfig"] = {
+candidateVnic: "HostVirtualNic",
+        selectedVnic: "HostVirtualNic"
+};
+typeNames.interfaces["HostVfatVolume"] = {
+
+};
+typeNames.interfaces["HostVirtualNic"] = {
+device: "string",
+        key: "string",
+        portgroup: "string",
+        spec: "HostVirtualNicSpec",
+        port: "HostPortGroupPort"
+};
+typeNames.interfaces["HostVirtualNicConfig"] = {
+changeOperation: "string",
+        device: "string",
+        portgroup: "string",
+        spec: "HostVirtualNicSpec"
+};
+typeNames.interfaces["HostVirtualNicIpRouteSpec"] = {
+ipRouteConfig: "HostIpRouteConfig"
+};
+typeNames.interfaces["HostVirtualNicOpaqueNetworkSpec"] = {
+opaqueNetworkId: "string",
+        opaqueNetworkType: "string"
+};
+typeNames.interfaces["HostVirtualNicSpec"] = {
+ip: "HostIpConfig",
+        mac: "string",
+        distributedVirtualPort: "DistributedVirtualSwitchPortConnection",
+        portgroup: "string",
+        mtu: "number",
+        tsoEnabled: "boolean",
+        netStackInstanceKey: "string",
+        opaqueNetwork: "HostVirtualNicOpaqueNetworkSpec",
+        externalId: "string",
+        pinnedPnic: "string",
+        ipRouteSpec: "HostVirtualNicIpRouteSpec",
+        systemOwned: "boolean"
+};
+typeNames.interfaces["HostVirtualNicConnection"] = {
+portgroup: "string",
+        dvPort: "DistributedVirtualSwitchPortConnection",
+        opNetwork: "HostVirtualNicOpaqueNetworkSpec"
+};
+typeNames.interfaces["VirtualNicManagerNetConfig"] = {
+nicType: "string",
+        multiSelectAllowed: "boolean",
+        candidateVnic: "HostVirtualNic",
+        selectedVnic: "HostVirtualNic"
+};
+typeNames.interfaces["HostVirtualNicManagerNicTypeSelection"] = {
+vnic: "HostVirtualNicConnection",
+        nicType: "string"
+};
+typeNames.interfaces["HostVirtualNicManagerInfo"] = {
+netConfig: "VirtualNicManagerNetConfig"
+};
+typeNames.interfaces["HostVirtualSwitch"] = {
+name: "string",
+        key: "string",
+        numPorts: "number",
+        numPortsAvailable: "number",
+        mtu: "number",
+        portgroup: "HostPortGroup",
+        pnic: "PhysicalNic",
+        spec: "HostVirtualSwitchSpec"
+};
+typeNames.interfaces["HostVirtualSwitchAutoBridge"] = {
+excludedNicDevice: "string"
+};
+typeNames.interfaces["HostVirtualSwitchBeaconConfig"] = {
+interval: "number"
+};
+typeNames.interfaces["HostVirtualSwitchBondBridge"] = {
+nicDevice: "string",
+        beacon: "HostVirtualSwitchBeaconConfig",
+        linkDiscoveryProtocolConfig: "LinkDiscoveryProtocolConfig"
+};
+typeNames.interfaces["HostVirtualSwitchBridge"] = {
+
+};
+typeNames.interfaces["HostVirtualSwitchConfig"] = {
+changeOperation: "string",
+        name: "string",
+        spec: "HostVirtualSwitchSpec"
+};
+typeNames.interfaces["HostVirtualSwitchSimpleBridge"] = {
+nicDevice: "string"
+};
+typeNames.interfaces["HostVirtualSwitchSpec"] = {
+numPorts: "number",
+        bridge: "HostVirtualSwitchBridge",
+        policy: "HostNetworkPolicy",
+        mtu: "number"
+};
+typeNames.interfaces["HostVmciAccessManagerAccessSpec"] = {
+vm: VirtualMachine,
+        services: "string",
+        mode: "string"
+};
+typeNames.interfaces["VmfsDatastoreOption"] = {
+info: "VmfsDatastoreBaseOption",
+        spec: "VmfsDatastoreSpec"
+};
+typeNames.interfaces["VmfsDatastoreAllExtentOption"] = {
+
+};
+typeNames.interfaces["VmfsDatastoreBaseOption"] = {
+layout: "HostDiskPartitionLayout",
+        partitionFormatChange: "boolean"
+};
+typeNames.interfaces["VmfsDatastoreMultipleExtentOption"] = {
+vmfsExtent: "HostDiskPartitionBlockRange"
+};
+typeNames.interfaces["VmfsDatastoreSingleExtentOption"] = {
+vmfsExtent: "HostDiskPartitionBlockRange"
+};
+typeNames.interfaces["VmfsDatastoreSpec"] = {
+diskUuid: "string"
+};
+typeNames.interfaces["HostVmfsRescanResult"] = {
+host: HostSystem,
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostVsanInternalSystemCmmdsQuery"] = {
+type: "string",
+        uuid: "string",
+        owner: "string"
+};
+typeNames.interfaces["HostVsanInternalSystemDeleteVsanObjectsResult"] = {
+uuid: "string",
+        success: "boolean",
+        failureReason: "LocalizableMessage"
+};
+typeNames.interfaces["VsanNewPolicyBatch"] = {
+size: "number",
+        policy: "string"
+};
+typeNames.interfaces["VsanPolicyChangeBatch"] = {
+uuid: "string",
+        policy: "string"
+};
+typeNames.interfaces["VsanPolicyCost"] = {
+changeDataSize: "number",
+        currentDataSize: "number",
+        tempDataSize: "number",
+        copyDataSize: "number",
+        changeFlashReadCacheSize: "number",
+        currentFlashReadCacheSize: "number",
+        currentDiskSpaceToAddressSpaceRatio: "number",
+        diskSpaceToAddressSpaceRatio: "number"
+};
+typeNames.interfaces["VsanPolicySatisfiability"] = {
+uuid: "string",
+        isSatisfiable: "boolean",
+        reason: "LocalizableMessage",
+        cost: "VsanPolicyCost"
+};
+typeNames.interfaces["HostVsanInternalSystemVsanObjectOperationResult"] = {
+uuid: "string",
+        failureReason: "LocalizableMessage"
+};
+typeNames.interfaces["HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult"] = {
+diskUuid: "string",
+        success: "boolean",
+        failureReason: "string"
+};
+typeNames.interfaces["HostVvolVolume"] = {
+scId: "string",
+        hostPE: "VVolHostPE",
+        vasaProviderInfo: "VimVasaProviderInfo",
+        storageArray: "VASAStorageArray"
+};
+typeNames.interfaces["VVolHostPE"] = {
+key: HostSystem,
+        protocolEndpoint: "HostProtocolEndpoint"
+};
+typeNames.interfaces["HostVvolVolumeSpecification"] = {
+maxSizeInMB: "number",
+        volumeName: "string",
+        vasaProviderInfo: "VimVasaProviderInfo",
+        storageArray: "VASAStorageArray",
+        uuid: "string"
+};
+typeNames.interfaces["NetDhcpConfigInfo"] = {
+ipv6: "NetDhcpConfigInfoDhcpOptions",
+        ipv4: "NetDhcpConfigInfoDhcpOptions"
+};
+typeNames.interfaces["NetDhcpConfigInfoDhcpOptions"] = {
+enable: "boolean",
+        config: "KeyValue"
+};
+typeNames.interfaces["NetDhcpConfigSpec"] = {
+ipv6: "NetDhcpConfigSpecDhcpOptionsSpec",
+        ipv4: "NetDhcpConfigSpecDhcpOptionsSpec"
+};
+typeNames.interfaces["NetDhcpConfigSpecDhcpOptionsSpec"] = {
+enable: "boolean",
+        config: "KeyValue",
+        operation: "string"
+};
+typeNames.interfaces["NetDnsConfigInfo"] = {
+dhcp: "boolean",
+        hostName: "string",
+        domainName: "string",
+        ipAddress: "string",
+        searchDomain: "string"
+};
+typeNames.interfaces["NetDnsConfigSpec"] = {
+dhcp: "boolean",
+        hostName: "string",
+        domainName: "string",
+        ipAddress: "string",
+        searchDomain: "string"
+};
+typeNames.interfaces["NetIpConfigInfo"] = {
+ipAddress: "NetIpConfigInfoIpAddress",
+        dhcp: "NetDhcpConfigInfo",
+        autoConfigurationEnabled: "boolean"
+};
+typeNames.interfaces["NetIpConfigInfoIpAddress"] = {
+ipAddress: "string",
+        prefixLength: "number",
+        origin: "string",
+        state: "string",
+        lifetime: "Date"
+};
+typeNames.interfaces["NetIpConfigSpec"] = {
+ipAddress: "NetIpConfigSpecIpAddressSpec",
+        dhcp: "NetDhcpConfigSpec",
+        autoConfigurationEnabled: "boolean"
+};
+typeNames.interfaces["NetIpConfigSpecIpAddressSpec"] = {
+ipAddress: "string",
+        prefixLength: "number",
+        operation: "string"
+};
+typeNames.interfaces["NetIpRouteConfigInfo"] = {
+ipRoute: "NetIpRouteConfigInfoIpRoute"
+};
+typeNames.interfaces["NetIpRouteConfigInfoGateway"] = {
+ipAddress: "string",
+        device: "string"
+};
+typeNames.interfaces["NetIpRouteConfigInfoIpRoute"] = {
+network: "string",
+        prefixLength: "number",
+        gateway: "NetIpRouteConfigInfoGateway"
+};
+typeNames.interfaces["NetIpRouteConfigSpec"] = {
+ipRoute: "NetIpRouteConfigSpecIpRouteSpec"
+};
+typeNames.interfaces["NetIpRouteConfigSpecGatewaySpec"] = {
+ipAddress: "string",
+        device: "string"
+};
+typeNames.interfaces["NetIpRouteConfigSpecIpRouteSpec"] = {
+network: "string",
+        prefixLength: "number",
+        gateway: "NetIpRouteConfigSpecGatewaySpec",
+        operation: "string"
+};
+typeNames.interfaces["NetIpStackInfo"] = {
+neighbor: "NetIpStackInfoNetToMedia",
+        defaultRouter: "NetIpStackInfoDefaultRouter"
+};
+typeNames.interfaces["NetIpStackInfoDefaultRouter"] = {
+ipAddress: "string",
+        device: "string",
+        lifetime: "Date",
+        preference: "string"
+};
+typeNames.interfaces["NetIpStackInfoNetToMedia"] = {
+ipAddress: "string",
+        physicalAddress: "string",
+        device: "string",
+        type: "string"
+};
+typeNames.interfaces["NetBIOSConfigInfo"] = {
+mode: "string"
+};
+typeNames.interfaces["WinNetBIOSConfigInfo"] = {
+primaryWINS: "string",
+        secondaryWINS: "string"
+};
+typeNames.interfaces["ArrayUpdateSpec"] = {
+operation: "ArrayUpdateOperation",
+        removeKey: "any"
+};
+typeNames.interfaces["OptionDef"] = {
+optionType: "OptionType"
+};
+typeNames.interfaces["OptionType"] = {
+valueIsReadonly: "boolean"
+};
+typeNames.interfaces["OptionValue"] = {
+key: "string",
+        value: "any"
+};
+typeNames.interfaces["StringOption"] = {
+defaultValue: "string",
+        validCharacters: "string"
+};
+typeNames.interfaces["ApplyProfile"] = {
+enabled: "boolean",
+        policy: "ProfilePolicy",
+        profileTypeName: "string",
+        profileVersion: "string",
+        property: "ProfileApplyProfileProperty",
+        favorite: "boolean",
+        toBeMerged: "boolean",
+        toReplaceWith: "boolean",
+        toBeDeleted: "boolean",
+        copyEnableStatus: "boolean",
+        hidden: "boolean"
+};
+typeNames.interfaces["ProfileApplyProfileElement"] = {
+key: "string"
+};
+typeNames.interfaces["ProfileApplyProfileProperty"] = {
+propertyName: "string",
+        array: "boolean",
+        profile: "ApplyProfile"
+};
+typeNames.interfaces["ComplianceLocator"] = {
+expressionName: "string",
+        applyPath: "ProfilePropertyPath"
+};
+typeNames.interfaces["ComplianceProfile"] = {
+expression: "ProfileExpression",
+        rootExpression: "string"
+};
+typeNames.interfaces["ComplianceResult"] = {
+profile: Profile,
+        complianceStatus: "string",
+        entity: ManagedEntity,
+        checkTime: "Date",
+        failure: "ComplianceFailure"
+};
+typeNames.interfaces["ComplianceFailure"] = {
+failureType: "string",
+        message: "LocalizableMessage",
+        expressionName: "string",
+        failureValues: "ComplianceFailureComplianceFailureValues"
+};
+typeNames.interfaces["ComplianceFailureComplianceFailureValues"] = {
+comparisonIdentifier: "string",
+        profileInstance: "string",
+        hostValue: "any",
+        profileValue: "any"
+};
+typeNames.interfaces["ProfileDeferredPolicyOptionParameter"] = {
+inputPath: "ProfilePropertyPath",
+        parameter: "KeyAnyValue"
+};
+typeNames.interfaces["ProfileExpression"] = {
+id: "string",
+        displayName: "string",
+        negated: "boolean"
+};
+typeNames.interfaces["ProfileExpressionMetadata"] = {
+expressionId: "ExtendedElementDescription",
+        parameter: "ProfileParameterMetadata"
+};
+typeNames.interfaces["ProfileParameterMetadata"] = {
+id: "ExtendedElementDescription",
+        type: "string",
+        optional: "boolean",
+        defaultValue: "any",
+        hidden: "boolean",
+        securitySensitive: "boolean",
+        readOnly: "boolean",
+        parameterRelations: "ProfileParameterMetadataParameterRelationMetadata"
+};
+typeNames.interfaces["ProfileParameterMetadataParameterRelationMetadata"] = {
+relationTypes: "string",
+        values: "any",
+        path: "ProfilePropertyPath",
+        minCount: "number",
+        maxCount: "number"
+};
+typeNames.interfaces["ProfilePolicy"] = {
+id: "string",
+        policyOption: "PolicyOption"
+};
+typeNames.interfaces["ProfilePolicyMetadata"] = {
+id: "ExtendedElementDescription",
+        possibleOption: "ProfilePolicyOptionMetadata"
+};
+typeNames.interfaces["PolicyOption"] = {
+id: "string",
+        parameter: "KeyAnyValue"
+};
+typeNames.interfaces["ProfilePolicyOptionMetadata"] = {
+id: "ExtendedElementDescription",
+        parameter: "ProfileParameterMetadata"
+};
+typeNames.interfaces["ProfileConfigInfo"] = {
+name: "string",
+        annotation: "string",
+        enabled: "boolean"
+};
+typeNames.interfaces["ProfileCreateSpec"] = {
+name: "string",
+        annotation: "string",
+        enabled: "boolean"
+};
+typeNames.interfaces["ProfileDescription"] = {
+section: "ProfileDescriptionSection"
+};
+typeNames.interfaces["ProfileDescriptionSection"] = {
+description: "ExtendedElementDescription",
+        message: "LocalizableMessage"
+};
+typeNames.interfaces["ProfileSerializedCreateSpec"] = {
+profileConfigString: "string"
+};
+typeNames.interfaces["ProfileMetadata"] = {
+key: "string",
+        profileTypeName: "string",
+        description: "ExtendedDescription",
+        sortSpec: "ProfileMetadataProfileSortSpec",
+        profileCategory: "string",
+        profileComponent: "string",
+        operationMessages: "ProfileMetadataProfileOperationMessage"
+};
+typeNames.interfaces["ProfileMetadataProfileOperationMessage"] = {
+operationName: "string",
+        message: "LocalizableMessage"
+};
+typeNames.interfaces["ProfileMetadataProfileSortSpec"] = {
+policyId: "string",
+        parameter: "string"
+};
+typeNames.interfaces["ProfilePropertyPath"] = {
+profilePath: "string",
+        policyId: "string",
+        parameterId: "string",
+        policyOptionId: "string"
+};
+typeNames.interfaces["ProfileProfileStructure"] = {
+profileTypeName: "string",
+        child: "ProfileProfileStructureProperty"
+};
+typeNames.interfaces["ProfileProfileStructureProperty"] = {
+propertyName: "string",
+        array: "boolean",
+        element: "ProfileProfileStructure"
+};
+typeNames.interfaces["ProfileSimpleExpression"] = {
+expressionType: "string",
+        parameter: "KeyAnyValue"
+};
+typeNames.interfaces["UserInputRequiredParameterMetadata"] = {
+userInputParameter: "ProfileParameterMetadata"
+};
+typeNames.interfaces["ClusterProfileCompleteConfigSpec"] = {
+complyProfile: "ComplianceProfile"
+};
+typeNames.interfaces["ClusterProfileConfigInfo"] = {
+complyProfile: "ComplianceProfile"
+};
+typeNames.interfaces["ClusterProfileConfigServiceCreateSpec"] = {
+serviceType: "string"
+};
+typeNames.interfaces["ClusterProfileConfigSpec"] = {
+
+};
+typeNames.interfaces["ClusterProfileCreateSpec"] = {
+
+};
+typeNames.interfaces["ActiveDirectoryProfile"] = {
+
+};
+typeNames.interfaces["AnswerFile"] = {
+userInput: "ProfileDeferredPolicyOptionParameter",
+        createdTime: "Date",
+        modifiedTime: "Date"
+};
+typeNames.interfaces["AnswerFileStatusResult"] = {
+checkedTime: "Date",
+        host: HostSystem,
+        status: "string",
+        error: "AnswerFileStatusError"
+};
+typeNames.interfaces["AnswerFileStatusError"] = {
+userInputPath: "ProfilePropertyPath",
+        errMsg: "LocalizableMessage"
+};
+typeNames.interfaces["AuthenticationProfile"] = {
+activeDirectory: "ActiveDirectoryProfile"
+};
+typeNames.interfaces["DateTimeProfile"] = {
+
+};
+typeNames.interfaces["DvsProfile"] = {
+key: "string",
+        name: "string",
+        uplink: "PnicUplinkProfile"
+};
+typeNames.interfaces["DvsVNicProfile"] = {
+key: "string",
+        ipConfig: "IpAddressProfile"
+};
+typeNames.interfaces["ProfileExecuteResult"] = {
+status: "string",
+        configSpec: "HostConfigSpec",
+        inapplicablePath: "string",
+        requireInput: "ProfileDeferredPolicyOptionParameter",
+        error: "ProfileExecuteError"
+};
+typeNames.interfaces["ProfileExecuteError"] = {
+path: "ProfilePropertyPath",
+        message: "LocalizableMessage"
+};
+typeNames.interfaces["FirewallProfile"] = {
+ruleset: "FirewallProfileRulesetProfile"
+};
+typeNames.interfaces["FirewallProfileRulesetProfile"] = {
+key: "string"
+};
+typeNames.interfaces["HostApplyProfile"] = {
+memory: "HostMemoryProfile",
+        storage: "StorageProfile",
+        network: "NetworkProfile",
+        datetime: "DateTimeProfile",
+        firewall: "FirewallProfile",
+        security: "SecurityProfile",
+        service: "ServiceProfile",
+        option: "OptionProfile",
+        userAccount: "UserProfile",
+        usergroupAccount: "UserGroupProfile",
+        authentication: "AuthenticationProfile"
+};
+typeNames.interfaces["HostMemoryProfile"] = {
+
+};
+typeNames.interfaces["HostSpecification"] = {
+createdTime: "Date",
+        lastModified: "Date",
+        host: HostSystem,
+        subSpecs: "HostSubSpecification",
+        changeID: "string"
+};
+typeNames.interfaces["HostSubSpecification"] = {
+name: "string",
+        createdTime: "Date",
+        data: "number",
+        binaryData: "Buffer"
+};
+typeNames.interfaces["IpAddressProfile"] = {
+
+};
+typeNames.interfaces["IpRouteProfile"] = {
+staticRoute: "StaticRouteProfile"
+};
+typeNames.interfaces["NasStorageProfile"] = {
+key: "string"
+};
+typeNames.interfaces["NetworkPolicyProfile"] = {
+
+};
+typeNames.interfaces["NetworkProfile"] = {
+vswitch: "VirtualSwitchProfile",
+        vmPortGroup: "VmPortGroupProfile",
+        hostPortGroup: "HostPortGroupProfile",
+        serviceConsolePortGroup: "ServiceConsolePortGroupProfile",
+        dnsConfig: "NetworkProfileDnsConfigProfile",
+        ipRouteConfig: "IpRouteProfile",
+        consoleIpRouteConfig: "IpRouteProfile",
+        pnic: "PhysicalNicProfile",
+        dvswitch: "DvsProfile",
+        dvsServiceConsoleNic: "DvsServiceConsoleVNicProfile",
+        dvsHostNic: "DvsHostVNicProfile",
+        nsxHostNic: "NsxHostVNicProfile",
+        netStackInstance: "NetStackInstanceProfile",
+        opaqueSwitch: "OpaqueSwitchProfile"
+};
+typeNames.interfaces["NetworkProfileDnsConfigProfile"] = {
+
+};
+typeNames.interfaces["NsxHostVNicProfile"] = {
+key: "string",
+        ipConfig: "IpAddressProfile"
+};
+typeNames.interfaces["OpaqueSwitchProfile"] = {
+
+};
+typeNames.interfaces["OptionProfile"] = {
+key: "string"
+};
+typeNames.interfaces["PermissionProfile"] = {
+key: "string"
+};
+typeNames.interfaces["PhysicalNicProfile"] = {
+key: "string"
+};
+typeNames.interfaces["PnicUplinkProfile"] = {
+key: "string"
+};
+typeNames.interfaces["PortGroupProfile"] = {
+key: "string",
+        name: "string",
+        vlan: "VlanProfile",
+        vswitch: "VirtualSwitchSelectionProfile",
+        networkPolicy: "NetworkPolicyProfile"
+};
+typeNames.interfaces["VirtualSwitchSelectionProfile"] = {
+
+};
+typeNames.interfaces["VlanProfile"] = {
+
+};
+typeNames.interfaces["SecurityProfile"] = {
+permission: "PermissionProfile"
+};
+typeNames.interfaces["ServiceConsolePortGroupProfile"] = {
+ipConfig: "IpAddressProfile"
+};
+typeNames.interfaces["ServiceProfile"] = {
+key: "string"
+};
+typeNames.interfaces["StaticRouteProfile"] = {
+key: "string"
+};
+typeNames.interfaces["StorageProfile"] = {
+nasStorage: "NasStorageProfile"
+};
+typeNames.interfaces["UserGroupProfile"] = {
+key: "string"
+};
+typeNames.interfaces["UserProfile"] = {
+key: "string"
+};
+typeNames.interfaces["VirtualSwitchProfile"] = {
+key: "string",
+        name: "string",
+        link: "LinkProfile",
+        numPorts: "NumPortsProfile",
+        networkPolicy: "NetworkPolicyProfile"
+};
+typeNames.interfaces["LinkProfile"] = {
+
+};
+typeNames.interfaces["NumPortsProfile"] = {
+
+};
+typeNames.interfaces["VmPortGroupProfile"] = {
+
+};
+typeNames.interfaces["ScheduledTaskDescription"] = {
+action: "TypeDescription",
+        schedulerInfo: "ScheduledTaskDetail",
+        state: "ElementDescription",
+        dayOfWeek: "ElementDescription",
+        weekOfMonth: "ElementDescription"
+};
+typeNames.interfaces["ScheduledTaskDetail"] = {
+frequency: "string"
+};
+typeNames.interfaces["ScheduledTaskSpec"] = {
+name: "string",
+        description: "string",
+        enabled: "boolean",
+        scheduler: "TaskScheduler",
+        action: "Action",
+        notification: "string"
+};
+typeNames.interfaces["TaskScheduler"] = {
+activeTime: "Date",
+        expireTime: "Date"
+};
+typeNames.interfaces["ApplyStorageRecommendationResult"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["StorageDrsAutomationConfig"] = {
+spaceLoadBalanceAutomationMode: "string",
+        ioLoadBalanceAutomationMode: "string",
+        ruleEnforcementAutomationMode: "string",
+        policyEnforcementAutomationMode: "string",
+        vmEvacuationAutomationMode: "string"
+};
+typeNames.interfaces["StorageDrsConfigInfo"] = {
+podConfig: "StorageDrsPodConfigInfo",
+        vmConfig: "StorageDrsVmConfigInfo"
+};
+typeNames.interfaces["StorageDrsConfigSpec"] = {
+podConfigSpec: "StorageDrsPodConfigSpec",
+        vmConfigSpec: "StorageDrsVmConfigSpec"
+};
+typeNames.interfaces["HbrDiskMigrationAction"] = {
+collectionId: "string",
+        collectionName: "string",
+        diskIds: "string",
+        source: Datastore,
+        destination: Datastore,
+        sizeTransferred: "number",
+        spaceUtilSrcBefore: "number",
+        spaceUtilDstBefore: "number",
+        spaceUtilSrcAfter: "number",
+        spaceUtilDstAfter: "number",
+        ioLatencySrcBefore: "number",
+        ioLatencyDstBefore: "number"
+};
+typeNames.interfaces["StorageDrsIoLoadBalanceConfig"] = {
+reservablePercentThreshold: "number",
+        reservableIopsThreshold: "number",
+        reservableThresholdMode: "string",
+        ioLatencyThreshold: "number",
+        ioLoadImbalanceThreshold: "number"
+};
+typeNames.interfaces["StorageDrsOptionSpec"] = {
+option: "OptionValue"
+};
+typeNames.interfaces["PlacementAffinityRule"] = {
+ruleType: "string",
+        ruleScope: "string",
+        vms: VirtualMachine,
+        keys: "string"
+};
+typeNames.interfaces["PlacementRankResult"] = {
+key: "string",
+        candidate: ClusterComputeResource,
+        reservedSpaceMB: "number",
+        usedSpaceMB: "number",
+        totalSpaceMB: "number",
+        utilization: "number",
+        faults: "MethodFault"
+};
+typeNames.interfaces["PlacementRankSpec"] = {
+specs: "PlacementSpec",
+        clusters: ClusterComputeResource,
+        rules: "PlacementAffinityRule",
+        placementRankByVm: "StorageDrsPlacementRankVmSpec"
+};
+typeNames.interfaces["StorageDrsPlacementRankVmSpec"] = {
+vmPlacementSpec: "PlacementSpec",
+        vmClusters: ClusterComputeResource
+};
+typeNames.interfaces["StorageDrsPodConfigInfo"] = {
+enabled: "boolean",
+        ioLoadBalanceEnabled: "boolean",
+        defaultVmBehavior: "string",
+        loadBalanceInterval: "number",
+        defaultIntraVmAffinity: "boolean",
+        spaceLoadBalanceConfig: "StorageDrsSpaceLoadBalanceConfig",
+        ioLoadBalanceConfig: "StorageDrsIoLoadBalanceConfig",
+        automationOverrides: "StorageDrsAutomationConfig",
+        rule: "ClusterRuleInfo",
+        option: "OptionValue"
+};
+typeNames.interfaces["StorageDrsPodConfigSpec"] = {
+enabled: "boolean",
+        ioLoadBalanceEnabled: "boolean",
+        defaultVmBehavior: "string",
+        loadBalanceInterval: "number",
+        defaultIntraVmAffinity: "boolean",
+        spaceLoadBalanceConfig: "StorageDrsSpaceLoadBalanceConfig",
+        ioLoadBalanceConfig: "StorageDrsIoLoadBalanceConfig",
+        automationOverrides: "StorageDrsAutomationConfig",
+        rule: "ClusterRuleSpec",
+        option: "StorageDrsOptionSpec"
+};
+typeNames.interfaces["StorageDrsSpaceLoadBalanceConfig"] = {
+spaceThresholdMode: "string",
+        spaceUtilizationThreshold: "number",
+        freeSpaceThresholdGB: "number",
+        minSpaceUtilizationDifference: "number"
+};
+typeNames.interfaces["StorageMigrationAction"] = {
+vm: VirtualMachine,
+        relocateSpec: "VirtualMachineRelocateSpec",
+        source: Datastore,
+        destination: Datastore,
+        sizeTransferred: "number",
+        spaceUtilSrcBefore: "number",
+        spaceUtilDstBefore: "number",
+        spaceUtilSrcAfter: "number",
+        spaceUtilDstAfter: "number",
+        ioLatencySrcBefore: "number",
+        ioLatencyDstBefore: "number"
+};
+typeNames.interfaces["StoragePlacementAction"] = {
+vm: VirtualMachine,
+        relocateSpec: "VirtualMachineRelocateSpec",
+        destination: Datastore,
+        spaceUtilBefore: "number",
+        spaceDemandBefore: "number",
+        spaceUtilAfter: "number",
+        spaceDemandAfter: "number",
+        ioLatencyBefore: "number"
+};
+typeNames.interfaces["StoragePlacementResult"] = {
+recommendations: "ClusterRecommendation",
+        drsFault: "ClusterDrsFaults",
+        task: Task
+};
+typeNames.interfaces["StorageDrsVmConfigInfo"] = {
+vm: VirtualMachine,
+        enabled: "boolean",
+        behavior: "string",
+        intraVmAffinity: "boolean",
+        intraVmAntiAffinity: "VirtualDiskAntiAffinityRuleSpec",
+        virtualDiskRules: "VirtualDiskRuleSpec"
+};
+typeNames.interfaces["StorageDrsVmConfigSpec"] = {
+info: "StorageDrsVmConfigInfo"
+};
+typeNames.interfaces["VAppCloneSpec"] = {
+location: Datastore,
+        host: HostSystem,
+        resourceSpec: "ResourceConfigSpec",
+        vmFolder: Folder,
+        networkMapping: "VAppCloneSpecNetworkMappingPair",
+        property: "KeyValue",
+        resourceMapping: "VAppCloneSpecResourceMap",
+        provisioning: "string"
+};
+typeNames.interfaces["VAppCloneSpecNetworkMappingPair"] = {
+source: Network,
+        destination: Network
+};
+typeNames.interfaces["VAppCloneSpecResourceMap"] = {
+source: ManagedEntity,
+        parent: ResourcePool,
+        resourceSpec: "ResourceConfigSpec",
+        location: Datastore
+};
+typeNames.interfaces["VAppEntityConfigInfo"] = {
+key: ManagedEntity,
+        tag: "string",
+        startOrder: "number",
+        startDelay: "number",
+        waitingForGuest: "boolean",
+        startAction: "string",
+        stopDelay: "number",
+        stopAction: "string",
+        destroyWithParent: "boolean"
+};
+typeNames.interfaces["VAppIPAssignmentInfo"] = {
+supportedAllocationScheme: "string",
+        ipAllocationPolicy: "string",
+        supportedIpProtocol: "string",
+        ipProtocol: "string"
+};
+typeNames.interfaces["IpPool"] = {
+id: "number",
+        name: "string",
+        ipv4Config: "IpPoolIpPoolConfigInfo",
+        ipv6Config: "IpPoolIpPoolConfigInfo",
+        dnsDomain: "string",
+        dnsSearchPath: "string",
+        hostPrefix: "string",
+        httpProxy: "string",
+        networkAssociation: "IpPoolAssociation",
+        availableIpv4Addresses: "number",
+        availableIpv6Addresses: "number",
+        allocatedIpv4Addresses: "number",
+        allocatedIpv6Addresses: "number"
+};
+typeNames.interfaces["IpPoolAssociation"] = {
+network: Network,
+        networkName: "string"
+};
+typeNames.interfaces["IpPoolIpPoolConfigInfo"] = {
+subnetAddress: "string",
+        netmask: "string",
+        gateway: "string",
+        range: "string",
+        dns: "string",
+        dhcpServerAvailable: "boolean",
+        ipPoolEnabled: "boolean"
+};
+typeNames.interfaces["VAppOvfSectionInfo"] = {
+key: "number",
+        namespace: "string",
+        type: "string",
+        atEnvelopeLevel: "boolean",
+        contents: "string"
+};
+typeNames.interfaces["VAppOvfSectionSpec"] = {
+info: "VAppOvfSectionInfo"
+};
+typeNames.interfaces["VAppProductInfo"] = {
+key: "number",
+        classId: "string",
+        instanceId: "string",
+        name: "string",
+        vendor: "string",
+        version: "string",
+        fullVersion: "string",
+        vendorUrl: "string",
+        productUrl: "string",
+        appUrl: "string"
+};
+typeNames.interfaces["VAppProductSpec"] = {
+info: "VAppProductInfo"
+};
+typeNames.interfaces["VAppPropertyInfo"] = {
+key: "number",
+        classId: "string",
+        instanceId: "string",
+        id: "string",
+        category: "string",
+        label: "string",
+        type: "string",
+        typeReference: "string",
+        userConfigurable: "boolean",
+        defaultValue: "string",
+        value: "string",
+        description: "string"
+};
+typeNames.interfaces["VAppPropertySpec"] = {
+info: "VAppPropertyInfo"
+};
+typeNames.interfaces["VmConfigInfo"] = {
+product: "VAppProductInfo",
+        property: "VAppPropertyInfo",
+        ipAssignment: "VAppIPAssignmentInfo",
+        eula: "string",
+        ovfSection: "VAppOvfSectionInfo",
+        ovfEnvironmentTransport: "string",
+        installBootRequired: "boolean",
+        installBootStopDelay: "number"
+};
+typeNames.interfaces["VmConfigSpec"] = {
+product: "VAppProductSpec",
+        property: "VAppPropertySpec",
+        ipAssignment: "VAppIPAssignmentInfo",
+        eula: "string",
+        ovfSection: "VAppOvfSectionSpec",
+        ovfEnvironmentTransport: "string",
+        installBootRequired: "boolean",
+        installBootStopDelay: "number"
+};
+typeNames.interfaces["ClusterNetworkConfigSpec"] = {
+networkPortGroup: Network,
+        ipSettings: "CustomizationIPSettings"
+};
+typeNames.interfaces["FailoverNodeInfo"] = {
+clusterIpSettings: "CustomizationIPSettings",
+        failoverIp: "CustomizationIPSettings",
+        biosUuid: "string"
+};
+typeNames.interfaces["NodeDeploymentSpec"] = {
+esxHost: HostSystem,
+        datastore: Datastore,
+        publicNetworkPortGroup: Network,
+        clusterNetworkPortGroup: Network,
+        folder: Folder,
+        resourcePool: ResourcePool,
+        managementVc: "ServiceLocator",
+        nodeName: "string",
+        ipSettings: "CustomizationIPSettings"
+};
+typeNames.interfaces["NodeNetworkSpec"] = {
+ipSettings: "CustomizationIPSettings"
+};
+typeNames.interfaces["PassiveNodeDeploymentSpec"] = {
+failoverIpSettings: "CustomizationIPSettings"
+};
+typeNames.interfaces["PassiveNodeNetworkSpec"] = {
+failoverIpSettings: "CustomizationIPSettings"
+};
+typeNames.interfaces["SourceNodeSpec"] = {
+managementVc: "ServiceLocator",
+        activeVc: VirtualMachine
+};
+typeNames.interfaces["VchaClusterConfigInfo"] = {
+failoverNodeInfo1: "FailoverNodeInfo",
+        failoverNodeInfo2: "FailoverNodeInfo",
+        witnessNodeInfo: "WitnessNodeInfo",
+        state: "string"
+};
+typeNames.interfaces["VchaClusterConfigSpec"] = {
+passiveIp: "string",
+        witnessIp: "string"
+};
+typeNames.interfaces["VchaClusterDeploymentSpec"] = {
+passiveDeploymentSpec: "PassiveNodeDeploymentSpec",
+        witnessDeploymentSpec: "NodeDeploymentSpec",
+        activeVcSpec: "SourceNodeSpec",
+        activeVcNetworkConfig: "ClusterNetworkConfigSpec"
+};
+typeNames.interfaces["VchaClusterNetworkSpec"] = {
+witnessNetworkSpec: "NodeNetworkSpec",
+        passiveNetworkSpec: "PassiveNodeNetworkSpec"
+};
+typeNames.interfaces["WitnessNodeInfo"] = {
+ipSettings: "CustomizationIPSettings",
+        biosUuid: "string"
+};
+typeNames.interfaces["VchaClusterHealth"] = {
+runtimeInfo: "VchaClusterRuntimeInfo",
+        healthMessages: "LocalizableMessage",
+        additionalInformation: "LocalizableMessage"
+};
+typeNames.interfaces["VchaClusterRuntimeInfo"] = {
+clusterState: "string",
+        nodeInfo: "VchaNodeRuntimeInfo",
+        clusterMode: "string"
+};
+typeNames.interfaces["VchaNodeRuntimeInfo"] = {
+nodeState: "string",
+        nodeRole: "string",
+        nodeIp: "string"
+};
+typeNames.interfaces["VirtualMachineAffinityInfo"] = {
+affinitySet: "number"
+};
+typeNames.interfaces["VirtualMachineBootOptions"] = {
+bootDelay: "number",
+        enterBIOSSetup: "boolean",
+        efiSecureBootEnabled: "boolean",
+        bootRetryEnabled: "boolean",
+        bootRetryDelay: "number",
+        bootOrder: "VirtualMachineBootOptionsBootableDevice",
+        networkBootProtocol: "string"
+};
+typeNames.interfaces["VirtualMachineBootOptionsBootableCdromDevice"] = {
+
+};
+typeNames.interfaces["VirtualMachineBootOptionsBootableDevice"] = {
+
+};
+typeNames.interfaces["VirtualMachineBootOptionsBootableDiskDevice"] = {
+deviceKey: "number"
+};
+typeNames.interfaces["VirtualMachineBootOptionsBootableEthernetDevice"] = {
+deviceKey: "number"
+};
+typeNames.interfaces["VirtualMachineBootOptionsBootableFloppyDevice"] = {
+
+};
+typeNames.interfaces["VirtualMachineCapability"] = {
+snapshotOperationsSupported: "boolean",
+        multipleSnapshotsSupported: "boolean",
+        snapshotConfigSupported: "boolean",
+        poweredOffSnapshotsSupported: "boolean",
+        memorySnapshotsSupported: "boolean",
+        revertToSnapshotSupported: "boolean",
+        quiescedSnapshotsSupported: "boolean",
+        disableSnapshotsSupported: "boolean",
+        lockSnapshotsSupported: "boolean",
+        consolePreferencesSupported: "boolean",
+        cpuFeatureMaskSupported: "boolean",
+        s1AcpiManagementSupported: "boolean",
+        settingScreenResolutionSupported: "boolean",
+        toolsAutoUpdateSupported: "boolean",
+        vmNpivWwnSupported: "boolean",
+        npivWwnOnNonRdmVmSupported: "boolean",
+        vmNpivWwnDisableSupported: "boolean",
+        vmNpivWwnUpdateSupported: "boolean",
+        swapPlacementSupported: "boolean",
+        toolsSyncTimeSupported: "boolean",
+        virtualMmuUsageSupported: "boolean",
+        diskSharesSupported: "boolean",
+        bootOptionsSupported: "boolean",
+        bootRetryOptionsSupported: "boolean",
+        settingVideoRamSizeSupported: "boolean",
+        settingDisplayTopologySupported: "boolean",
+        recordReplaySupported: "boolean",
+        changeTrackingSupported: "boolean",
+        multipleCoresPerSocketSupported: "boolean",
+        hostBasedReplicationSupported: "boolean",
+        guestAutoLockSupported: "boolean",
+        memoryReservationLockSupported: "boolean",
+        featureRequirementSupported: "boolean",
+        poweredOnMonitorTypeChangeSupported: "boolean",
+        seSparseDiskSupported: "boolean",
+        nestedHVSupported: "boolean",
+        vPMCSupported: "boolean",
+        secureBootSupported: "boolean",
+        perVmEvcSupported: "boolean",
+        virtualMmuUsageIgnored: "boolean",
+        virtualExecUsageIgnored: "boolean",
+        diskOnlySnapshotOnSuspendedVMSupported: "boolean",
+        toolsSyncTimeAllowSupported: "boolean",
+        sevSupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineCloneSpec"] = {
+location: "VirtualMachineRelocateSpec",
+        template: "boolean",
+        config: "VirtualMachineConfigSpec",
+        customization: "CustomizationSpec",
+        powerOn: "boolean",
+        snapshot: VirtualMachineSnapshot,
+        memory: "boolean"
+};
+typeNames.interfaces["VirtualMachineConfigInfo"] = {
+changeVersion: "string",
+        modified: "Date",
+        name: "string",
+        guestFullName: "string",
+        version: "string",
+        uuid: "string",
+        createDate: "Date",
+        instanceUuid: "string",
+        npivNodeWorldWideName: "number",
+        npivPortWorldWideName: "number",
+        npivWorldWideNameType: "string",
+        npivDesiredNodeWwns: "number",
+        npivDesiredPortWwns: "number",
+        npivTemporaryDisabled: "boolean",
+        npivOnNonRdmDisks: "boolean",
+        locationId: "string",
+        template: "boolean",
+        guestId: "string",
+        alternateGuestName: "string",
+        annotation: "string",
+        files: "VirtualMachineFileInfo",
+        tools: "ToolsConfigInfo",
+        flags: "VirtualMachineFlagInfo",
+        consolePreferences: "VirtualMachineConsolePreferences",
+        defaultPowerOps: "VirtualMachineDefaultPowerOpInfo",
+        hardware: "VirtualHardware",
+        vcpuConfig: "VirtualMachineVcpuConfig",
+        cpuAllocation: "ResourceAllocationInfo",
+        memoryAllocation: "ResourceAllocationInfo",
+        latencySensitivity: "LatencySensitivity",
+        memoryHotAddEnabled: "boolean",
+        cpuHotAddEnabled: "boolean",
+        cpuHotRemoveEnabled: "boolean",
+        hotPlugMemoryLimit: "number",
+        hotPlugMemoryIncrementSize: "number",
+        cpuAffinity: "VirtualMachineAffinityInfo",
+        memoryAffinity: "VirtualMachineAffinityInfo",
+        networkShaper: "VirtualMachineNetworkShaperInfo",
+        extraConfig: "OptionValue",
+        cpuFeatureMask: "HostCpuIdInfo",
+        datastoreUrl: "VirtualMachineConfigInfoDatastoreUrlPair",
+        swapPlacement: "string",
+        bootOptions: "VirtualMachineBootOptions",
+        ftInfo: "FaultToleranceConfigInfo",
+        repConfig: "ReplicationConfigSpec",
+        vAppConfig: "VmConfigInfo",
+        vAssertsEnabled: "boolean",
+        changeTrackingEnabled: "boolean",
+        firmware: "string",
+        maxMksConnections: "number",
+        guestAutoLockEnabled: "boolean",
+        managedBy: "ManagedByInfo",
+        memoryReservationLockedToMax: "boolean",
+        initialOverhead: "VirtualMachineConfigInfoOverheadInfo",
+        nestedHVEnabled: "boolean",
+        vPMCEnabled: "boolean",
+        scheduledHardwareUpgradeInfo: "ScheduledHardwareUpgradeInfo",
+        forkConfigInfo: "VirtualMachineForkConfigInfo",
+        vFlashCacheReservation: "number",
+        vmxConfigChecksum: "Buffer",
+        messageBusTunnelEnabled: "boolean",
+        vmStorageObjectId: "string",
+        swapStorageObjectId: "string",
+        keyId: "CryptoKeyId",
+        guestIntegrityInfo: "VirtualMachineGuestIntegrityInfo",
+        migrateEncryption: "string",
+        sgxInfo: "VirtualMachineSgxInfo",
+        contentLibItemInfo: "VirtualMachineContentLibraryItemInfo",
+        guestMonitoringModeInfo: "VirtualMachineGuestMonitoringModeInfo",
+        sevEnabled: "boolean"
+};
+typeNames.interfaces["VirtualMachineConfigInfoDatastoreUrlPair"] = {
+name: "string",
+        url: "string"
+};
+typeNames.interfaces["VirtualMachineConfigInfoOverheadInfo"] = {
+initialMemoryReservation: "number",
+        initialSwapReservation: "number"
+};
+typeNames.interfaces["VirtualMachineConfigOption"] = {
+version: "string",
+        description: "string",
+        guestOSDescriptor: "GuestOsDescriptor",
+        guestOSDefaultIndex: "number",
+        hardwareOptions: "VirtualHardwareOption",
+        capabilities: "VirtualMachineCapability",
+        datastore: "DatastoreOption",
+        defaultDevice: "VirtualDevice",
+        supportedMonitorType: "string",
+        supportedOvfEnvironmentTransport: "string",
+        supportedOvfInstallTransport: "string",
+        propertyRelations: "VirtualMachinePropertyRelation"
+};
+typeNames.interfaces["VirtualMachineConfigOptionDescriptor"] = {
+key: "string",
+        description: "string",
+        host: HostSystem,
+        createSupported: "boolean",
+        defaultConfigOption: "boolean",
+        runSupported: "boolean",
+        upgradeSupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineConfigSpec"] = {
+changeVersion: "string",
+        name: "string",
+        version: "string",
+        createDate: "Date",
+        uuid: "string",
+        instanceUuid: "string",
+        npivNodeWorldWideName: "number",
+        npivPortWorldWideName: "number",
+        npivWorldWideNameType: "string",
+        npivDesiredNodeWwns: "number",
+        npivDesiredPortWwns: "number",
+        npivTemporaryDisabled: "boolean",
+        npivOnNonRdmDisks: "boolean",
+        npivWorldWideNameOp: "string",
+        locationId: "string",
+        guestId: "string",
+        alternateGuestName: "string",
+        annotation: "string",
+        files: "VirtualMachineFileInfo",
+        tools: "ToolsConfigInfo",
+        flags: "VirtualMachineFlagInfo",
+        consolePreferences: "VirtualMachineConsolePreferences",
+        powerOpInfo: "VirtualMachineDefaultPowerOpInfo",
+        numCPUs: "number",
+        vcpuConfig: "VirtualMachineVcpuConfig",
+        numCoresPerSocket: "number",
+        memoryMB: "number",
+        memoryHotAddEnabled: "boolean",
+        cpuHotAddEnabled: "boolean",
+        cpuHotRemoveEnabled: "boolean",
+        virtualICH7MPresent: "boolean",
+        virtualSMCPresent: "boolean",
+        deviceChange: "VirtualDeviceConfigSpec",
+        cpuAllocation: "ResourceAllocationInfo",
+        memoryAllocation: "ResourceAllocationInfo",
+        latencySensitivity: "LatencySensitivity",
+        cpuAffinity: "VirtualMachineAffinityInfo",
+        memoryAffinity: "VirtualMachineAffinityInfo",
+        networkShaper: "VirtualMachineNetworkShaperInfo",
+        cpuFeatureMask: "VirtualMachineCpuIdInfoSpec",
+        extraConfig: "OptionValue",
+        swapPlacement: "string",
+        bootOptions: "VirtualMachineBootOptions",
+        vAppConfig: "VmConfigSpec",
+        ftInfo: "FaultToleranceConfigInfo",
+        repConfig: "ReplicationConfigSpec",
+        vAppConfigRemoved: "boolean",
+        vAssertsEnabled: "boolean",
+        changeTrackingEnabled: "boolean",
+        firmware: "string",
+        maxMksConnections: "number",
+        guestAutoLockEnabled: "boolean",
+        managedBy: "ManagedByInfo",
+        memoryReservationLockedToMax: "boolean",
+        nestedHVEnabled: "boolean",
+        vPMCEnabled: "boolean",
+        scheduledHardwareUpgradeInfo: "ScheduledHardwareUpgradeInfo",
+        vmProfile: "VirtualMachineProfileSpec",
+        messageBusTunnelEnabled: "boolean",
+        crypto: "CryptoSpec",
+        migrateEncryption: "string",
+        sgxInfo: "VirtualMachineSgxInfo",
+        guestMonitoringModeInfo: "VirtualMachineGuestMonitoringModeInfo",
+        sevEnabled: "boolean"
+};
+typeNames.interfaces["VirtualMachineCpuIdInfoSpec"] = {
+info: "HostCpuIdInfo"
+};
+typeNames.interfaces["VirtualMachineConsolePreferences"] = {
+powerOnWhenOpened: "boolean",
+        enterFullScreenOnPowerOn: "boolean",
+        closeOnPowerOffOrSuspend: "boolean"
+};
+typeNames.interfaces["VirtualMachineContentLibraryItemInfo"] = {
+contentLibraryItemUuid: "string",
+        contentLibraryItemVersion: "string"
+};
+typeNames.interfaces["DatastoreOption"] = {
+unsupportedVolumes: "VirtualMachineDatastoreVolumeOption"
+};
+typeNames.interfaces["VirtualMachineDatastoreVolumeOption"] = {
+fileSystemType: "string",
+        majorVersion: "number"
+};
+typeNames.interfaces["VirtualMachineDefaultPowerOpInfo"] = {
+powerOffType: "string",
+        suspendType: "string",
+        resetType: "string",
+        defaultPowerOffType: "string",
+        defaultSuspendType: "string",
+        defaultResetType: "string",
+        standbyAction: "string"
+};
+typeNames.interfaces["VirtualMachineDeviceRuntimeInfo"] = {
+runtimeState: "VirtualMachineDeviceRuntimeInfoDeviceRuntimeState",
+        key: "number"
+};
+typeNames.interfaces["VirtualMachineDeviceRuntimeInfoDeviceRuntimeState"] = {
+
+};
+typeNames.interfaces["VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeState"] = {
+vmDirectPathGen2Active: "boolean",
+        vmDirectPathGen2InactiveReasonVm: "string",
+        vmDirectPathGen2InactiveReasonOther: "string",
+        vmDirectPathGen2InactiveReasonExtended: "string",
+        reservationStatus: "string",
+        attachmentStatus: "string",
+        featureRequirement: "VirtualMachineFeatureRequirement"
+};
+typeNames.interfaces["FaultToleranceConfigInfo"] = {
+role: "number",
+        instanceUuids: "string",
+        configPaths: "string",
+        orphaned: "boolean"
+};
+typeNames.interfaces["FaultToleranceConfigSpec"] = {
+metaDataPath: "FaultToleranceMetaSpec",
+        secondaryVmSpec: "FaultToleranceVMConfigSpec"
+};
+typeNames.interfaces["FaultToleranceMetaSpec"] = {
+metaDataDatastore: Datastore
+};
+typeNames.interfaces["FaultTolerancePrimaryConfigInfo"] = {
+secondaries: VirtualMachine
+};
+typeNames.interfaces["FaultToleranceSecondaryConfigInfo"] = {
+primaryVM: VirtualMachine
+};
+typeNames.interfaces["FaultToleranceSecondaryOpResult"] = {
+vm: VirtualMachine,
+        powerOnAttempted: "boolean",
+        powerOnResult: "ClusterPowerOnVmResult"
+};
+typeNames.interfaces["FaultToleranceVMConfigSpec"] = {
+vmConfig: Datastore,
+        disks: "FaultToleranceDiskSpec"
+};
+typeNames.interfaces["FaultToleranceDiskSpec"] = {
+disk: "VirtualDevice",
+        datastore: Datastore
+};
+typeNames.interfaces["VirtualMachineFeatureRequirement"] = {
+key: "string",
+        featureName: "string",
+        value: "string"
+};
+typeNames.interfaces["VirtualMachineFileInfo"] = {
+vmPathName: "string",
+        snapshotDirectory: "string",
+        suspendDirectory: "string",
+        logDirectory: "string",
+        ftMetadataDirectory: "string"
+};
+typeNames.interfaces["VirtualMachineFileLayout"] = {
+configFile: "string",
+        logFile: "string",
+        disk: "VirtualMachineFileLayoutDiskLayout",
+        snapshot: "VirtualMachineFileLayoutSnapshotLayout",
+        swapFile: "string"
+};
+typeNames.interfaces["VirtualMachineFileLayoutDiskLayout"] = {
+key: "number",
+        diskFile: "string"
+};
+typeNames.interfaces["VirtualMachineFileLayoutSnapshotLayout"] = {
+key: VirtualMachineSnapshot,
+        snapshotFile: "string"
+};
+typeNames.interfaces["VirtualMachineFileLayoutEx"] = {
+file: "VirtualMachineFileLayoutExFileInfo",
+        disk: "VirtualMachineFileLayoutExDiskLayout",
+        snapshot: "VirtualMachineFileLayoutExSnapshotLayout",
+        timestamp: "Date"
+};
+typeNames.interfaces["VirtualMachineFileLayoutExDiskLayout"] = {
+key: "number",
+        chain: "VirtualMachineFileLayoutExDiskUnit"
+};
+typeNames.interfaces["VirtualMachineFileLayoutExDiskUnit"] = {
+fileKey: "number"
+};
+typeNames.interfaces["VirtualMachineFileLayoutExFileInfo"] = {
+key: "number",
+        name: "string",
+        type: "string",
+        size: "number",
+        uniqueSize: "number",
+        backingObjectId: "string",
+        accessible: "boolean"
+};
+typeNames.interfaces["VirtualMachineFileLayoutExSnapshotLayout"] = {
+key: VirtualMachineSnapshot,
+        dataKey: "number",
+        memoryKey: "number",
+        disk: "VirtualMachineFileLayoutExDiskLayout"
+};
+typeNames.interfaces["VirtualMachineFlagInfo"] = {
+disableAcceleration: "boolean",
+        enableLogging: "boolean",
+        useToe: "boolean",
+        runWithDebugInfo: "boolean",
+        monitorType: "string",
+        htSharing: "string",
+        snapshotDisabled: "boolean",
+        snapshotLocked: "boolean",
+        diskUuidEnabled: "boolean",
+        virtualMmuUsage: "string",
+        virtualExecUsage: "string",
+        snapshotPowerOffBehavior: "string",
+        recordReplayEnabled: "boolean",
+        faultToleranceType: "string",
+        cbrcCacheEnabled: "boolean",
+        vvtdEnabled: "boolean",
+        vbsEnabled: "boolean"
+};
+typeNames.interfaces["VirtualMachineForkConfigInfo"] = {
+parentEnabled: "boolean",
+        childForkGroupId: "string",
+        parentForkGroupId: "string",
+        childType: "string"
+};
+typeNames.interfaces["GuestInfo"] = {
+toolsStatus: "VirtualMachineToolsStatus",
+        toolsVersionStatus: "string",
+        toolsVersionStatus2: "string",
+        toolsRunningStatus: "string",
+        toolsVersion: "string",
+        toolsInstallType: "string",
+        guestId: "string",
+        guestFamily: "string",
+        guestFullName: "string",
+        hostName: "string",
+        ipAddress: "string",
+        net: "GuestNicInfo",
+        ipStack: "GuestStackInfo",
+        disk: "GuestDiskInfo",
+        screen: "GuestScreenInfo",
+        guestState: "string",
+        appHeartbeatStatus: "string",
+        guestKernelCrashed: "boolean",
+        appState: "string",
+        guestOperationsReady: "boolean",
+        interactiveGuestOperationsReady: "boolean",
+        guestStateChangeSupported: "boolean",
+        generationInfo: "GuestInfoNamespaceGenerationInfo",
+        hwVersion: "string"
+};
+typeNames.interfaces["GuestDiskInfo"] = {
+diskPath: "string",
+        capacity: "number",
+        freeSpace: "number",
+        filesystemType: "string",
+        mappings: "GuestInfoVirtualDiskMapping"
+};
+typeNames.interfaces["GuestInfoNamespaceGenerationInfo"] = {
+key: "string",
+        generationNo: "number"
+};
+typeNames.interfaces["GuestNicInfo"] = {
+network: "string",
+        ipAddress: "string",
+        macAddress: "string",
+        connected: "boolean",
+        deviceConfigId: "number",
+        dnsConfig: "NetDnsConfigInfo",
+        ipConfig: "NetIpConfigInfo",
+        netBIOSConfig: "NetBIOSConfigInfo"
+};
+typeNames.interfaces["GuestScreenInfo"] = {
+width: "number",
+        height: "number"
+};
+typeNames.interfaces["GuestStackInfo"] = {
+dnsConfig: "NetDnsConfigInfo",
+        ipRouteConfig: "NetIpRouteConfigInfo",
+        ipStackConfig: "KeyValue",
+        dhcpConfig: "NetDhcpConfigInfo"
+};
+typeNames.interfaces["GuestInfoVirtualDiskMapping"] = {
+key: "number"
+};
+typeNames.interfaces["VirtualMachineGuestIntegrityInfo"] = {
+enabled: "boolean"
+};
+typeNames.interfaces["VirtualMachineGuestMonitoringModeInfo"] = {
+gmmFile: "string",
+        gmmAppliance: "string"
+};
+typeNames.interfaces["GuestOsDescriptor"] = {
+id: "string",
+        family: "string",
+        fullName: "string",
+        supportedMaxCPUs: "number",
+        numSupportedPhysicalSockets: "number",
+        numSupportedCoresPerSocket: "number",
+        supportedMinMemMB: "number",
+        supportedMaxMemMB: "number",
+        recommendedMemMB: "number",
+        recommendedColorDepth: "number",
+        supportedDiskControllerList: "string",
+        recommendedSCSIController: "string",
+        recommendedDiskController: "string",
+        supportedNumDisks: "number",
+        recommendedDiskSizeMB: "number",
+        recommendedCdromController: "string",
+        supportedEthernetCard: "string",
+        recommendedEthernetCard: "string",
+        supportsSlaveDisk: "boolean",
+        cpuFeatureMask: "HostCpuIdInfo",
+        smcRequired: "boolean",
+        supportsWakeOnLan: "boolean",
+        supportsVMI: "boolean",
+        supportsMemoryHotAdd: "boolean",
+        supportsCpuHotAdd: "boolean",
+        supportsCpuHotRemove: "boolean",
+        supportedFirmware: "string",
+        recommendedFirmware: "string",
+        supportedUSBControllerList: "string",
+        recommendedUSBController: "string",
+        supports3D: "boolean",
+        recommended3D: "boolean",
+        smcRecommended: "boolean",
+        ich7mRecommended: "boolean",
+        usbRecommended: "boolean",
+        supportLevel: "string",
+        supportedForCreate: "boolean",
+        vRAMSizeInKB: "IntOption",
+        numSupportedFloppyDevices: "number",
+        wakeOnLanEthernetCard: "string",
+        supportsPvscsiControllerForBoot: "boolean",
+        diskUuidEnabled: "boolean",
+        supportsHotPlugPCI: "boolean",
+        supportsSecureBoot: "boolean",
+        defaultSecureBoot: "boolean",
+        persistentMemorySupported: "boolean",
+        supportedMinPersistentMemoryMB: "number",
+        supportedMaxPersistentMemoryMB: "number",
+        recommendedPersistentMemoryMB: "number",
+        persistentMemoryHotAddSupported: "boolean",
+        persistentMemoryHotRemoveSupported: "boolean",
+        persistentMemoryColdGrowthSupported: "boolean",
+        persistentMemoryColdGrowthGranularityMB: "number",
+        persistentMemoryHotGrowthSupported: "boolean",
+        persistentMemoryHotGrowthGranularityMB: "number",
+        numRecommendedPhysicalSockets: "number",
+        numRecommendedCoresPerSocket: "number",
+        vvtdSupported: "BoolOption",
+        vbsSupported: "BoolOption",
+        vsgxSupported: "BoolOption",
+        supportsTPM20: "boolean",
+        vwdtSupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineGuestQuiesceSpec"] = {
+timeout: "number"
+};
+typeNames.interfaces["VirtualMachineInstantCloneSpec"] = {
+name: "string",
+        location: "VirtualMachineRelocateSpec",
+        config: "OptionValue",
+        biosUuid: "string"
+};
+typeNames.interfaces["VirtualMachineLegacyNetworkSwitchInfo"] = {
+name: "string"
+};
+typeNames.interfaces["VirtualMachineMessage"] = {
+id: "string",
+        argument: "any",
+        text: "string"
+};
+typeNames.interfaces["VirtualMachineMetadataManagerVmMetadata"] = {
+vmId: "string",
+        metadata: "string"
+};
+typeNames.interfaces["VirtualMachineMetadataManagerVmMetadataInput"] = {
+operation: "string",
+        vmMetadata: "VirtualMachineMetadataManagerVmMetadata"
+};
+typeNames.interfaces["VirtualMachineMetadataManagerVmMetadataOwner"] = {
+name: "string"
+};
+typeNames.interfaces["VirtualMachineMetadataManagerVmMetadataResult"] = {
+vmMetadata: "VirtualMachineMetadataManagerVmMetadata",
+        error: "MethodFault"
+};
+typeNames.interfaces["VirtualMachineNetworkShaperInfo"] = {
+enabled: "boolean",
+        peakBps: "number",
+        averageBps: "number",
+        burstSize: "number"
+};
+typeNames.interfaces["VirtualMachineProfileDetails"] = {
+profile: "VirtualMachineProfileSpec",
+        diskProfileDetails: "VirtualMachineProfileDetailsDiskProfileDetails"
+};
+typeNames.interfaces["VirtualMachineProfileDetailsDiskProfileDetails"] = {
+diskId: "number",
+        profile: "VirtualMachineProfileSpec"
+};
+typeNames.interfaces["VirtualMachineProfileRawData"] = {
+extensionKey: "string",
+        objectData: "string"
+};
+typeNames.interfaces["VirtualMachineProfileSpec"] = {
+
+};
+typeNames.interfaces["VirtualMachinePropertyRelation"] = {
+key: "DynamicProperty",
+        relations: "DynamicProperty"
+};
+typeNames.interfaces["VirtualMachineQuestionInfo"] = {
+id: "string",
+        text: "string",
+        choice: "ChoiceOption",
+        message: "VirtualMachineMessage"
+};
+typeNames.interfaces["ReplicationConfigSpec"] = {
+generation: "number",
+        vmReplicationId: "string",
+        destination: "string",
+        port: "number",
+        rpo: "number",
+        quiesceGuestEnabled: "boolean",
+        paused: "boolean",
+        oppUpdatesEnabled: "boolean",
+        netCompressionEnabled: "boolean",
+        netEncryptionEnabled: "boolean",
+        encryptionDestination: "string",
+        encryptionPort: "number",
+        remoteCertificateThumbprint: "string",
+        disk: "ReplicationInfoDiskSettings"
+};
+typeNames.interfaces["ReplicationInfoDiskSettings"] = {
+key: "number",
+        diskReplicationId: "string"
+};
+typeNames.interfaces["ScheduledHardwareUpgradeInfo"] = {
+upgradePolicy: "string",
+        versionKey: "string",
+        scheduledHardwareUpgradeStatus: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["VirtualMachineSgxInfo"] = {
+epcSize: "number",
+        flcMode: "string",
+        lePubKeyHash: "string"
+};
+typeNames.interfaces["VirtualMachineSnapshotInfo"] = {
+currentSnapshot: VirtualMachineSnapshot,
+        rootSnapshotList: "VirtualMachineSnapshotTree"
+};
+typeNames.interfaces["VirtualMachineSriovDevicePoolInfo"] = {
+key: "string"
+};
+typeNames.interfaces["VirtualMachineSriovNetworkDevicePoolInfo"] = {
+switchKey: "string",
+        switchUuid: "string"
+};
+typeNames.interfaces["VirtualMachineStorageInfo"] = {
+perDatastoreUsage: "VirtualMachineUsageOnDatastore",
+        timestamp: "Date"
+};
+typeNames.interfaces["VirtualMachineUsageOnDatastore"] = {
+datastore: Datastore,
+        committed: "number",
+        uncommitted: "number",
+        unshared: "number"
+};
+typeNames.interfaces["VirtualMachineTargetInfo"] = {
+name: "string",
+        configurationTag: "string"
+};
+typeNames.interfaces["ToolsConfigInfo"] = {
+toolsVersion: "number",
+        toolsInstallType: "string",
+        afterPowerOn: "boolean",
+        afterResume: "boolean",
+        beforeGuestStandby: "boolean",
+        beforeGuestShutdown: "boolean",
+        beforeGuestReboot: "boolean",
+        toolsUpgradePolicy: "string",
+        pendingCustomization: "string",
+        customizationKeyId: "CryptoKeyId",
+        syncTimeWithHostAllowed: "boolean",
+        syncTimeWithHost: "boolean",
+        lastInstallInfo: "ToolsConfigInfoToolsLastInstallInfo"
+};
+typeNames.interfaces["ToolsConfigInfoToolsLastInstallInfo"] = {
+counter: "number",
+        fault: "MethodFault"
+};
+typeNames.interfaces["VirtualMachineUsbInfo"] = {
+description: "string",
+        vendor: "number",
+        product: "number",
+        physicalPath: "string",
+        family: "string",
+        speed: "string",
+        summary: "VirtualMachineSummary"
+};
+typeNames.interfaces["UsbScanCodeSpec"] = {
+keyEvents: "UsbScanCodeSpecKeyEvent"
+};
+typeNames.interfaces["UsbScanCodeSpecKeyEvent"] = {
+usbHidCode: "number",
+        modifiers: "UsbScanCodeSpecModifierType"
+};
+typeNames.interfaces["UsbScanCodeSpecModifierType"] = {
+leftControl: "boolean",
+        leftShift: "boolean",
+        leftAlt: "boolean",
+        leftGui: "boolean",
+        rightControl: "boolean",
+        rightShift: "boolean",
+        rightAlt: "boolean",
+        rightGui: "boolean"
+};
+typeNames.interfaces["VirtualMachineVcpuConfig"] = {
+latencySensitivity: "LatencySensitivity"
+};
+typeNames.interfaces["VirtualHardware"] = {
+numCPU: "number",
+        numCoresPerSocket: "number",
+        memoryMB: "number",
+        virtualICH7MPresent: "boolean",
+        virtualSMCPresent: "boolean",
+        device: "VirtualDevice"
+};
+typeNames.interfaces["VirtualHardwareOption"] = {
+hwVersion: "number",
+        virtualDeviceOption: "VirtualDeviceOption",
+        deviceListReadonly: "boolean",
+        numCPU: "number",
+        numCoresPerSocket: "IntOption",
+        numCpuReadonly: "boolean",
+        memoryMB: "LongOption",
+        numPCIControllers: "IntOption",
+        numIDEControllers: "IntOption",
+        numUSBControllers: "IntOption",
+        numUSBXHCIControllers: "IntOption",
+        numSIOControllers: "IntOption",
+        numPS2Controllers: "IntOption",
+        licensingLimit: "string",
+        numSupportedWwnPorts: "IntOption",
+        numSupportedWwnNodes: "IntOption",
+        resourceConfigOption: "ResourceConfigOption",
+        numNVDIMMControllers: "IntOption",
+        numTPMDevices: "IntOption",
+        numWDTDevices: "IntOption",
+        numPrecisionClockDevices: "IntOption",
+        epcMemoryMB: "LongOption"
+};
+typeNames.interfaces["VirtualMachineWindowsQuiesceSpec"] = {
+vssBackupType: "number",
+        vssBootableSystemState: "boolean",
+        vssPartialFileSupport: "boolean",
+        vssBackupContext: "string"
+};
+typeNames.interfaces["CheckResult"] = {
+vm: VirtualMachine,
+        host: HostSystem,
+        warning: "MethodFault",
+        error: "MethodFault"
+};
+typeNames.interfaces["CustomizationAdapterMapping"] = {
+macAddress: "string",
+        adapter: "CustomizationIPSettings"
+};
+typeNames.interfaces["CustomizationGlobalIPSettings"] = {
+dnsSuffixList: "string",
+        dnsServerList: "string"
+};
+typeNames.interfaces["CustomizationGuiRunOnce"] = {
+commandList: "string"
+};
+typeNames.interfaces["CustomizationGuiUnattended"] = {
+password: "CustomizationPassword",
+        timeZone: "number",
+        autoLogon: "boolean",
+        autoLogonCount: "number"
+};
+typeNames.interfaces["CustomizationIPSettings"] = {
+ip: "CustomizationIpGenerator",
+        subnetMask: "string",
+        gateway: "string",
+        ipV6Spec: "CustomizationIPSettingsIpV6AddressSpec",
+        dnsServerList: "string",
+        dnsDomain: "string",
+        primaryWINS: "string",
+        secondaryWINS: "string",
+        netBIOS: "CustomizationNetBIOSMode"
+};
+typeNames.interfaces["CustomizationIPSettingsIpV6AddressSpec"] = {
+ip: "CustomizationIpV6Generator",
+        gateway: "string"
+};
+typeNames.interfaces["CustomizationIdentification"] = {
+joinWorkgroup: "string",
+        joinDomain: "string",
+        domainAdmin: "string",
+        domainAdminPassword: "CustomizationPassword"
+};
+typeNames.interfaces["CustomizationIdentitySettings"] = {
+
+};
+typeNames.interfaces["CustomizationIpGenerator"] = {
+
+};
+typeNames.interfaces["CustomizationIpV6Generator"] = {
+
+};
+typeNames.interfaces["CustomizationLicenseFilePrintData"] = {
+autoMode: "CustomizationLicenseDataMode",
+        autoUsers: "number"
+};
+typeNames.interfaces["CustomizationLinuxPrep"] = {
+hostName: "CustomizationName",
+        domain: "string",
+        timeZone: "string",
+        hwClockUTC: "boolean",
+        scriptText: "string"
+};
+typeNames.interfaces["CustomizationName"] = {
+
+};
+typeNames.interfaces["CustomizationOptions"] = {
+
+};
+typeNames.interfaces["CustomizationPassword"] = {
+value: "string",
+        plainText: "boolean"
+};
+typeNames.interfaces["CustomizationPrefixName"] = {
+base: "string"
+};
+typeNames.interfaces["CustomizationSpec"] = {
+options: "CustomizationOptions",
+        identity: "CustomizationIdentitySettings",
+        globalIPSettings: "CustomizationGlobalIPSettings",
+        nicSettingMap: "CustomizationAdapterMapping",
+        encryptionKey: "number"
+};
+typeNames.interfaces["CustomizationStatelessIpV6Generator"] = {
+
+};
+typeNames.interfaces["CustomizationSysprep"] = {
+guiUnattended: "CustomizationGuiUnattended",
+        userData: "CustomizationUserData",
+        guiRunOnce: "CustomizationGuiRunOnce",
+        identification: "CustomizationIdentification",
+        licenseFilePrintData: "CustomizationLicenseFilePrintData"
+};
+typeNames.interfaces["CustomizationSysprepText"] = {
+value: "string"
+};
+typeNames.interfaces["CustomizationUnknownIpGenerator"] = {
+
+};
+typeNames.interfaces["CustomizationUnknownIpV6Generator"] = {
+
+};
+typeNames.interfaces["CustomizationUnknownName"] = {
+
+};
+typeNames.interfaces["CustomizationUserData"] = {
+fullName: "string",
+        orgName: "string",
+        computerName: "CustomizationName",
+        productId: "string"
+};
+typeNames.interfaces["CustomizationVirtualMachineName"] = {
+
+};
+typeNames.interfaces["CustomizationWinOptions"] = {
+changeSID: "boolean",
+        deleteAccounts: "boolean",
+        reboot: "CustomizationSysprepRebootOption"
+};
+typeNames.interfaces["HostDiskMappingInfo"] = {
+physicalPartition: "HostDiskMappingPartitionInfo",
+        name: "string",
+        exclusive: "boolean"
+};
+typeNames.interfaces["HostDiskMappingPartitionInfo"] = {
+name: "string",
+        fileSystem: "string",
+        capacityInKb: "number"
+};
+typeNames.interfaces["HostDiskMappingOption"] = {
+physicalPartition: "HostDiskMappingPartitionOption",
+        name: "string"
+};
+typeNames.interfaces["HostDiskMappingPartitionOption"] = {
+name: "string",
+        fileSystem: "string",
+        capacityInKb: "number"
+};
+typeNames.interfaces["VirtualDevice"] = {
+key: "number",
+        deviceInfo: "Description",
+        backing: "VirtualDeviceBackingInfo",
+        connectable: "VirtualDeviceConnectInfo",
+        slotInfo: "VirtualDeviceBusSlotInfo",
+        controllerKey: "number",
+        unitNumber: "number"
+};
+typeNames.interfaces["VirtualDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualDeviceBusSlotInfo"] = {
+
+};
+typeNames.interfaces["VirtualDeviceConnectInfo"] = {
+migrateConnect: "string",
+        startConnected: "boolean",
+        allowGuestControl: "boolean",
+        connected: "boolean",
+        status: "string"
+};
+typeNames.interfaces["VirtualDeviceDeviceBackingInfo"] = {
+deviceName: "string",
+        useAutoDetect: "boolean"
+};
+typeNames.interfaces["VirtualDeviceFileBackingInfo"] = {
+fileName: "string",
+        datastore: Datastore,
+        backingObjectId: "string"
+};
+typeNames.interfaces["VirtualDevicePciBusSlotInfo"] = {
+pciSlotNumber: "number"
+};
+typeNames.interfaces["VirtualDevicePipeBackingInfo"] = {
+pipeName: "string"
+};
+typeNames.interfaces["VirtualDeviceRemoteDeviceBackingInfo"] = {
+deviceName: "string",
+        useAutoDetect: "boolean"
+};
+typeNames.interfaces["VirtualDeviceURIBackingInfo"] = {
+serviceURI: "string",
+        direction: "string",
+        proxyURI: "string"
+};
+typeNames.interfaces["VirtualDeviceOption"] = {
+type: "string",
+        connectOption: "VirtualDeviceConnectOption",
+        busSlotOption: "VirtualDeviceBusSlotOption",
+        controllerType: "string",
+        autoAssignController: "BoolOption",
+        backingOption: "VirtualDeviceBackingOption",
+        defaultBackingOptionIndex: "number",
+        licensingLimit: "string",
+        deprecated: "boolean",
+        plugAndPlay: "boolean",
+        hotRemoveSupported: "boolean"
+};
+typeNames.interfaces["VirtualDeviceBackingOption"] = {
+type: "string"
+};
+typeNames.interfaces["VirtualDeviceBusSlotOption"] = {
+type: "string"
+};
+typeNames.interfaces["VirtualDeviceConnectOption"] = {
+startConnected: "BoolOption",
+        allowGuestControl: "BoolOption"
+};
+typeNames.interfaces["VirtualDeviceDeviceBackingOption"] = {
+autoDetectAvailable: "BoolOption"
+};
+typeNames.interfaces["VirtualDeviceFileBackingOption"] = {
+fileNameExtensions: "ChoiceOption"
+};
+typeNames.interfaces["VirtualDevicePipeBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualDeviceRemoteDeviceBackingOption"] = {
+autoDetectAvailable: "BoolOption"
+};
+typeNames.interfaces["VirtualDeviceURIBackingOption"] = {
+directions: "ChoiceOption"
+};
+typeNames.interfaces["VirtualDeviceConfigSpec"] = {
+operation: "VirtualDeviceConfigSpecOperation",
+        fileOperation: "VirtualDeviceConfigSpecFileOperation",
+        device: "VirtualDevice",
+        profile: "VirtualMachineProfileSpec",
+        backing: "VirtualDeviceConfigSpecBackingSpec"
+};
+typeNames.interfaces["VirtualDeviceConfigSpecBackingSpec"] = {
+parent: "VirtualDeviceConfigSpecBackingSpec",
+        crypto: "CryptoSpec"
+};
+typeNames.interfaces["VirtualDisk"] = {
+capacityInKB: "number",
+        capacityInBytes: "number",
+        shares: "SharesInfo",
+        storageIOAllocation: "StorageIOAllocationInfo",
+        diskObjectId: "string",
+        vFlashCacheConfigInfo: "VirtualDiskVFlashCacheConfigInfo",
+        iofilter: "string",
+        vDiskId: "ID",
+        nativeUnmanagedLinkedClone: "boolean"
+};
+typeNames.interfaces["VirtualDiskFlatVer1BackingInfo"] = {
+diskMode: "string",
+        split: "boolean",
+        writeThrough: "boolean",
+        contentId: "string",
+        parent: "VirtualDiskFlatVer1BackingInfo"
+};
+typeNames.interfaces["VirtualDiskFlatVer2BackingInfo"] = {
+diskMode: "string",
+        split: "boolean",
+        writeThrough: "boolean",
+        thinProvisioned: "boolean",
+        eagerlyScrub: "boolean",
+        uuid: "string",
+        contentId: "string",
+        changeId: "string",
+        parent: "VirtualDiskFlatVer2BackingInfo",
+        deltaDiskFormat: "string",
+        digestEnabled: "boolean",
+        deltaGrainSize: "number",
+        deltaDiskFormatVariant: "string",
+        sharing: "string",
+        keyId: "CryptoKeyId"
+};
+typeNames.interfaces["VirtualDiskLocalPMemBackingInfo"] = {
+diskMode: "string",
+        uuid: "string",
+        volumeUUID: "string",
+        contentId: "string"
+};
+typeNames.interfaces["VirtualDiskPartitionedRawDiskVer2BackingInfo"] = {
+partition: "number"
+};
+typeNames.interfaces["VirtualDiskRawDiskMappingVer1BackingInfo"] = {
+lunUuid: "string",
+        deviceName: "string",
+        compatibilityMode: "string",
+        diskMode: "string",
+        uuid: "string",
+        contentId: "string",
+        changeId: "string",
+        parent: "VirtualDiskRawDiskMappingVer1BackingInfo",
+        deltaDiskFormat: "string",
+        deltaGrainSize: "number",
+        sharing: "string"
+};
+typeNames.interfaces["VirtualDiskRawDiskVer2BackingInfo"] = {
+descriptorFileName: "string",
+        uuid: "string",
+        changeId: "string",
+        sharing: "string"
+};
+typeNames.interfaces["VirtualDiskSeSparseBackingInfo"] = {
+diskMode: "string",
+        writeThrough: "boolean",
+        uuid: "string",
+        contentId: "string",
+        changeId: "string",
+        parent: "VirtualDiskSeSparseBackingInfo",
+        deltaDiskFormat: "string",
+        digestEnabled: "boolean",
+        grainSize: "number",
+        keyId: "CryptoKeyId"
+};
+typeNames.interfaces["VirtualDiskSparseVer1BackingInfo"] = {
+diskMode: "string",
+        split: "boolean",
+        writeThrough: "boolean",
+        spaceUsedInKB: "number",
+        contentId: "string",
+        parent: "VirtualDiskSparseVer1BackingInfo"
+};
+typeNames.interfaces["VirtualDiskSparseVer2BackingInfo"] = {
+diskMode: "string",
+        split: "boolean",
+        writeThrough: "boolean",
+        spaceUsedInKB: "number",
+        uuid: "string",
+        contentId: "string",
+        changeId: "string",
+        parent: "VirtualDiskSparseVer2BackingInfo",
+        keyId: "CryptoKeyId"
+};
+typeNames.interfaces["VirtualDiskVFlashCacheConfigInfo"] = {
+vFlashModule: "string",
+        reservationInMB: "number",
+        cacheConsistencyType: "string",
+        cacheMode: "string",
+        blockSizeInKB: "number"
+};
+typeNames.interfaces["VirtualDiskId"] = {
+vm: VirtualMachine,
+        diskId: "number"
+};
+typeNames.interfaces["VirtualDiskOption"] = {
+capacityInKB: "LongOption",
+        ioAllocationOption: "StorageIOAllocationOption",
+        vFlashCacheConfigOption: "VirtualDiskOptionVFlashCacheConfigOption"
+};
+typeNames.interfaces["VirtualDiskDeltaDiskFormatsSupported"] = {
+datastoreType: "string",
+        deltaDiskFormat: "ChoiceOption"
+};
+typeNames.interfaces["VirtualDiskFlatVer1BackingOption"] = {
+diskMode: "ChoiceOption",
+        split: "BoolOption",
+        writeThrough: "BoolOption",
+        growable: "boolean"
+};
+typeNames.interfaces["VirtualDiskFlatVer2BackingOption"] = {
+diskMode: "ChoiceOption",
+        split: "BoolOption",
+        writeThrough: "BoolOption",
+        growable: "boolean",
+        hotGrowable: "boolean",
+        uuid: "boolean",
+        thinProvisioned: "BoolOption",
+        eagerlyScrub: "BoolOption",
+        deltaDiskFormat: "ChoiceOption",
+        deltaDiskFormatsSupported: "VirtualDiskDeltaDiskFormatsSupported"
+};
+typeNames.interfaces["VirtualDiskLocalPMemBackingOption"] = {
+diskMode: "ChoiceOption",
+        growable: "boolean",
+        hotGrowable: "boolean",
+        uuid: "boolean"
+};
+typeNames.interfaces["VirtualDiskPartitionedRawDiskVer2BackingOption"] = {
+
+};
+typeNames.interfaces["VirtualDiskRawDiskMappingVer1BackingOption"] = {
+descriptorFileNameExtensions: "ChoiceOption",
+        compatibilityMode: "ChoiceOption",
+        diskMode: "ChoiceOption",
+        uuid: "boolean"
+};
+typeNames.interfaces["VirtualDiskRawDiskVer2BackingOption"] = {
+descriptorFileNameExtensions: "ChoiceOption",
+        uuid: "boolean"
+};
+typeNames.interfaces["VirtualDiskSeSparseBackingOption"] = {
+diskMode: "ChoiceOption",
+        writeThrough: "BoolOption",
+        growable: "boolean",
+        hotGrowable: "boolean",
+        uuid: "boolean",
+        deltaDiskFormatsSupported: "VirtualDiskDeltaDiskFormatsSupported"
+};
+typeNames.interfaces["VirtualDiskSparseVer1BackingOption"] = {
+diskModes: "ChoiceOption",
+        split: "BoolOption",
+        writeThrough: "BoolOption",
+        growable: "boolean"
+};
+typeNames.interfaces["VirtualDiskSparseVer2BackingOption"] = {
+diskMode: "ChoiceOption",
+        split: "BoolOption",
+        writeThrough: "BoolOption",
+        growable: "boolean",
+        hotGrowable: "boolean",
+        uuid: "boolean"
+};
+typeNames.interfaces["VirtualDiskOptionVFlashCacheConfigOption"] = {
+cacheConsistencyType: "ChoiceOption",
+        cacheMode: "ChoiceOption",
+        reservationInMB: "LongOption",
+        blockSizeInKB: "LongOption"
+};
+typeNames.interfaces["VirtualDiskConfigSpec"] = {
+diskMoveType: "string",
+        migrateCache: "boolean"
+};
+typeNames.interfaces["VirtualEthernetCard"] = {
+addressType: "string",
+        macAddress: "string",
+        wakeOnLanEnabled: "boolean",
+        resourceAllocation: "VirtualEthernetCardResourceAllocation",
+        externalId: "string",
+        uptCompatibilityEnabled: "boolean"
+};
+typeNames.interfaces["VirtualEthernetCardDistributedVirtualPortBackingInfo"] = {
+port: "DistributedVirtualSwitchPortConnection"
+};
+typeNames.interfaces["VirtualEthernetCardLegacyNetworkBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualEthernetCardNetworkBackingInfo"] = {
+network: Network,
+        inPassthroughMode: "boolean"
+};
+typeNames.interfaces["VirtualEthernetCardOpaqueNetworkBackingInfo"] = {
+opaqueNetworkId: "string",
+        opaqueNetworkType: "string"
+};
+typeNames.interfaces["VirtualEthernetCardResourceAllocation"] = {
+reservation: "number",
+        share: "SharesInfo",
+        limit: "number"
+};
+typeNames.interfaces["VirtualEthernetCardOption"] = {
+supportedOUI: "ChoiceOption",
+        macType: "ChoiceOption",
+        wakeOnLanEnabled: "BoolOption",
+        vmDirectPathGen2Supported: "boolean",
+        uptCompatibilityEnabled: "BoolOption"
+};
+typeNames.interfaces["VirtualEthernetCardDVPortBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualEthernetCardLegacyNetworkBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualEthernetCardNetworkBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualEthernetCardOpaqueNetworkBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualFloppy"] = {
+
+};
+typeNames.interfaces["VirtualFloppyDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualFloppyImageBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualFloppyRemoteDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualFloppyOption"] = {
+
+};
+typeNames.interfaces["VirtualFloppyDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualFloppyImageBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualFloppyRemoteDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualKeyboard"] = {
+
+};
+typeNames.interfaces["VirtualKeyboardOption"] = {
+
+};
+typeNames.interfaces["VirtualNVDIMM"] = {
+capacityInMB: "number"
+};
+typeNames.interfaces["VirtualNVDIMMBackingInfo"] = {
+parent: "VirtualNVDIMMBackingInfo",
+        changeId: "string"
+};
+typeNames.interfaces["VirtualNVDIMMOption"] = {
+capacityInMB: "LongOption",
+        growable: "boolean",
+        hotGrowable: "boolean",
+        granularityInMB: "number"
+};
+typeNames.interfaces["VirtualPCIPassthrough"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughAllowedDevice"] = {
+vendorId: "number",
+        deviceId: "number",
+        subVendorId: "number",
+        subDeviceId: "number",
+        revisionId: "number"
+};
+typeNames.interfaces["VirtualPCIPassthroughDeviceBackingInfo"] = {
+id: "string",
+        deviceId: "string",
+        systemId: "string",
+        vendorId: "number"
+};
+typeNames.interfaces["VirtualPCIPassthroughDynamicBackingInfo"] = {
+allowedDevice: "VirtualPCIPassthroughAllowedDevice",
+        customLabel: "string",
+        assignedId: "string"
+};
+typeNames.interfaces["VirtualPCIPassthroughPluginBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughVmiopBackingInfo"] = {
+vgpu: "string"
+};
+typeNames.interfaces["VirtualPCIPassthroughOption"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughDynamicBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughPluginBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualPCIPassthroughVmiopBackingOption"] = {
+vgpu: "StringOption",
+        maxInstances: "number"
+};
+typeNames.interfaces["VirtualPCNet32"] = {
+
+};
+typeNames.interfaces["VirtualPCNet32Option"] = {
+supportsMorphing: "boolean"
+};
+typeNames.interfaces["VirtualParallelPort"] = {
+
+};
+typeNames.interfaces["VirtualParallelPortDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualParallelPortFileBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualParallelPortOption"] = {
+
+};
+typeNames.interfaces["VirtualParallelPortDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualParallelPortFileBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualPointingDevice"] = {
+
+};
+typeNames.interfaces["VirtualPointingDeviceDeviceBackingInfo"] = {
+hostPointingDevice: "string"
+};
+typeNames.interfaces["VirtualPointingDeviceOption"] = {
+
+};
+typeNames.interfaces["VirtualPointingDeviceBackingOption"] = {
+hostPointingDevice: "ChoiceOption"
+};
+typeNames.interfaces["VirtualPrecisionClock"] = {
+
+};
+typeNames.interfaces["VirtualPrecisionClockSystemClockBackingInfo"] = {
+protocol: "string"
+};
+typeNames.interfaces["VirtualPrecisionClockOption"] = {
+
+};
+typeNames.interfaces["VirtualPrecisionClockSystemClockBackingOption"] = {
+protocol: "ChoiceOption"
+};
+typeNames.interfaces["VirtualSCSIPassthrough"] = {
+
+};
+typeNames.interfaces["VirtualSCSIPassthroughDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSCSIPassthroughOption"] = {
+
+};
+typeNames.interfaces["VirtualSCSIPassthroughDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSerialPort"] = {
+yieldOnPoll: "boolean"
+};
+typeNames.interfaces["VirtualSerialPortDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortFileBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortPipeBackingInfo"] = {
+endpoint: "string",
+        noRxLoss: "boolean"
+};
+typeNames.interfaces["VirtualSerialPortThinPrintBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortURIBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortOption"] = {
+yieldOnPoll: "BoolOption"
+};
+typeNames.interfaces["VirtualSerialPortDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortFileBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortPipeBackingOption"] = {
+endpoint: "ChoiceOption",
+        noRxLoss: "BoolOption"
+};
+typeNames.interfaces["VirtualSerialPortThinPrintBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSerialPortURIBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSoundCard"] = {
+
+};
+typeNames.interfaces["VirtualSoundCardDeviceBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualSoundCardOption"] = {
+
+};
+typeNames.interfaces["VirtualSoundCardDeviceBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualSriovEthernetCard"] = {
+allowGuestOSMtuChange: "boolean",
+        sriovBacking: "VirtualSriovEthernetCardSriovBackingInfo"
+};
+typeNames.interfaces["VirtualSriovEthernetCardSriovBackingInfo"] = {
+physicalFunctionBacking: "VirtualPCIPassthroughDeviceBackingInfo",
+        virtualFunctionBacking: "VirtualPCIPassthroughDeviceBackingInfo",
+        virtualFunctionIndex: "number"
+};
+typeNames.interfaces["VirtualSriovEthernetCardOption"] = {
+
+};
+typeNames.interfaces["VirtualSriovEthernetCardSriovBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualTPM"] = {
+endorsementKeyCertificateSigningRequest: "Buffer",
+        endorsementKeyCertificate: "Buffer"
+};
+typeNames.interfaces["VirtualTPMOption"] = {
+supportedFirmware: "string"
+};
+typeNames.interfaces["VirtualUSB"] = {
+connected: "boolean",
+        vendor: "number",
+        product: "number",
+        family: "string",
+        speed: "string"
+};
+typeNames.interfaces["VirtualUSBRemoteClientBackingInfo"] = {
+hostname: "string"
+};
+typeNames.interfaces["VirtualUSBRemoteHostBackingInfo"] = {
+hostname: "string"
+};
+typeNames.interfaces["VirtualUSBUSBBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualUSBOption"] = {
+
+};
+typeNames.interfaces["VirtualUSBRemoteClientBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualUSBRemoteHostBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualUSBUSBBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualMachineVMCIDevice"] = {
+id: "number",
+        allowUnrestrictedCommunication: "boolean",
+        filterEnable: "boolean",
+        filterInfo: "VirtualMachineVMCIDeviceFilterInfo"
+};
+typeNames.interfaces["VirtualMachineVMCIDeviceFilterInfo"] = {
+filters: "VirtualMachineVMCIDeviceFilterSpec"
+};
+typeNames.interfaces["VirtualMachineVMCIDeviceFilterSpec"] = {
+rank: "number",
+        action: "string",
+        protocol: "string",
+        direction: "string",
+        lowerDstPortBoundary: "number",
+        upperDstPortBoundary: "number"
+};
+typeNames.interfaces["VirtualMachineVMCIDeviceOption"] = {
+allowUnrestrictedCommunication: "BoolOption",
+        filterSpecOption: "VirtualMachineVMCIDeviceOptionFilterSpecOption",
+        filterSupported: "BoolOption"
+};
+typeNames.interfaces["VirtualMachineVMCIDeviceOptionFilterSpecOption"] = {
+action: "ChoiceOption",
+        protocol: "ChoiceOption",
+        direction: "ChoiceOption",
+        lowerDstPortBoundary: "LongOption",
+        upperDstPortBoundary: "LongOption"
+};
+typeNames.interfaces["VirtualMachineVMIROM"] = {
+
+};
+typeNames.interfaces["VirtualVMIROMOption"] = {
+
+};
+typeNames.interfaces["VirtualMachineVideoCard"] = {
+videoRamSizeInKB: "number",
+        numDisplays: "number",
+        useAutoDetect: "boolean",
+        enable3DSupport: "boolean",
+        use3dRenderer: "string",
+        graphicsMemorySizeInKB: "number"
+};
+typeNames.interfaces["VirtualVideoCardOption"] = {
+videoRamSizeInKB: "LongOption",
+        numDisplays: "IntOption",
+        useAutoDetect: "BoolOption",
+        support3D: "BoolOption",
+        use3dRendererSupported: "BoolOption",
+        graphicsMemorySizeInKB: "LongOption",
+        graphicsMemorySizeSupported: "BoolOption"
+};
+typeNames.interfaces["VirtualVmxnet"] = {
+
+};
+typeNames.interfaces["VirtualVmxnet2"] = {
+
+};
+typeNames.interfaces["VirtualVmxnet3"] = {
+
+};
+typeNames.interfaces["VirtualVmxnet3Vrdma"] = {
+deviceProtocol: "string"
+};
+typeNames.interfaces["VirtualVmxnetOption"] = {
+
+};
+typeNames.interfaces["VirtualWDT"] = {
+runOnBoot: "boolean",
+        running: "boolean"
+};
+typeNames.interfaces["VirtualWDTOption"] = {
+runOnBoot: "BoolOption"
+};
+typeNames.interfaces["GuestAliases"] = {
+base64Cert: "string",
+        aliases: "GuestAuthAliasInfo"
+};
+typeNames.interfaces["GuestAuthAliasInfo"] = {
+subject: "GuestAuthSubject",
+        comment: "string"
+};
+typeNames.interfaces["GuestAuthAnySubject"] = {
+
+};
+typeNames.interfaces["GuestAuthNamedSubject"] = {
+name: "string"
+};
+typeNames.interfaces["GuestAuthSubject"] = {
+
+};
+typeNames.interfaces["GuestMappedAliases"] = {
+base64Cert: "string",
+        username: "string",
+        subjects: "GuestAuthSubject"
+};
+typeNames.interfaces["GuestFileAttributes"] = {
+modificationTime: "Date",
+        accessTime: "Date",
+        symlinkTarget: "string"
+};
+typeNames.interfaces["GuestFileInfo"] = {
+path: "string",
+        type: "string",
+        size: "number",
+        attributes: "GuestFileAttributes"
+};
+typeNames.interfaces["FileTransferInformation"] = {
+attributes: "GuestFileAttributes",
+        size: "number",
+        url: "string"
+};
+typeNames.interfaces["GuestListFileInfo"] = {
+files: "GuestFileInfo",
+        remaining: "number"
+};
+typeNames.interfaces["GuestPosixFileAttributes"] = {
+ownerId: "number",
+        groupId: "number",
+        permissions: "number"
+};
+typeNames.interfaces["GuestWindowsFileAttributes"] = {
+hidden: "boolean",
+        readOnly: "boolean",
+        createTime: "Date"
+};
+typeNames.interfaces["GuestAuthentication"] = {
+interactiveSession: "boolean"
+};
+typeNames.interfaces["NamePasswordAuthentication"] = {
+username: "string",
+        password: "string"
+};
+typeNames.interfaces["GuestProcessInfo"] = {
+name: "string",
+        pid: "number",
+        owner: "string",
+        cmdLine: "string",
+        startTime: "Date",
+        endTime: "Date",
+        exitCode: "number"
+};
+typeNames.interfaces["GuestProgramSpec"] = {
+programPath: "string",
+        arguments: "string",
+        workingDirectory: "string",
+        envVariables: "string"
+};
+typeNames.interfaces["GuestWindowsProgramSpec"] = {
+startMinimized: "boolean"
+};
+typeNames.interfaces["SAMLTokenAuthentication"] = {
+token: "string",
+        username: "string"
+};
+typeNames.interfaces["SSPIAuthentication"] = {
+sspiToken: "string"
+};
+typeNames.interfaces["TicketedSessionAuthentication"] = {
+ticket: "string"
+};
+typeNames.interfaces["GuestRegKeySpec"] = {
+keyName: "GuestRegKeyNameSpec",
+        classType: "string",
+        lastWritten: "Date"
+};
+typeNames.interfaces["GuestRegKeyNameSpec"] = {
+registryPath: "string",
+        wowBitness: "string"
+};
+typeNames.interfaces["GuestRegKeyRecordSpec"] = {
+key: "GuestRegKeySpec",
+        fault: "MethodFault"
+};
+typeNames.interfaces["GuestRegValueSpec"] = {
+name: "GuestRegValueNameSpec",
+        data: "GuestRegValueDataSpec"
+};
+typeNames.interfaces["GuestRegValueBinarySpec"] = {
+value: "Buffer"
+};
+typeNames.interfaces["GuestRegValueDataSpec"] = {
+
+};
+typeNames.interfaces["GuestRegValueDwordSpec"] = {
+value: "number"
+};
+typeNames.interfaces["GuestRegValueExpandStringSpec"] = {
+value: "string"
+};
+typeNames.interfaces["GuestRegValueMultiStringSpec"] = {
+value: "string"
+};
+typeNames.interfaces["GuestRegValueNameSpec"] = {
+keyName: "GuestRegKeyNameSpec",
+        name: "string"
+};
+typeNames.interfaces["GuestRegValueQwordSpec"] = {
+value: "number"
+};
+typeNames.interfaces["GuestRegValueStringSpec"] = {
+value: "string"
+};
+typeNames.interfaces["DeviceGroupId"] = {
+id: "string"
+};
+typeNames.interfaces["FaultDomainId"] = {
+id: "string"
+};
+typeNames.interfaces["ReplicationGroupId"] = {
+faultDomainId: "FaultDomainId",
+        deviceGroupId: "DeviceGroupId"
+};
+typeNames.interfaces["ReplicationSpec"] = {
+replicationGroupId: "ReplicationGroupId"
+};
+typeNames.interfaces["VsanClusterConfigInfo"] = {
+enabled: "boolean",
+        defaultConfig: "VsanClusterConfigInfoHostDefaultInfo"
+};
+typeNames.interfaces["VsanClusterConfigInfoHostDefaultInfo"] = {
+uuid: "string",
+        autoClaimStorage: "boolean",
+        checksumEnabled: "boolean"
+};
+typeNames.interfaces["VsanHostClusterStatus"] = {
+uuid: "string",
+        nodeUuid: "string",
+        health: "string",
+        nodeState: "VsanHostClusterStatusState",
+        memberUuid: "string"
+};
+typeNames.interfaces["VsanHostClusterStatusState"] = {
+state: "string",
+        completion: "VsanHostClusterStatusStateCompletionEstimate"
+};
+typeNames.interfaces["VsanHostClusterStatusStateCompletionEstimate"] = {
+completeTime: "Date",
+        percentComplete: "number"
+};
+typeNames.interfaces["VsanHostConfigInfo"] = {
+enabled: "boolean",
+        hostSystem: HostSystem,
+        clusterInfo: "VsanHostConfigInfoClusterInfo",
+        storageInfo: "VsanHostConfigInfoStorageInfo",
+        networkInfo: "VsanHostConfigInfoNetworkInfo",
+        faultDomainInfo: "VsanHostFaultDomainInfo"
+};
+typeNames.interfaces["VsanHostConfigInfoClusterInfo"] = {
+uuid: "string",
+        nodeUuid: "string"
+};
+typeNames.interfaces["VsanHostFaultDomainInfo"] = {
+name: "string"
+};
+typeNames.interfaces["VsanHostConfigInfoNetworkInfo"] = {
+port: "VsanHostConfigInfoNetworkInfoPortConfig"
+};
+typeNames.interfaces["VsanHostConfigInfoNetworkInfoPortConfig"] = {
+ipConfig: "VsanHostIpConfig",
+        device: "string"
+};
+typeNames.interfaces["VsanHostConfigInfoStorageInfo"] = {
+autoClaimStorage: "boolean",
+        diskMapping: "VsanHostDiskMapping",
+        diskMapInfo: "VsanHostDiskMapInfo",
+        checksumEnabled: "boolean"
+};
+typeNames.interfaces["VsanHostDecommissionMode"] = {
+objectAction: "string"
+};
+typeNames.interfaces["VsanHostDiskMapInfo"] = {
+mapping: "VsanHostDiskMapping",
+        mounted: "boolean"
+};
+typeNames.interfaces["VsanHostDiskMapResult"] = {
+mapping: "VsanHostDiskMapping",
+        diskResult: "VsanHostDiskResult",
+        error: "MethodFault"
+};
+typeNames.interfaces["VsanHostDiskMapping"] = {
+ssd: "HostScsiDisk",
+        nonSsd: "HostScsiDisk"
+};
+typeNames.interfaces["VsanHostDiskResult"] = {
+disk: "HostScsiDisk",
+        state: "string",
+        vsanUuid: "string",
+        error: "MethodFault",
+        degraded: "boolean"
+};
+typeNames.interfaces["VsanHostIpConfig"] = {
+upstreamIpAddress: "string",
+        downstreamIpAddress: "string"
+};
+typeNames.interfaces["VsanHostMembershipInfo"] = {
+nodeUuid: "string",
+        hostname: "string"
+};
+typeNames.interfaces["VsanHostVsanDiskInfo"] = {
+vsanUuid: "string",
+        formatVersion: "number"
+};
+typeNames.interfaces["VsanHostRuntimeInfo"] = {
+membershipList: "VsanHostMembershipInfo",
+        diskIssues: "VsanHostRuntimeInfoDiskIssue",
+        accessGenNo: "number"
+};
+typeNames.interfaces["VsanHostRuntimeInfoDiskIssue"] = {
+diskId: "string",
+        issue: "string"
+};
+typeNames.interfaces["BaseConfigInfo"] = {
+id: "ID",
+        name: "string",
+        createTime: "Date",
+        keepAfterDeleteVm: "boolean",
+        relocationDisabled: "boolean",
+        nativeSnapshotSupported: "boolean",
+        changedBlockTrackingEnabled: "boolean",
+        backing: "BaseConfigInfoBackingInfo",
+        iofilter: "string"
+};
+typeNames.interfaces["BaseConfigInfoBackingInfo"] = {
+datastore: Datastore
+};
+typeNames.interfaces["BaseConfigInfoDiskFileBackingInfo"] = {
+provisioningType: "string"
+};
+typeNames.interfaces["BaseConfigInfoFileBackingInfo"] = {
+filePath: "string",
+        backingObjectId: "string",
+        parent: "BaseConfigInfoFileBackingInfo",
+        deltaSizeInMB: "number",
+        keyId: "CryptoKeyId"
+};
+typeNames.interfaces["BaseConfigInfoRawDiskMappingBackingInfo"] = {
+lunUuid: "string",
+        compatibilityMode: "string"
+};
+typeNames.interfaces["VslmCreateSpec"] = {
+name: "string",
+        keepAfterDeleteVm: "boolean",
+        backingSpec: "VslmCreateSpecBackingSpec",
+        capacityInMB: "number",
+        profile: "VirtualMachineProfileSpec",
+        crypto: "CryptoSpec",
+        metadata: "KeyValue"
+};
+typeNames.interfaces["VslmCreateSpecBackingSpec"] = {
+datastore: Datastore,
+        path: "string"
+};
+typeNames.interfaces["VslmCreateSpecDiskFileBackingSpec"] = {
+provisioningType: "string"
+};
+typeNames.interfaces["VslmCreateSpecRawDiskMappingBackingSpec"] = {
+lunUuid: "string",
+        compatibilityMode: "string"
+};
+typeNames.interfaces["DiskCryptoSpec"] = {
+parent: "DiskCryptoSpec",
+        crypto: "CryptoSpec"
+};
+typeNames.interfaces["ID"] = {
+id: "string"
+};
+typeNames.interfaces["vslmInfrastructureObjectPolicy"] = {
+name: "string",
+        backingObjectId: "string",
+        profileId: "string",
+        error: "MethodFault"
+};
+typeNames.interfaces["vslmInfrastructureObjectPolicySpec"] = {
+datastore: Datastore,
+        profile: "VirtualMachineProfileSpec"
+};
+typeNames.interfaces["VslmMigrateSpec"] = {
+backingSpec: "VslmCreateSpecBackingSpec",
+        profile: "VirtualMachineProfileSpec",
+        consolidate: "boolean",
+        disksCrypto: "DiskCryptoSpec"
+};
+typeNames.interfaces["VslmRelocateSpec"] = {
+
+};
+typeNames.interfaces["VStorageObjectStateInfo"] = {
+tentative: "boolean"
+};
+typeNames.interfaces["VslmTagEntry"] = {
+tagName: "string",
+        parentCategoryName: "string"
+};
+typeNames.interfaces["VStorageObject"] = {
+config: "VStorageObjectConfigInfo"
+};
+typeNames.interfaces["VStorageObjectConfigInfo"] = {
+capacityInMB: "number",
+        consumptionType: "string",
+        consumerId: "ID"
+};
+typeNames.interfaces["VStorageObjectSnapshotDetails"] = {
+path: "string",
+        changedBlockTrackingId: "string"
+};
+typeNames.interfaces["VStorageObjectSnapshotInfo"] = {
+snapshots: "VStorageObjectSnapshotInfoVStorageObjectSnapshot"
+};
+typeNames.interfaces["VStorageObjectSnapshotInfoVStorageObjectSnapshot"] = {
+id: "ID",
+        backingObjectId: "string",
+        createTime: "Date",
+        description: "string"
+};
+typeNames.interfaces["RetrieveVStorageObjSpec"] = {
+id: "ID",
+        datastore: Datastore
+};
+typeNames.interfaces["VStorageObjectAssociations"] = {
+id: "ID",
+        vmDiskAssociations: "VStorageObjectAssociationsVmDiskAssociations",
+        fault: "MethodFault"
+};
+typeNames.interfaces["VStorageObjectAssociationsVmDiskAssociations"] = {
+vmId: "string",
+        diskKey: "number"
+};
+typeNames.interfaces["EntityPrivilege"] = {
+entity: ManagedEntity,
+        privAvailability: "PrivilegeAvailability"
+};
+typeNames.interfaces["Permission"] = {
+entity: ManagedEntity,
+        principal: "string",
+        group: "boolean",
+        roleId: "number",
+        propagate: "boolean"
+};
+typeNames.interfaces["AuthorizationPrivilege"] = {
+privId: "string",
+        onParent: "boolean",
+        name: "string",
+        privGroupName: "string"
+};
+typeNames.interfaces["PrivilegeAvailability"] = {
+privId: "string",
+        isGranted: "boolean"
+};
+typeNames.interfaces["AuthorizationRole"] = {
+roleId: "number",
+        system: "boolean",
+        name: "string",
+        info: "Description",
+        privilege: "string"
+};
+typeNames.interfaces["UserPrivilegeResult"] = {
+entity: ManagedEntity,
+        privileges: "string"
+};
+typeNames.interfaces["BoolPolicy"] = {
+value: "boolean"
+};
+typeNames.interfaces["EVCMode"] = {
+guaranteedCPUFeatures: "HostCpuIdInfo",
+        featureCapability: "HostFeatureCapability",
+        featureMask: "HostFeatureMask",
+        featureRequirement: "VirtualMachineFeatureRequirement",
+        vendor: "string",
+        track: "string",
+        vendorTier: "number"
+};
+typeNames.interfaces["ImportSpec"] = {
+entityConfig: "VAppEntityConfigInfo",
+        instantiationOst: "OvfConsumerOstNode"
+};
+typeNames.interfaces["IntExpression"] = {
+value: "number"
+};
+typeNames.interfaces["IpAddress"] = {
+
+};
+typeNames.interfaces["IpRange"] = {
+addressPrefix: "string",
+        prefixLength: "number"
+};
+typeNames.interfaces["LicenseAssignmentManagerLicenseAssignment"] = {
+entityId: "string",
+        scope: "string",
+        entityDisplayName: "string",
+        assignedLicense: "LicenseManagerLicenseInfo",
+        properties: "KeyAnyValue"
+};
+typeNames.interfaces["MacAddress"] = {
+
+};
+typeNames.interfaces["MacRange"] = {
+address: "string",
+        mask: "string"
+};
+typeNames.interfaces["NetworkSummary"] = {
+network: Network,
+        name: "string",
+        accessible: "boolean",
+        ipPoolName: "string",
+        ipPoolId: "number"
+};
+typeNames.interfaces["OpaqueNetworkCapability"] = {
+networkReservationSupported: "boolean"
+};
+typeNames.interfaces["OpaqueNetworkSummary"] = {
+opaqueNetworkId: "string",
+        opaqueNetworkType: "string"
+};
+typeNames.interfaces["PosixUserSearchResult"] = {
+id: "number",
+        shellAccess: "boolean"
+};
+typeNames.interfaces["ResourcePoolResourceUsage"] = {
+reservationUsed: "number",
+        reservationUsedForVm: "number",
+        unreservedForPool: "number",
+        unreservedForVm: "number",
+        overallUsage: "number",
+        maxUsage: "number"
+};
+typeNames.interfaces["ResourcePoolRuntimeInfo"] = {
+memory: "ResourcePoolResourceUsage",
+        cpu: "ResourcePoolResourceUsage",
+        overallStatus: "ManagedEntityStatus",
+        sharesScalable: "string"
+};
+typeNames.interfaces["ResourcePoolSummary"] = {
+name: "string",
+        config: "ResourceConfigSpec",
+        runtime: "ResourcePoolRuntimeInfo",
+        quickStats: "ResourcePoolQuickStats",
+        configuredMemoryMB: "number"
+};
+typeNames.interfaces["ResourcePoolQuickStats"] = {
+overallCpuUsage: "number",
+        overallCpuDemand: "number",
+        guestMemoryUsage: "number",
+        hostMemoryUsage: "number",
+        distributedCpuEntitlement: "number",
+        distributedMemoryEntitlement: "number",
+        staticCpuEntitlement: "number",
+        staticMemoryEntitlement: "number",
+        privateMemory: "number",
+        sharedMemory: "number",
+        swappedMemory: "number",
+        balloonedMemory: "number",
+        overheadMemory: "number",
+        consumedOverheadMemory: "number",
+        compressedMemory: "number"
+};
+typeNames.interfaces["SingleIp"] = {
+address: "string"
+};
+typeNames.interfaces["SingleMac"] = {
+address: "string"
+};
+typeNames.interfaces["TaskFilterSpec"] = {
+entity: "TaskFilterSpecByEntity",
+        time: "TaskFilterSpecByTime",
+        userName: "TaskFilterSpecByUsername",
+        activationId: "string",
+        state: "TaskInfoState",
+        alarm: Alarm,
+        scheduledTask: ScheduledTask,
+        eventChainId: "number",
+        tag: "string",
+        parentTaskKey: "string",
+        rootTaskKey: "string"
+};
+typeNames.interfaces["TaskFilterSpecByEntity"] = {
+entity: ManagedEntity,
+        recursion: "TaskFilterSpecRecursionOption"
+};
+typeNames.interfaces["TaskFilterSpecByTime"] = {
+timeType: "TaskFilterSpecTimeOption",
+        beginTime: "Date",
+        endTime: "Date"
+};
+typeNames.interfaces["TaskFilterSpecByUsername"] = {
+systemUser: "boolean",
+        userList: "string"
+};
+typeNames.interfaces["VirtualAppLinkInfo"] = {
+key: ManagedEntity,
+        destroyWithParent: "boolean"
+};
+typeNames.interfaces["VirtualAppSummary"] = {
+product: "VAppProductInfo",
+        vAppState: "VirtualAppVAppState",
+        suspended: "boolean",
+        installBootRequired: "boolean",
+        instanceUuid: "string"
+};
+typeNames.interfaces["DeviceBackedVirtualDiskSpec"] = {
+device: "string"
+};
+typeNames.interfaces["FileBackedVirtualDiskSpec"] = {
+capacityKb: "number",
+        profile: "VirtualMachineProfileSpec",
+        crypto: "CryptoSpec"
+};
+typeNames.interfaces["SeSparseVirtualDiskSpec"] = {
+grainSizeKb: "number"
+};
+typeNames.interfaces["VirtualDiskSpec"] = {
+diskType: "string",
+        adapterType: "string"
+};
+typeNames.interfaces["VirtualMachineConnection"] = {
+label: "string",
+        client: "string",
+        userName: "string"
+};
+typeNames.interfaces["DiskChangeInfo"] = {
+startOffset: "number",
+        length: "number",
+        changedArea: "DiskChangeExtent"
+};
+typeNames.interfaces["DiskChangeExtent"] = {
+start: "number",
+        length: "number"
+};
+typeNames.interfaces["VirtualMachineDisplayTopology"] = {
+x: "number",
+        y: "number",
+        width: "number",
+        height: "number"
+};
+typeNames.interfaces["VirtualMachineMksConnection"] = {
+
+};
+typeNames.interfaces["VirtualMachineMksTicket"] = {
+ticket: "string",
+        cfgFile: "string",
+        host: "string",
+        port: "number",
+        sslThumbprint: "string"
+};
+typeNames.interfaces["StorageRequirement"] = {
+datastore: Datastore,
+        freeSpaceRequiredInKb: "number"
+};
+typeNames.interfaces["VirtualMachineTicket"] = {
+ticket: "string",
+        cfgFile: "string",
+        host: "string",
+        port: "number",
+        sslThumbprint: "string",
+        url: "string"
+};
+typeNames.interfaces["VirtualMachineWipeResult"] = {
+diskId: "number",
+        shrinkableDiskSpace: "number"
+};
+typeNames.interfaces["AlarmFilterSpec"] = {
+status: "ManagedEntityStatus",
+        typeEntity: "string",
+        typeTrigger: "string"
+};
+typeNames.interfaces["AlarmInfo"] = {
+key: "string",
+        alarm: Alarm,
+        entity: ManagedEntity,
+        lastModifiedTime: "Date",
+        lastModifiedUser: "string",
+        creationEventId: "number"
+};
+typeNames.interfaces["AlarmState"] = {
+key: "string",
+        entity: ManagedEntity,
+        alarm: Alarm,
+        overallStatus: "ManagedEntityStatus",
+        time: "Date",
+        acknowledged: "boolean",
+        acknowledgedByUser: "string",
+        acknowledgedTime: "Date",
+        eventKey: "number",
+        disabled: "boolean"
+};
+typeNames.interfaces["AlarmTriggeringAction"] = {
+action: "Action",
+        transitionSpecs: "AlarmTriggeringActionTransitionSpec",
+        green2yellow: "boolean",
+        yellow2red: "boolean",
+        red2yellow: "boolean",
+        yellow2green: "boolean"
+};
+typeNames.interfaces["AlarmTriggeringActionTransitionSpec"] = {
+startState: "ManagedEntityStatus",
+        finalState: "ManagedEntityStatus",
+        repeats: "boolean"
+};
+typeNames.interfaces["EventAlarmExpression"] = {
+comparisons: "EventAlarmExpressionComparison",
+        eventType: "string",
+        eventTypeId: "string",
+        objectType: "string",
+        status: "ManagedEntityStatus"
+};
+typeNames.interfaces["EventAlarmExpressionComparison"] = {
+attributeName: "string",
+        operator: "string",
+        value: "string"
+};
+typeNames.interfaces["ClusterDasAamHostInfo"] = {
+hostDasState: "ClusterDasAamNodeState",
+        primaryHosts: "string"
+};
+typeNames.interfaces["ClusterDasVmConfigSpec"] = {
+info: "ClusterDasVmConfigInfo"
+};
+typeNames.interfaces["ClusterDpmHostConfigSpec"] = {
+info: "ClusterDpmHostConfigInfo"
+};
+typeNames.interfaces["ClusterDrsVmConfigSpec"] = {
+info: "ClusterDrsVmConfigInfo"
+};
+typeNames.interfaces["ClusterFailoverHostAdmissionControlInfo"] = {
+hostStatus: "ClusterFailoverHostAdmissionControlInfoHostStatus"
+};
+typeNames.interfaces["ClusterFailoverHostAdmissionControlInfoHostStatus"] = {
+host: HostSystem,
+        status: "ManagedEntityStatus"
+};
+typeNames.interfaces["ClusterFixedSizeSlotPolicy"] = {
+cpu: "number",
+        memory: "number"
+};
+typeNames.interfaces["ClusterGroupSpec"] = {
+info: "ClusterGroupInfo"
+};
+typeNames.interfaces["PlacementSpec"] = {
+priority: "VirtualMachineMovePriority",
+        vm: VirtualMachine,
+        configSpec: "VirtualMachineConfigSpec",
+        relocateSpec: "VirtualMachineRelocateSpec",
+        hosts: HostSystem,
+        datastores: Datastore,
+        storagePods: StoragePod,
+        disallowPrerequisiteMoves: "boolean",
+        rules: "ClusterRuleInfo",
+        key: "string",
+        placementType: "string",
+        cloneSpec: "VirtualMachineCloneSpec",
+        cloneName: "string"
+};
+typeNames.interfaces["ClusterRuleInfo"] = {
+key: "number",
+        status: "ManagedEntityStatus",
+        enabled: "boolean",
+        name: "string",
+        mandatory: "boolean",
+        userCreated: "boolean",
+        inCompliance: "boolean",
+        ruleUuid: "string"
+};
+typeNames.interfaces["ClusterRuleSpec"] = {
+info: "ClusterRuleInfo"
+};
+typeNames.interfaces["ClusterVmHostRuleInfo"] = {
+vmGroupName: "string",
+        affineHostGroupName: "string",
+        antiAffineHostGroupName: "string"
+};
+typeNames.interfaces["ClusterVmOrchestrationSpec"] = {
+info: "ClusterVmOrchestrationInfo"
+};
+typeNames.interfaces["DVPortgroupConfigInfo"] = {
+key: "string",
+        name: "string",
+        numPorts: "number",
+        distributedVirtualSwitch: DistributedVirtualSwitch,
+        defaultPortConfig: "DVPortSetting",
+        description: "string",
+        type: "string",
+        backingType: "string",
+        policy: "DVPortgroupPolicy",
+        portNameFormat: "string",
+        scope: ManagedEntity,
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob",
+        configVersion: "string",
+        autoExpand: "boolean",
+        vmVnicNetworkResourcePoolKey: "string",
+        uplink: "boolean",
+        transportZoneUuid: "string",
+        transportZoneName: "string",
+        logicalSwitchUuid: "string",
+        segmentId: "string"
+};
+typeNames.interfaces["DVPortgroupConfigSpec"] = {
+configVersion: "string",
+        name: "string",
+        numPorts: "number",
+        portNameFormat: "string",
+        defaultPortConfig: "DVPortSetting",
+        description: "string",
+        type: "string",
+        backingType: "string",
+        scope: ManagedEntity,
+        policy: "DVPortgroupPolicy",
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob",
+        autoExpand: "boolean",
+        vmVnicNetworkResourcePoolKey: "string",
+        transportZoneUuid: "string",
+        transportZoneName: "string",
+        logicalSwitchUuid: "string",
+        segmentId: "string"
+};
+typeNames.interfaces["DistributedVirtualPortgroupNsxPortgroupOperationResult"] = {
+portgroups: DistributedVirtualPortgroup,
+        problems: "DistributedVirtualPortgroupProblem"
+};
+typeNames.interfaces["DVPortgroupPolicy"] = {
+blockOverrideAllowed: "boolean",
+        shapingOverrideAllowed: "boolean",
+        vendorConfigOverrideAllowed: "boolean",
+        livePortMovingAllowed: "boolean",
+        portConfigResetAtDisconnect: "boolean",
+        networkResourcePoolOverrideAllowed: "boolean",
+        trafficFilterOverrideAllowed: "boolean"
+};
+typeNames.interfaces["DistributedVirtualPortgroupProblem"] = {
+logicalSwitchUuid: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["CryptoManagerKmipCertificateInfo"] = {
+subject: "string",
+        issuer: "string",
+        serialNumber: "string",
+        notBefore: "Date",
+        notAfter: "Date",
+        fingerprint: "string",
+        checkTime: "Date",
+        secondsSinceValid: "number",
+        secondsBeforeExpire: "number"
+};
+typeNames.interfaces["CryptoManagerKmipClusterStatus"] = {
+clusterId: "KeyProviderId",
+        overallStatus: "ManagedEntityStatus",
+        managementType: "string",
+        servers: "CryptoManagerKmipServerStatus",
+        clientCertInfo: "CryptoManagerKmipCertificateInfo"
+};
+typeNames.interfaces["CryptoManagerKmipCryptoKeyStatus"] = {
+keyId: "CryptoKeyId",
+        keyAvailable: "boolean",
+        reason: "string",
+        encryptedVMs: VirtualMachine,
+        affectedHosts: HostSystem,
+        referencedByTags: "string"
+};
+typeNames.interfaces["CryptoManagerKmipServerCertInfo"] = {
+certificate: "string",
+        certInfo: "CryptoManagerKmipCertificateInfo",
+        clientTrustServer: "boolean"
+};
+typeNames.interfaces["CryptoManagerKmipServerStatus"] = {
+name: "string",
+        status: "ManagedEntityStatus",
+        connectionStatus: "string",
+        certInfo: "CryptoManagerKmipCertificateInfo",
+        clientTrustServer: "boolean",
+        serverTrustClient: "boolean"
+};
+typeNames.interfaces["KmipServerStatus"] = {
+clusterId: "KeyProviderId",
+        name: "string",
+        status: "ManagedEntityStatus",
+        description: "string"
+};
+typeNames.interfaces["AccountCreatedEvent"] = {
+spec: "HostAccountSpec",
+        group: "boolean"
+};
+typeNames.interfaces["AccountRemovedEvent"] = {
+account: "string",
+        group: "boolean"
+};
+typeNames.interfaces["AccountUpdatedEvent"] = {
+spec: "HostAccountSpec",
+        group: "boolean",
+        prevDescription: "string"
+};
+typeNames.interfaces["AdminPasswordNotChangedEvent"] = {
+
+};
+typeNames.interfaces["AlarmEvent"] = {
+alarm: "AlarmEventArgument"
+};
+typeNames.interfaces["AlarmReconfiguredEvent"] = {
+entity: "ManagedEntityEventArgument",
+        configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["AlarmRemovedEvent"] = {
+entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["AlarmScriptCompleteEvent"] = {
+entity: "ManagedEntityEventArgument",
+        script: "string"
+};
+typeNames.interfaces["AlarmScriptFailedEvent"] = {
+entity: "ManagedEntityEventArgument",
+        script: "string",
+        reason: "MethodFault"
+};
+typeNames.interfaces["AlarmSnmpCompletedEvent"] = {
+entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["AlarmSnmpFailedEvent"] = {
+entity: "ManagedEntityEventArgument",
+        reason: "MethodFault"
+};
+typeNames.interfaces["AlarmStatusChangedEvent"] = {
+source: "ManagedEntityEventArgument",
+        entity: "ManagedEntityEventArgument",
+        from: "string",
+        to: "string"
+};
+typeNames.interfaces["AllVirtualMachinesLicensedEvent"] = {
+
+};
+typeNames.interfaces["AlreadyAuthenticatedSessionEvent"] = {
+
+};
+typeNames.interfaces["AuthorizationEvent"] = {
+
+};
+typeNames.interfaces["BadUsernameSessionEvent"] = {
+ipAddress: "string"
+};
+typeNames.interfaces["CanceledHostOperationEvent"] = {
+
+};
+typeNames.interfaces["ClusterEvent"] = {
+
+};
+typeNames.interfaces["ClusterOvercommittedEvent"] = {
+
+};
+typeNames.interfaces["ClusterReconfiguredEvent"] = {
+configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["ClusterStatusChangedEvent"] = {
+oldStatus: "string",
+        newStatus: "string"
+};
+typeNames.interfaces["CustomFieldEvent"] = {
+
+};
+typeNames.interfaces["CustomFieldValueChangedEvent"] = {
+entity: "ManagedEntityEventArgument",
+        fieldKey: "number",
+        name: "string",
+        value: "string",
+        prevState: "string"
+};
+typeNames.interfaces["CustomizationEvent"] = {
+logLocation: "string"
+};
+typeNames.interfaces["CustomizationFailed"] = {
+reason: "string"
+};
+typeNames.interfaces["CustomizationLinuxIdentityFailed"] = {
+
+};
+typeNames.interfaces["CustomizationNetworkSetupFailed"] = {
+
+};
+typeNames.interfaces["CustomizationStartedEvent"] = {
+
+};
+typeNames.interfaces["CustomizationSucceeded"] = {
+
+};
+typeNames.interfaces["CustomizationSysprepFailed"] = {
+sysprepVersion: "string",
+        systemVersion: "string"
+};
+typeNames.interfaces["CustomizationUnknownFailure"] = {
+
+};
+typeNames.interfaces["DVPortgroupEvent"] = {
+
+};
+typeNames.interfaces["DVPortgroupReconfiguredEvent"] = {
+configSpec: "DVPortgroupConfigSpec",
+        configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["DVPortgroupRenamedEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["DasAdmissionControlDisabledEvent"] = {
+
+};
+typeNames.interfaces["DasAdmissionControlEnabledEvent"] = {
+
+};
+typeNames.interfaces["DasAgentFoundEvent"] = {
+
+};
+typeNames.interfaces["DasAgentUnavailableEvent"] = {
+
+};
+typeNames.interfaces["DasClusterIsolatedEvent"] = {
+
+};
+typeNames.interfaces["DasDisabledEvent"] = {
+
+};
+typeNames.interfaces["DasEnabledEvent"] = {
+
+};
+typeNames.interfaces["DasHostFailedEvent"] = {
+failedHost: "HostEventArgument"
+};
+typeNames.interfaces["DasHostIsolatedEvent"] = {
+isolatedHost: "HostEventArgument"
+};
+typeNames.interfaces["DatacenterEvent"] = {
+
+};
+typeNames.interfaces["DatacenterRenamedEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["DatastoreDiscoveredEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["DatastoreEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["DatastoreFileEvent"] = {
+targetFile: "string",
+        sourceOfOperation: "string",
+        succeeded: "boolean"
+};
+typeNames.interfaces["DatastoreFileMovedEvent"] = {
+sourceDatastore: "DatastoreEventArgument",
+        sourceFile: "string"
+};
+typeNames.interfaces["DatastoreIORMReconfiguredEvent"] = {
+
+};
+typeNames.interfaces["DatastorePrincipalConfigured"] = {
+datastorePrincipal: "string"
+};
+typeNames.interfaces["DatastoreRemovedOnHostEvent"] = {
+datastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["DatastoreRenamedEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["DatastoreRenamedOnHostEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["DrsDisabledEvent"] = {
+
+};
+typeNames.interfaces["DrsEnabledEvent"] = {
+behavior: "string"
+};
+typeNames.interfaces["DrsInvocationFailedEvent"] = {
+
+};
+typeNames.interfaces["DrsRecoveredFromFailureEvent"] = {
+
+};
+typeNames.interfaces["DrsResourceConfigureFailedEvent"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["DrsResourceConfigureSyncedEvent"] = {
+
+};
+typeNames.interfaces["DrsRuleComplianceEvent"] = {
+
+};
+typeNames.interfaces["DrsRuleViolationEvent"] = {
+
+};
+typeNames.interfaces["DrsSoftRuleViolationEvent"] = {
+
+};
+typeNames.interfaces["DrsVmMigratedEvent"] = {
+
+};
+typeNames.interfaces["DrsVmPoweredOnEvent"] = {
+
+};
+typeNames.interfaces["DuplicateIpDetectedEvent"] = {
+duplicateIP: "string",
+        macAddress: "string"
+};
+typeNames.interfaces["DvpgImportEvent"] = {
+importType: "string"
+};
+typeNames.interfaces["DvpgRestoreEvent"] = {
+
+};
+typeNames.interfaces["DvsEvent"] = {
+
+};
+typeNames.interfaces["DvsHealthStatusChangeEvent"] = {
+switchUuid: "string",
+        healthResult: "HostMemberHealthCheckResult"
+};
+typeNames.interfaces["DvsHostBackInSyncEvent"] = {
+hostBackInSync: "HostEventArgument"
+};
+typeNames.interfaces["DvsHostJoinedEvent"] = {
+hostJoined: "HostEventArgument"
+};
+typeNames.interfaces["DvsHostLeftEvent"] = {
+hostLeft: "HostEventArgument"
+};
+typeNames.interfaces["DvsHostStatusUpdated"] = {
+hostMember: "HostEventArgument",
+        oldStatus: "string",
+        newStatus: "string",
+        oldStatusDetail: "string",
+        newStatusDetail: "string"
+};
+typeNames.interfaces["DvsHostWentOutOfSyncEvent"] = {
+hostOutOfSync: "DvsOutOfSyncHostArgument"
+};
+typeNames.interfaces["DvsImportEvent"] = {
+importType: "string"
+};
+typeNames.interfaces["DvsMergedEvent"] = {
+sourceDvs: "DvsEventArgument",
+        destinationDvs: "DvsEventArgument"
+};
+typeNames.interfaces["DvsPortBlockedEvent"] = {
+portKey: "string",
+        statusDetail: "string",
+        runtimeInfo: "DVPortStatus",
+        prevBlockState: "string"
+};
+typeNames.interfaces["DvsPortConnectedEvent"] = {
+portKey: "string",
+        connectee: "DistributedVirtualSwitchPortConnectee"
+};
+typeNames.interfaces["DvsPortCreatedEvent"] = {
+portKey: "string"
+};
+typeNames.interfaces["DvsPortDeletedEvent"] = {
+portKey: "string"
+};
+typeNames.interfaces["DvsPortDisconnectedEvent"] = {
+portKey: "string",
+        connectee: "DistributedVirtualSwitchPortConnectee"
+};
+typeNames.interfaces["DvsPortEnteredPassthruEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus"
+};
+typeNames.interfaces["DvsPortExitedPassthruEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus"
+};
+typeNames.interfaces["DvsPortJoinPortgroupEvent"] = {
+portKey: "string",
+        portgroupKey: "string",
+        portgroupName: "string"
+};
+typeNames.interfaces["DvsPortLeavePortgroupEvent"] = {
+portKey: "string",
+        portgroupKey: "string",
+        portgroupName: "string"
+};
+typeNames.interfaces["DvsPortLinkDownEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus"
+};
+typeNames.interfaces["DvsPortLinkUpEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus"
+};
+typeNames.interfaces["DvsPortReconfiguredEvent"] = {
+portKey: "string",
+        configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["DvsPortRuntimeChangeEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus"
+};
+typeNames.interfaces["DvsPortUnblockedEvent"] = {
+portKey: "string",
+        runtimeInfo: "DVPortStatus",
+        prevBlockState: "string"
+};
+typeNames.interfaces["DvsPortVendorSpecificStateChangeEvent"] = {
+portKey: "string"
+};
+typeNames.interfaces["DvsRenamedEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["DvsRestoreEvent"] = {
+
+};
+typeNames.interfaces["DvsUpgradeAvailableEvent"] = {
+productInfo: "DistributedVirtualSwitchProductSpec"
+};
+typeNames.interfaces["DvsUpgradeInProgressEvent"] = {
+productInfo: "DistributedVirtualSwitchProductSpec"
+};
+typeNames.interfaces["DvsUpgradeRejectedEvent"] = {
+productInfo: "DistributedVirtualSwitchProductSpec"
+};
+typeNames.interfaces["DvsUpgradedEvent"] = {
+productInfo: "DistributedVirtualSwitchProductSpec"
+};
+typeNames.interfaces["EnteredMaintenanceModeEvent"] = {
+
+};
+typeNames.interfaces["EnteredStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["EnteringMaintenanceModeEvent"] = {
+
+};
+typeNames.interfaces["EnteringStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["EntityEventArgument"] = {
+name: "string"
+};
+typeNames.interfaces["ErrorUpgradeEvent"] = {
+
+};
+typeNames.interfaces["ExitMaintenanceModeEvent"] = {
+
+};
+typeNames.interfaces["ExitStandbyModeFailedEvent"] = {
+
+};
+typeNames.interfaces["ExitedStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["ExitingStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["ExtendedEvent"] = {
+eventTypeId: "string",
+        managedObject: "ManagedObject",
+        data: "ExtendedEventPair"
+};
+typeNames.interfaces["ExtendedEventPair"] = {
+key: "string",
+        value: "string"
+};
+typeNames.interfaces["FailoverLevelRestored"] = {
+
+};
+typeNames.interfaces["FolderEventArgument"] = {
+folder: Folder
+};
+typeNames.interfaces["GhostDvsProxySwitchDetectedEvent"] = {
+switchUuid: "string"
+};
+typeNames.interfaces["GhostDvsProxySwitchRemovedEvent"] = {
+switchUuid: "string"
+};
+typeNames.interfaces["GlobalMessageChangedEvent"] = {
+message: "string",
+        prevMessage: "string"
+};
+typeNames.interfaces["HostAddFailedEvent"] = {
+hostname: "string"
+};
+typeNames.interfaces["HostAddedEvent"] = {
+
+};
+typeNames.interfaces["HostAdminDisableEvent"] = {
+
+};
+typeNames.interfaces["HostAdminEnableEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedAccountFailedEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedAlreadyManagedEvent"] = {
+serverName: "string"
+};
+typeNames.interfaces["HostCnxFailedBadCcagentEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedBadUsernameEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedBadVersionEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedCcagentUpgradeEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedNetworkErrorEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedNoAccessEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedNoConnectionEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedNoLicenseEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedNotFoundEvent"] = {
+
+};
+typeNames.interfaces["HostCnxFailedTimeoutEvent"] = {
+
+};
+typeNames.interfaces["HostComplianceCheckedEvent"] = {
+profile: "ProfileEventArgument"
+};
+typeNames.interfaces["HostCompliantEvent"] = {
+
+};
+typeNames.interfaces["HostConfigAppliedEvent"] = {
+
+};
+typeNames.interfaces["HostConnectedEvent"] = {
+
+};
+typeNames.interfaces["HostConnectionLostEvent"] = {
+
+};
+typeNames.interfaces["HostDasDisabledEvent"] = {
+
+};
+typeNames.interfaces["HostDasDisablingEvent"] = {
+
+};
+typeNames.interfaces["HostDasEnabledEvent"] = {
+
+};
+typeNames.interfaces["HostDasEnablingEvent"] = {
+
+};
+typeNames.interfaces["HostDasErrorEvent"] = {
+message: "string",
+        reason: "string"
+};
+typeNames.interfaces["HostDasEvent"] = {
+
+};
+typeNames.interfaces["HostDasOkEvent"] = {
+
+};
+typeNames.interfaces["HostDisconnectedEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["HostEnableAdminFailedEvent"] = {
+permissions: "Permission"
+};
+typeNames.interfaces["HostEventArgument"] = {
+host: HostSystem
+};
+typeNames.interfaces["HostExtraNetworksEvent"] = {
+ips: "string"
+};
+typeNames.interfaces["HostInventoryFullEvent"] = {
+capacity: "number"
+};
+typeNames.interfaces["HostIsolationIpPingFailedEvent"] = {
+isolationIp: "string"
+};
+typeNames.interfaces["HostLicenseExpiredEvent"] = {
+
+};
+typeNames.interfaces["HostLocalPortCreatedEvent"] = {
+hostLocalPort: "DVSHostLocalPortInfo"
+};
+typeNames.interfaces["HostMissingNetworksEvent"] = {
+ips: "string"
+};
+typeNames.interfaces["HostMonitoringStateChangedEvent"] = {
+state: "string",
+        prevState: "string"
+};
+typeNames.interfaces["HostNoAvailableNetworksEvent"] = {
+ips: "string"
+};
+typeNames.interfaces["HostNoHAEnabledPortGroupsEvent"] = {
+
+};
+typeNames.interfaces["HostNoRedundantManagementNetworkEvent"] = {
+
+};
+typeNames.interfaces["HostNotInClusterEvent"] = {
+
+};
+typeNames.interfaces["HostOvercommittedEvent"] = {
+
+};
+typeNames.interfaces["HostPrimaryAgentNotShortNameEvent"] = {
+primaryAgent: "string"
+};
+typeNames.interfaces["HostShortNameInconsistentEvent"] = {
+shortName: "string",
+        shortName2: "string"
+};
+typeNames.interfaces["HostStatusChangedEvent"] = {
+
+};
+typeNames.interfaces["IncorrectHostInformationEvent"] = {
+
+};
+typeNames.interfaces["InfoUpgradeEvent"] = {
+
+};
+typeNames.interfaces["InsufficientFailoverResourcesEvent"] = {
+
+};
+typeNames.interfaces["InvalidEditionEvent"] = {
+feature: "string"
+};
+typeNames.interfaces["ManagedEntityEventArgument"] = {
+entity: ManagedEntity
+};
+typeNames.interfaces["MigrationEvent"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["MigrationHostErrorEvent"] = {
+dstHost: "HostEventArgument"
+};
+typeNames.interfaces["MigrationHostWarningEvent"] = {
+dstHost: "HostEventArgument"
+};
+typeNames.interfaces["MigrationResourceErrorEvent"] = {
+dstPool: "ResourcePoolEventArgument",
+        dstHost: "HostEventArgument"
+};
+typeNames.interfaces["MigrationResourceWarningEvent"] = {
+dstPool: "ResourcePoolEventArgument",
+        dstHost: "HostEventArgument"
+};
+typeNames.interfaces["MigrationWarningEvent"] = {
+
+};
+typeNames.interfaces["MtuMatchEvent"] = {
+
+};
+typeNames.interfaces["MtuMismatchEvent"] = {
+
+};
+typeNames.interfaces["NetworkEventArgument"] = {
+network: Network
+};
+typeNames.interfaces["NoAccessUserEvent"] = {
+ipAddress: "string"
+};
+typeNames.interfaces["NoMaintenanceModeDrsRecommendationForVM"] = {
+
+};
+typeNames.interfaces["NonVIWorkloadDetectedOnDatastoreEvent"] = {
+
+};
+typeNames.interfaces["NotEnoughResourcesToStartVmEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["OutOfSyncDvsHost"] = {
+hostOutOfSync: "DvsOutOfSyncHostArgument"
+};
+typeNames.interfaces["PermissionEvent"] = {
+entity: "ManagedEntityEventArgument",
+        principal: "string",
+        group: "boolean"
+};
+typeNames.interfaces["PermissionRemovedEvent"] = {
+
+};
+typeNames.interfaces["PermissionUpdatedEvent"] = {
+role: "RoleEventArgument",
+        propagate: "boolean",
+        prevRole: "RoleEventArgument",
+        prevPropagate: "boolean"
+};
+typeNames.interfaces["ProfileAssociatedEvent"] = {
+
+};
+typeNames.interfaces["ProfileChangedEvent"] = {
+
+};
+typeNames.interfaces["ProfileCreatedEvent"] = {
+
+};
+typeNames.interfaces["ProfileDissociatedEvent"] = {
+
+};
+typeNames.interfaces["RecoveryEvent"] = {
+hostName: "string",
+        portKey: "string",
+        dvsUuid: "string",
+        vnic: "string"
+};
+typeNames.interfaces["ResourcePoolCreatedEvent"] = {
+parent: "ResourcePoolEventArgument"
+};
+typeNames.interfaces["ResourcePoolDestroyedEvent"] = {
+
+};
+typeNames.interfaces["ResourcePoolEventArgument"] = {
+resourcePool: ResourcePool
+};
+typeNames.interfaces["RoleEvent"] = {
+role: "RoleEventArgument"
+};
+typeNames.interfaces["RoleRemovedEvent"] = {
+
+};
+typeNames.interfaces["RoleUpdatedEvent"] = {
+privilegeList: "string",
+        prevRoleName: "string",
+        privilegesAdded: "string",
+        privilegesRemoved: "string"
+};
+typeNames.interfaces["RollbackEvent"] = {
+hostName: "string",
+        methodName: "string"
+};
+typeNames.interfaces["ScheduledTaskCompletedEvent"] = {
+
+};
+typeNames.interfaces["ScheduledTaskCreatedEvent"] = {
+
+};
+typeNames.interfaces["ScheduledTaskEmailCompletedEvent"] = {
+to: "string"
+};
+typeNames.interfaces["ScheduledTaskEmailFailedEvent"] = {
+to: "string",
+        reason: "MethodFault"
+};
+typeNames.interfaces["ScheduledTaskEventArgument"] = {
+scheduledTask: ScheduledTask
+};
+typeNames.interfaces["ServerStartedSessionEvent"] = {
+
+};
+typeNames.interfaces["TeamingMatchEvent"] = {
+
+};
+typeNames.interfaces["TeamingMisMatchEvent"] = {
+
+};
+typeNames.interfaces["TemplateBeingUpgradedEvent"] = {
+
+};
+typeNames.interfaces["UplinkPortMtuNotSupportEvent"] = {
+
+};
+typeNames.interfaces["UplinkPortMtuSupportEvent"] = {
+
+};
+typeNames.interfaces["UplinkPortVlanTrunkedEvent"] = {
+
+};
+typeNames.interfaces["UplinkPortVlanUntrunkedEvent"] = {
+
+};
+typeNames.interfaces["VmAcquiredMksTicketEvent"] = {
+
+};
+typeNames.interfaces["VmAcquiredTicketEvent"] = {
+ticketType: "string"
+};
+typeNames.interfaces["VmAutoRenameEvent"] = {
+oldName: "string",
+        newName: "string"
+};
+typeNames.interfaces["VmBeingCreatedEvent"] = {
+configSpec: "VirtualMachineConfigSpec"
+};
+typeNames.interfaces["VmBeingDeployedEvent"] = {
+srcTemplate: "VmEventArgument"
+};
+typeNames.interfaces["VmBeingHotMigratedEvent"] = {
+destHost: "HostEventArgument",
+        destDatacenter: "DatacenterEventArgument",
+        destDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmBeingMigratedEvent"] = {
+destHost: "HostEventArgument",
+        destDatacenter: "DatacenterEventArgument",
+        destDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmBeingRelocatedEvent"] = {
+destHost: "HostEventArgument",
+        destDatacenter: "DatacenterEventArgument",
+        destDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmCloneEvent"] = {
+
+};
+typeNames.interfaces["VmCloneFailedEvent"] = {
+destFolder: "FolderEventArgument",
+        destName: "string",
+        destHost: "HostEventArgument",
+        reason: "MethodFault"
+};
+typeNames.interfaces["VmClonedEvent"] = {
+sourceVm: "VmEventArgument"
+};
+typeNames.interfaces["VmConfigMissingEvent"] = {
+
+};
+typeNames.interfaces["VmConnectedEvent"] = {
+
+};
+typeNames.interfaces["VmCreatedEvent"] = {
+
+};
+typeNames.interfaces["VmDasBeingResetEvent"] = {
+reason: "string"
+};
+typeNames.interfaces["VmDasBeingResetWithScreenshotEvent"] = {
+screenshotFilePath: "string"
+};
+typeNames.interfaces["VmDasResetFailedEvent"] = {
+
+};
+typeNames.interfaces["VmDasUpdateErrorEvent"] = {
+
+};
+typeNames.interfaces["VmDasUpdateOkEvent"] = {
+
+};
+typeNames.interfaces["VmDateRolledBackEvent"] = {
+
+};
+typeNames.interfaces["VmDeployFailedEvent"] = {
+destDatastore: "EntityEventArgument",
+        reason: "MethodFault"
+};
+typeNames.interfaces["VmDeployedEvent"] = {
+srcTemplate: "VmEventArgument"
+};
+typeNames.interfaces["VmDisconnectedEvent"] = {
+
+};
+typeNames.interfaces["VmDiscoveredEvent"] = {
+
+};
+typeNames.interfaces["VmDiskFailedEvent"] = {
+disk: "string",
+        reason: "MethodFault"
+};
+typeNames.interfaces["VmEmigratingEvent"] = {
+
+};
+typeNames.interfaces["VmEndRecordingEvent"] = {
+
+};
+typeNames.interfaces["VmEndReplayingEvent"] = {
+
+};
+typeNames.interfaces["VmEventArgument"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["VmFaultToleranceStateChangedEvent"] = {
+oldState: "VirtualMachineFaultToleranceState",
+        newState: "VirtualMachineFaultToleranceState"
+};
+typeNames.interfaces["VmHealthMonitoringStateChangedEvent"] = {
+state: "string",
+        prevState: "string"
+};
+typeNames.interfaces["VmPowerOffOnIsolationEvent"] = {
+isolatedHost: "HostEventArgument"
+};
+typeNames.interfaces["VmRelocateFailedEvent"] = {
+destHost: "HostEventArgument",
+        reason: "MethodFault",
+        destDatacenter: "DatacenterEventArgument",
+        destDatastore: "DatastoreEventArgument"
+};
+typeNames.interfaces["VmVnicPoolReservationViolationClearEvent"] = {
+vmVnicResourcePoolKey: "string",
+        vmVnicResourcePoolName: "string"
+};
+typeNames.interfaces["VmVnicPoolReservationViolationRaiseEvent"] = {
+vmVnicResourcePoolKey: "string",
+        vmVnicResourcePoolName: "string"
+};
+typeNames.interfaces["ActiveDirectoryFault"] = {
+errorCode: "number"
+};
+typeNames.interfaces["AlreadyExists"] = {
+name: "string"
+};
+typeNames.interfaces["AlreadyUpgraded"] = {
+
+};
+typeNames.interfaces["AnswerFileUpdateFailed"] = {
+failure: "AnswerFileUpdateFailure"
+};
+typeNames.interfaces["AnswerFileUpdateFailure"] = {
+userInputPath: "ProfilePropertyPath",
+        errMsg: "LocalizableMessage"
+};
+typeNames.interfaces["AuthMinimumAdminPermission"] = {
+
+};
+typeNames.interfaces["CannotAccessLocalSource"] = {
+
+};
+typeNames.interfaces["CannotAccessVmComponent"] = {
+
+};
+typeNames.interfaces["CannotAccessVmConfig"] = {
+reason: "MethodFault"
+};
+typeNames.interfaces["CannotAccessVmDevice"] = {
+device: "string",
+        backing: "string",
+        connected: "boolean"
+};
+typeNames.interfaces["CannotAccessVmDisk"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["CannotChangeDrsBehaviorForFtSecondary"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["CannotChangeHaSettingsForFtSecondary"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["CannotChangeVsanClusterUuid"] = {
+
+};
+typeNames.interfaces["CannotChangeVsanNodeUuid"] = {
+
+};
+typeNames.interfaces["CannotComputeFTCompatibleHosts"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["CannotDisableSnapshot"] = {
+
+};
+typeNames.interfaces["CannotDisconnectHostWithFaultToleranceVm"] = {
+hostName: "string"
+};
+typeNames.interfaces["CannotEnableVmcpForCluster"] = {
+host: HostSystem,
+        hostName: "string",
+        reason: "string"
+};
+typeNames.interfaces["CannotMoveFaultToleranceVm"] = {
+moveType: "string",
+        vmName: "string"
+};
+typeNames.interfaces["CannotMoveHostWithFaultToleranceVm"] = {
+
+};
+typeNames.interfaces["CannotMoveVsanEnabledHost"] = {
+
+};
+typeNames.interfaces["CannotPlaceWithoutPrerequisiteMoves"] = {
+
+};
+typeNames.interfaces["CannotReconfigureVsanWhenHaEnabled"] = {
+
+};
+typeNames.interfaces["CannotUseNetwork"] = {
+device: "string",
+        backing: "string",
+        connected: "boolean",
+        reason: "string",
+        network: Network
+};
+typeNames.interfaces["ConcurrentAccess"] = {
+
+};
+typeNames.interfaces["CpuHotPlugNotSupported"] = {
+
+};
+typeNames.interfaces["CustomizationFault"] = {
+
+};
+typeNames.interfaces["CustomizationPending"] = {
+
+};
+typeNames.interfaces["DasConfigFault"] = {
+reason: "string",
+        output: "string",
+        event: "Event"
+};
+typeNames.interfaces["DeltaDiskFormatNotSupported"] = {
+datastore: Datastore,
+        deltaDiskFormat: "string"
+};
+typeNames.interfaces["DestinationVsanDisabled"] = {
+destinationCluster: "string"
+};
+typeNames.interfaces["DomainNotFound"] = {
+domainName: "string"
+};
+typeNames.interfaces["DrsDisabledOnVm"] = {
+
+};
+typeNames.interfaces["DuplicateName"] = {
+name: "string",
+        object: "ManagedObject"
+};
+typeNames.interfaces["DuplicateVsanNetworkInterface"] = {
+device: "string"
+};
+typeNames.interfaces["DvsFault"] = {
+
+};
+typeNames.interfaces["DvsNotAuthorized"] = {
+sessionExtensionKey: "string",
+        dvsExtensionKey: "string"
+};
+typeNames.interfaces["DvsOperationBulkFault"] = {
+hostFault: "DvsOperationBulkFaultFaultOnHost"
+};
+typeNames.interfaces["DvsOperationBulkFaultFaultOnHost"] = {
+host: HostSystem,
+        fault: "MethodFault"
+};
+typeNames.interfaces["DvsScopeViolated"] = {
+scope: ManagedEntity,
+        entity: ManagedEntity
+};
+typeNames.interfaces["EVCConfigFault"] = {
+faults: "MethodFault"
+};
+typeNames.interfaces["EVCModeIllegalByVendor"] = {
+clusterCPUVendor: "string",
+        modeCPUVendor: "string"
+};
+typeNames.interfaces["EVCModeUnsupportedByHosts"] = {
+evcMode: "string",
+        host: HostSystem,
+        hostName: "string"
+};
+typeNames.interfaces["EVCUnsupportedByHostHardware"] = {
+host: HostSystem,
+        hostName: "string"
+};
+typeNames.interfaces["EVCUnsupportedByHostSoftware"] = {
+host: HostSystem,
+        hostName: "string"
+};
+typeNames.interfaces["EightHostLimitViolated"] = {
+
+};
+typeNames.interfaces["ExpiredAddonLicense"] = {
+
+};
+typeNames.interfaces["ExpiredEditionLicense"] = {
+
+};
+typeNames.interfaces["ExtendedFault"] = {
+faultTypeId: "string",
+        data: "KeyValue"
+};
+typeNames.interfaces["FaultToleranceCannotEditMem"] = {
+vmName: "string",
+        vm: VirtualMachine
+};
+typeNames.interfaces["FaultToleranceNotLicensed"] = {
+hostName: "string"
+};
+typeNames.interfaces["FaultTolerancePrimaryPowerOnNotAttempted"] = {
+secondaryVm: VirtualMachine,
+        primaryVm: VirtualMachine
+};
+typeNames.interfaces["FaultToleranceVmNotDasProtected"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["FcoeFault"] = {
+
+};
+typeNames.interfaces["FcoeFaultPnicHasNoPortSet"] = {
+nicDevice: "string"
+};
+typeNames.interfaces["FileFault"] = {
+file: "string"
+};
+typeNames.interfaces["FileLocked"] = {
+
+};
+typeNames.interfaces["FileNameTooLong"] = {
+
+};
+typeNames.interfaces["FileNotFound"] = {
+
+};
+typeNames.interfaces["FileNotWritable"] = {
+
+};
+typeNames.interfaces["FileTooLarge"] = {
+datastore: "string",
+        fileSize: "number",
+        maxFileSize: "number"
+};
+typeNames.interfaces["FtIssuesOnHost"] = {
+host: HostSystem,
+        hostName: "string",
+        errors: "MethodFault"
+};
+typeNames.interfaces["GenericDrsFault"] = {
+hostFaults: "MethodFault"
+};
+typeNames.interfaces["GenericVmConfigFault"] = {
+reason: "string"
+};
+typeNames.interfaces["GuestOperationsFault"] = {
+
+};
+typeNames.interfaces["GuestOperationsUnavailable"] = {
+
+};
+typeNames.interfaces["GuestPermissionDenied"] = {
+
+};
+typeNames.interfaces["GuestProcessNotFound"] = {
+pid: "number"
+};
+typeNames.interfaces["GuestRegistryFault"] = {
+windowsSystemErrorCode: "number"
+};
+typeNames.interfaces["GuestRegistryKeyFault"] = {
+keyName: "string"
+};
+typeNames.interfaces["GuestRegistryKeyHasSubkeys"] = {
+
+};
+typeNames.interfaces["GuestRegistryKeyInvalid"] = {
+
+};
+typeNames.interfaces["GuestRegistryKeyParentVolatile"] = {
+
+};
+typeNames.interfaces["GuestRegistryValueFault"] = {
+keyName: "string",
+        valueName: "string"
+};
+typeNames.interfaces["GuestRegistryValueNotFound"] = {
+
+};
+typeNames.interfaces["HeterogenousHostsBlockingEVC"] = {
+
+};
+typeNames.interfaces["HostConfigFault"] = {
+
+};
+typeNames.interfaces["HostConnectFault"] = {
+
+};
+typeNames.interfaces["HostHasComponentFailure"] = {
+hostName: "string",
+        componentType: "string",
+        componentName: "string"
+};
+typeNames.interfaces["HostInDomain"] = {
+
+};
+typeNames.interfaces["HostIncompatibleForFaultTolerance"] = {
+hostName: "string",
+        reason: "string"
+};
+typeNames.interfaces["HostIncompatibleForRecordReplay"] = {
+hostName: "string",
+        reason: "string"
+};
+typeNames.interfaces["HostPowerOpFailed"] = {
+
+};
+typeNames.interfaces["HostSpecificationOperationFailed"] = {
+host: HostSystem
+};
+typeNames.interfaces["HttpFault"] = {
+statusCode: "number",
+        statusMessage: "string"
+};
+typeNames.interfaces["IORMNotSupportedHostOnDatastore"] = {
+datastore: Datastore,
+        datastoreName: "string",
+        host: HostSystem
+};
+typeNames.interfaces["ImportHostAddFailure"] = {
+hostIp: "string"
+};
+typeNames.interfaces["ImportOperationBulkFault"] = {
+importFaults: "ImportOperationBulkFaultFaultOnImport"
+};
+typeNames.interfaces["ImportOperationBulkFaultFaultOnImport"] = {
+entityType: "string",
+        key: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["InaccessibleVFlashSource"] = {
+hostName: "string"
+};
+typeNames.interfaces["IncompatibleHostForFtSecondary"] = {
+host: HostSystem,
+        error: "MethodFault"
+};
+typeNames.interfaces["IncorrectFileType"] = {
+
+};
+typeNames.interfaces["InsufficientResourcesFault"] = {
+
+};
+typeNames.interfaces["InsufficientStandbyResource"] = {
+
+};
+typeNames.interfaces["InsufficientStorageIops"] = {
+unreservedIops: "number",
+        requestedIops: "number",
+        datastoreName: "string"
+};
+typeNames.interfaces["InsufficientStorageSpace"] = {
+
+};
+typeNames.interfaces["InsufficientVFlashResourcesFault"] = {
+freeSpaceInMB: "number",
+        freeSpace: "number",
+        requestedSpaceInMB: "number",
+        requestedSpace: "number"
+};
+typeNames.interfaces["InvalidAffinitySettingFault"] = {
+
+};
+typeNames.interfaces["InvalidBmcRole"] = {
+
+};
+typeNames.interfaces["InvalidCAMServer"] = {
+camServer: "string"
+};
+typeNames.interfaces["InvalidDatastore"] = {
+datastore: Datastore,
+        name: "string"
+};
+typeNames.interfaces["InvalidDatastorePath"] = {
+datastorePath: "string"
+};
+typeNames.interfaces["InvalidEvent"] = {
+
+};
+typeNames.interfaces["InvalidFolder"] = {
+target: ManagedEntity
+};
+typeNames.interfaces["InvalidFormat"] = {
+
+};
+typeNames.interfaces["InvalidGuestLogin"] = {
+
+};
+typeNames.interfaces["InvalidHostName"] = {
+
+};
+typeNames.interfaces["InvalidIpfixConfig"] = {
+property: "string"
+};
+typeNames.interfaces["InvalidIpmiLoginInfo"] = {
+
+};
+typeNames.interfaces["InvalidIpmiMacAddress"] = {
+userProvidedMacAddress: "string",
+        observedMacAddress: "string"
+};
+typeNames.interfaces["InvalidLicense"] = {
+licenseContent: "string"
+};
+typeNames.interfaces["InvalidLocale"] = {
+
+};
+typeNames.interfaces["InvalidLogin"] = {
+
+};
+typeNames.interfaces["InvalidName"] = {
+name: "string",
+        entity: ManagedEntity
+};
+typeNames.interfaces["InvalidOperationOnSecondaryVm"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["InvalidPrivilege"] = {
+privilege: "string"
+};
+typeNames.interfaces["InvalidResourcePoolStructureFault"] = {
+
+};
+typeNames.interfaces["InvalidSnapshotFormat"] = {
+
+};
+typeNames.interfaces["InvalidState"] = {
+
+};
+typeNames.interfaces["InvalidVmConfig"] = {
+property: "string"
+};
+typeNames.interfaces["InvalidVmState"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["IpHostnameGeneratorError"] = {
+
+};
+typeNames.interfaces["IscsiFault"] = {
+
+};
+typeNames.interfaces["IscsiFaultInvalidVnic"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultPnicInUse"] = {
+pnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicAlreadyBound"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicHasActivePaths"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicHasMultipleUplinks"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicHasNoUplinks"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicHasWrongUplink"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicInUse"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicIsLastPath"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicNotBound"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["IscsiFaultVnicNotFound"] = {
+vnicDevice: "string"
+};
+typeNames.interfaces["KeyNotFound"] = {
+key: "string"
+};
+typeNames.interfaces["LargeRDMNotSupportedOnDatastore"] = {
+device: "string",
+        datastore: Datastore,
+        datastoreName: "string"
+};
+typeNames.interfaces["LicenseEntityNotFound"] = {
+entityId: "string"
+};
+typeNames.interfaces["LicenseServerUnavailable"] = {
+licenseServer: "string"
+};
+typeNames.interfaces["LimitExceeded"] = {
+property: "string",
+        limit: "number"
+};
+typeNames.interfaces["LinuxVolumeNotClean"] = {
+
+};
+typeNames.interfaces["LogBundlingFailed"] = {
+
+};
+typeNames.interfaces["MemoryHotPlugNotSupported"] = {
+
+};
+typeNames.interfaces["MigrationFault"] = {
+
+};
+typeNames.interfaces["MigrationFeatureNotSupported"] = {
+atSourceHost: "boolean",
+        failedHostName: "string",
+        failedHost: HostSystem
+};
+typeNames.interfaces["MigrationNotReady"] = {
+reason: "string"
+};
+typeNames.interfaces["MismatchedBundle"] = {
+bundleUuid: "string",
+        hostUuid: "string",
+        bundleBuildNumber: "number",
+        hostBuildNumber: "number"
+};
+typeNames.interfaces["MismatchedNetworkPolicies"] = {
+device: "string",
+        backing: "string",
+        connected: "boolean"
+};
+typeNames.interfaces["MismatchedVMotionNetworkNames"] = {
+sourceNetwork: "string",
+        destNetwork: "string"
+};
+typeNames.interfaces["MissingBmcSupport"] = {
+
+};
+typeNames.interfaces["MissingLinuxCustResources"] = {
+
+};
+typeNames.interfaces["MissingWindowsCustResources"] = {
+
+};
+typeNames.interfaces["MksConnectionLimitReached"] = {
+connectionLimit: "number"
+};
+typeNames.interfaces["MountError"] = {
+vm: VirtualMachine,
+        diskIndex: "number"
+};
+typeNames.interfaces["MultipleCertificatesVerifyFault"] = {
+thumbprintData: "MultipleCertificatesVerifyFaultThumbprintData"
+};
+typeNames.interfaces["MultipleCertificatesVerifyFaultThumbprintData"] = {
+port: "number",
+        thumbprint: "string"
+};
+typeNames.interfaces["NamespaceFull"] = {
+name: "string",
+        currentMaxSize: "number",
+        requiredSize: "number"
+};
+typeNames.interfaces["NamespaceLimitReached"] = {
+limit: "number"
+};
+typeNames.interfaces["NamespaceWriteProtected"] = {
+name: "string"
+};
+typeNames.interfaces["NasConfigFault"] = {
+name: "string"
+};
+typeNames.interfaces["NasConnectionLimitReached"] = {
+remoteHost: "string",
+        remotePath: "string"
+};
+typeNames.interfaces["NasSessionCredentialConflict"] = {
+remoteHost: "string",
+        remotePath: "string",
+        userName: "string"
+};
+typeNames.interfaces["NasVolumeNotMounted"] = {
+remoteHost: "string",
+        remotePath: "string"
+};
+typeNames.interfaces["NetworkCopyFault"] = {
+
+};
+typeNames.interfaces["NetworkDisruptedAndConfigRolledBack"] = {
+host: "string"
+};
+typeNames.interfaces["NetworkInaccessible"] = {
+
+};
+typeNames.interfaces["NetworksMayNotBeTheSame"] = {
+name: "string"
+};
+typeNames.interfaces["NicSettingMismatch"] = {
+numberOfNicsInSpec: "number",
+        numberOfNicsInVM: "number"
+};
+typeNames.interfaces["NoActiveHostInCluster"] = {
+computeResource: ComputeResource
+};
+typeNames.interfaces["NoClientCertificate"] = {
+
+};
+typeNames.interfaces["NoCompatibleDatastore"] = {
+
+};
+typeNames.interfaces["NoCompatibleHardAffinityHost"] = {
+vmName: "string"
+};
+typeNames.interfaces["NoCompatibleHost"] = {
+host: HostSystem,
+        error: "MethodFault"
+};
+typeNames.interfaces["NoCompatibleHostWithAccessToDevice"] = {
+
+};
+typeNames.interfaces["NoCompatibleSoftAffinityHost"] = {
+vmName: "string"
+};
+typeNames.interfaces["NoConnectedDatastore"] = {
+
+};
+typeNames.interfaces["NoDiskFound"] = {
+
+};
+typeNames.interfaces["NoDiskSpace"] = {
+datastore: "string"
+};
+typeNames.interfaces["NoDisksToCustomize"] = {
+
+};
+typeNames.interfaces["NoGateway"] = {
+
+};
+typeNames.interfaces["NoGuestHeartbeat"] = {
+
+};
+typeNames.interfaces["NoHost"] = {
+name: "string"
+};
+typeNames.interfaces["NoHostSuitableForFtSecondary"] = {
+vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["NoPeerHostFound"] = {
+
+};
+typeNames.interfaces["NoPermissionOnAD"] = {
+
+};
+typeNames.interfaces["NoPermissionOnHost"] = {
+
+};
+typeNames.interfaces["NoPermissionOnNasVolume"] = {
+userName: "string"
+};
+typeNames.interfaces["NoSubjectName"] = {
+
+};
+typeNames.interfaces["NoVirtualNic"] = {
+
+};
+typeNames.interfaces["NonADUserRequired"] = {
+
+};
+typeNames.interfaces["NonHomeRDMVMotionNotSupported"] = {
+device: "string"
+};
+typeNames.interfaces["NotADirectory"] = {
+
+};
+typeNames.interfaces["NotAFile"] = {
+
+};
+typeNames.interfaces["NotFound"] = {
+
+};
+typeNames.interfaces["NotSupportedDeviceForFT"] = {
+host: HostSystem,
+        hostName: "string",
+        vm: VirtualMachine,
+        vmName: "string",
+        deviceType: "string",
+        deviceLabel: "string"
+};
+typeNames.interfaces["NotSupportedHost"] = {
+productName: "string",
+        productVersion: "string"
+};
+typeNames.interfaces["NotSupportedHostForChecksum"] = {
+
+};
+typeNames.interfaces["NotSupportedHostForVFlash"] = {
+hostName: "string"
+};
+typeNames.interfaces["NotSupportedHostForVmcp"] = {
+hostName: "string"
+};
+typeNames.interfaces["NotSupportedHostForVmemFile"] = {
+hostName: "string"
+};
+typeNames.interfaces["NotSupportedHostForVsan"] = {
+hostName: "string"
+};
+typeNames.interfaces["NotSupportedHostInCluster"] = {
+
+};
+typeNames.interfaces["NotSupportedHostInDvs"] = {
+switchProductSpec: "DistributedVirtualSwitchProductSpec"
+};
+typeNames.interfaces["NotSupportedHostInHACluster"] = {
+hostName: "string",
+        build: "string"
+};
+typeNames.interfaces["NumVirtualCpusExceedsLimit"] = {
+maxSupportedVcpus: "number"
+};
+typeNames.interfaces["NumVirtualCpusIncompatible"] = {
+reason: "string",
+        numCpu: "number"
+};
+typeNames.interfaces["OperationDisabledByGuest"] = {
+
+};
+typeNames.interfaces["OperationNotSupportedByGuest"] = {
+
+};
+typeNames.interfaces["OutOfBounds"] = {
+argumentName: "string"
+};
+typeNames.interfaces["OvfConsumerPowerOnFault"] = {
+extensionKey: "string",
+        extensionName: "string",
+        description: "string"
+};
+typeNames.interfaces["OvfConsumerValidationFault"] = {
+extensionKey: "string",
+        extensionName: "string",
+        message: "string"
+};
+typeNames.interfaces["OvfFault"] = {
+
+};
+typeNames.interfaces["OvfImport"] = {
+
+};
+typeNames.interfaces["OvfImportFailed"] = {
+
+};
+typeNames.interfaces["OvfInvalidPackage"] = {
+lineNumber: "number"
+};
+typeNames.interfaces["OvfMappedOsId"] = {
+ovfId: "number",
+        ovfDescription: "string",
+        targetDescription: "string"
+};
+typeNames.interfaces["OvfMissingHardware"] = {
+name: "string",
+        resourceType: "number"
+};
+typeNames.interfaces["OvfNetworkMappingNotSupported"] = {
+
+};
+typeNames.interfaces["OvfProperty"] = {
+type: "string",
+        value: "string"
+};
+typeNames.interfaces["OvfPropertyNetwork"] = {
+
+};
+typeNames.interfaces["OvfPropertyQualifier"] = {
+qualifier: "string"
+};
+typeNames.interfaces["OvfPropertyQualifierDuplicate"] = {
+qualifier: "string"
+};
+typeNames.interfaces["OvfPropertyQualifierIgnored"] = {
+qualifier: "string"
+};
+typeNames.interfaces["OvfPropertyType"] = {
+
+};
+typeNames.interfaces["OvfPropertyValue"] = {
+
+};
+typeNames.interfaces["OvfSystemFault"] = {
+
+};
+typeNames.interfaces["OvfToXmlUnsupportedElement"] = {
+name: "string"
+};
+typeNames.interfaces["OvfUnknownDevice"] = {
+device: "VirtualDevice",
+        vmName: "string"
+};
+typeNames.interfaces["OvfUnknownEntity"] = {
+lineNumber: "number"
+};
+typeNames.interfaces["OvfUnsupportedDeviceBackingInfo"] = {
+elementName: "string",
+        instanceId: "string",
+        deviceName: "string",
+        backingName: "string"
+};
+typeNames.interfaces["OvfUnsupportedDeviceBackingOption"] = {
+elementName: "string",
+        instanceId: "string",
+        deviceName: "string",
+        backingName: "string"
+};
+typeNames.interfaces["OvfUnsupportedDiskProvisioning"] = {
+diskProvisioning: "string",
+        supportedDiskProvisioning: "string"
+};
+typeNames.interfaces["OvfUnsupportedPackage"] = {
+lineNumber: "number"
+};
+typeNames.interfaces["OvfUnsupportedSubType"] = {
+elementName: "string",
+        instanceId: "string",
+        deviceType: "number",
+        deviceSubType: "string"
+};
+typeNames.interfaces["OvfUnsupportedType"] = {
+name: "string",
+        instanceId: "string",
+        deviceType: "number"
+};
+typeNames.interfaces["OvfWrongNamespace"] = {
+namespaceName: "string"
+};
+typeNames.interfaces["OvfXmlFormat"] = {
+description: "string"
+};
+typeNames.interfaces["PasswordExpired"] = {
+
+};
+typeNames.interfaces["PatchBinariesNotFound"] = {
+patchID: "string",
+        binary: "string"
+};
+typeNames.interfaces["PatchMetadataInvalid"] = {
+patchID: "string",
+        metaData: "string"
+};
+typeNames.interfaces["PatchMetadataNotFound"] = {
+
+};
+typeNames.interfaces["PatchNotApplicable"] = {
+patchID: "string"
+};
+typeNames.interfaces["PatchSuperseded"] = {
+supersede: "string"
+};
+typeNames.interfaces["PlatformConfigFault"] = {
+text: "string"
+};
+typeNames.interfaces["PowerOnFtSecondaryFailed"] = {
+vm: VirtualMachine,
+        vmName: "string",
+        hostSelectionBy: "FtIssuesOnHostHostSelectionType",
+        hostErrors: "MethodFault",
+        rootCause: "MethodFault"
+};
+typeNames.interfaces["ProfileUpdateFailed"] = {
+failure: "ProfileUpdateFailedUpdateFailure",
+        warnings: "ProfileUpdateFailedUpdateFailure"
+};
+typeNames.interfaces["ProfileUpdateFailedUpdateFailure"] = {
+profilePath: "ProfilePropertyPath",
+        errMsg: "LocalizableMessage"
+};
+typeNames.interfaces["QuarantineModeFault"] = {
+vmName: "string",
+        faultType: "string"
+};
+typeNames.interfaces["QuestionPending"] = {
+text: "string"
+};
+typeNames.interfaces["RDMConversionNotSupported"] = {
+device: "string"
+};
+typeNames.interfaces["RDMNotPreserved"] = {
+device: "string"
+};
+typeNames.interfaces["RDMNotSupportedOnDatastore"] = {
+device: "string",
+        datastore: Datastore,
+        datastoreName: "string"
+};
+typeNames.interfaces["RDMPointsToInaccessibleDisk"] = {
+
+};
+typeNames.interfaces["ReadHostResourcePoolTreeFailed"] = {
+
+};
+typeNames.interfaces["ReadOnlyDisksWithLegacyDestination"] = {
+roDiskCount: "number",
+        timeoutDanger: "boolean"
+};
+typeNames.interfaces["RebootRequired"] = {
+patch: "string"
+};
+typeNames.interfaces["RecordReplayDisabled"] = {
+
+};
+typeNames.interfaces["RemoveFailed"] = {
+
+};
+typeNames.interfaces["ReplicationFault"] = {
+
+};
+typeNames.interfaces["ReplicationIncompatibleWithFT"] = {
+
+};
+typeNames.interfaces["ReplicationInvalidOptions"] = {
+options: "string",
+        entity: ManagedEntity
+};
+typeNames.interfaces["ReplicationNotSupportedOnHost"] = {
+
+};
+typeNames.interfaces["ReplicationVmFault"] = {
+reason: "string",
+        state: "string",
+        instanceId: "string",
+        vm: VirtualMachine
+};
+typeNames.interfaces["ReplicationVmInProgressFault"] = {
+requestedActivity: "string",
+        inProgressActivity: "string"
+};
+typeNames.interfaces["ResourceInUse"] = {
+type: "string",
+        name: "string"
+};
+typeNames.interfaces["ResourceNotAvailable"] = {
+containerType: "string",
+        containerName: "string",
+        type: "string"
+};
+typeNames.interfaces["RollbackFailure"] = {
+entityName: "string",
+        entityType: "string"
+};
+typeNames.interfaces["RuleViolation"] = {
+host: HostSystem,
+        rule: "ClusterRuleInfo"
+};
+typeNames.interfaces["SSLDisabledFault"] = {
+
+};
+typeNames.interfaces["SSLVerifyFault"] = {
+selfSigned: "boolean",
+        thumbprint: "string"
+};
+typeNames.interfaces["SSPIChallenge"] = {
+base64Token: "string"
+};
+typeNames.interfaces["SecondaryVmAlreadyDisabled"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["SecondaryVmAlreadyEnabled"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["SecondaryVmAlreadyRegistered"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["SecondaryVmNotRegistered"] = {
+instanceUuid: "string"
+};
+typeNames.interfaces["ShrinkDiskFault"] = {
+diskId: "number"
+};
+typeNames.interfaces["SnapshotCopyNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotFault"] = {
+
+};
+typeNames.interfaces["SnapshotIncompatibleDeviceInVm"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["SnapshotLocked"] = {
+
+};
+typeNames.interfaces["SnapshotMoveFromNonHomeNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotMoveNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotMoveToNonHomeNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotNoChange"] = {
+
+};
+typeNames.interfaces["SnapshotRevertIssue"] = {
+snapshotName: "string",
+        event: "Event",
+        errors: "boolean"
+};
+typeNames.interfaces["SoftRuleVioCorrectionDisallowed"] = {
+vmName: "string"
+};
+typeNames.interfaces["SoftRuleVioCorrectionImpact"] = {
+vmName: "string"
+};
+typeNames.interfaces["SsdDiskNotAvailable"] = {
+devicePath: "string"
+};
+typeNames.interfaces["StorageDrsCannotMoveDiskInMultiWriterMode"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveFTVm"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveIndependentDisk"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveManuallyPlacedSwapFile"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveManuallyPlacedVm"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveSharedDisk"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveTemplate"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveVmInUserFolder"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveVmWithMountedCDROM"] = {
+
+};
+typeNames.interfaces["StorageDrsCannotMoveVmWithNoFilesInLayout"] = {
+
+};
+typeNames.interfaces["StorageDrsDatacentersCannotShareDatastore"] = {
+
+};
+typeNames.interfaces["StorageDrsDisabledOnVm"] = {
+
+};
+typeNames.interfaces["StorageDrsHbrDiskNotMovable"] = {
+nonMovableDiskIds: "string"
+};
+typeNames.interfaces["StorageDrsHmsMoveInProgress"] = {
+
+};
+typeNames.interfaces["StorageDrsHmsUnreachable"] = {
+
+};
+typeNames.interfaces["StorageDrsIolbDisabledInternally"] = {
+
+};
+typeNames.interfaces["StorageDrsRelocateDisabled"] = {
+
+};
+typeNames.interfaces["StorageDrsStaleHmsCollection"] = {
+
+};
+typeNames.interfaces["StorageDrsUnableToMoveFiles"] = {
+
+};
+typeNames.interfaces["StorageVMotionNotSupported"] = {
+
+};
+typeNames.interfaces["SuspendedRelocateNotSupported"] = {
+
+};
+typeNames.interfaces["SwapDatastoreUnset"] = {
+
+};
+typeNames.interfaces["SwapPlacementOverrideNotSupported"] = {
+
+};
+typeNames.interfaces["SwitchIpUnset"] = {
+
+};
+typeNames.interfaces["SwitchNotInUpgradeMode"] = {
+
+};
+typeNames.interfaces["TaskInProgress"] = {
+task: Task
+};
+typeNames.interfaces["Timedout"] = {
+
+};
+typeNames.interfaces["TooManyConcurrentNativeClones"] = {
+
+};
+typeNames.interfaces["TooManyConsecutiveOverrides"] = {
+
+};
+typeNames.interfaces["TooManyDevices"] = {
+
+};
+typeNames.interfaces["TooManyDisksOnLegacyHost"] = {
+diskCount: "number",
+        timeoutDanger: "boolean"
+};
+typeNames.interfaces["TooManyGuestLogons"] = {
+
+};
+typeNames.interfaces["TooManyHosts"] = {
+
+};
+typeNames.interfaces["TooManyNativeCloneLevels"] = {
+
+};
+typeNames.interfaces["TooManyNativeClonesOnFile"] = {
+
+};
+typeNames.interfaces["TooManySnapshotLevels"] = {
+
+};
+typeNames.interfaces["ToolsAlreadyUpgraded"] = {
+
+};
+typeNames.interfaces["ToolsAutoUpgradeNotSupported"] = {
+
+};
+typeNames.interfaces["ToolsImageCopyFailed"] = {
+
+};
+typeNames.interfaces["ToolsImageNotAvailable"] = {
+
+};
+typeNames.interfaces["ToolsImageSignatureCheckFailed"] = {
+
+};
+typeNames.interfaces["ToolsInstallationInProgress"] = {
+
+};
+typeNames.interfaces["ToolsUnavailable"] = {
+
+};
+typeNames.interfaces["ToolsUpgradeCancelled"] = {
+
+};
+typeNames.interfaces["UncommittedUndoableDisk"] = {
+
+};
+typeNames.interfaces["UncustomizableGuest"] = {
+uncustomizableGuestOS: "string"
+};
+typeNames.interfaces["UnexpectedCustomizationFault"] = {
+
+};
+typeNames.interfaces["UnrecognizedHost"] = {
+hostName: "string"
+};
+typeNames.interfaces["UnsharedSwapVMotionNotSupported"] = {
+
+};
+typeNames.interfaces["UnsupportedDatastore"] = {
+datastore: Datastore
+};
+typeNames.interfaces["UnsupportedGuest"] = {
+unsupportedGuestOS: "string"
+};
+typeNames.interfaces["UnsupportedVimApiVersion"] = {
+version: "string"
+};
+typeNames.interfaces["UnsupportedVmxLocation"] = {
+
+};
+typeNames.interfaces["UserNotFound"] = {
+principal: "string",
+        unresolved: "boolean"
+};
+typeNames.interfaces["VAppConfigFault"] = {
+
+};
+typeNames.interfaces["VAppNotRunning"] = {
+
+};
+typeNames.interfaces["VAppPropertyFault"] = {
+id: "string",
+        category: "string",
+        label: "string",
+        type: "string",
+        value: "string"
+};
+typeNames.interfaces["VAppTaskInProgress"] = {
+
+};
+typeNames.interfaces["VFlashCacheHotConfigNotSupported"] = {
+
+};
+typeNames.interfaces["VFlashModuleNotSupported"] = {
+vmName: "string",
+        moduleName: "string",
+        reason: "string",
+        hostName: "string"
+};
+typeNames.interfaces["VFlashModuleVersionIncompatible"] = {
+moduleName: "string",
+        vmRequestModuleVersion: "string",
+        hostMinSupportedVerson: "string",
+        hostModuleVersion: "string"
+};
+typeNames.interfaces["VMotionAcrossNetworkNotSupported"] = {
+
+};
+typeNames.interfaces["VMotionInterfaceIssue"] = {
+atSourceHost: "boolean",
+        failedHost: "string",
+        failedHostEntity: HostSystem
+};
+typeNames.interfaces["VMotionLinkCapacityLow"] = {
+network: "string"
+};
+typeNames.interfaces["VMotionLinkDown"] = {
+network: "string"
+};
+typeNames.interfaces["VMotionNotConfigured"] = {
+
+};
+typeNames.interfaces["VMotionNotLicensed"] = {
+
+};
+typeNames.interfaces["VMotionNotSupported"] = {
+
+};
+typeNames.interfaces["VMotionProtocolIncompatible"] = {
+
+};
+typeNames.interfaces["VirtualHardwareCompatibilityIssue"] = {
+
+};
+typeNames.interfaces["VirtualHardwareVersionNotSupported"] = {
+hostName: "string",
+        host: HostSystem
+};
+typeNames.interfaces["VmAlreadyExistsInDatacenter"] = {
+host: HostSystem,
+        hostname: "string",
+        vm: VirtualMachine
+};
+typeNames.interfaces["VmFaultToleranceConfigIssue"] = {
+reason: "string",
+        entityName: "string",
+        entity: ManagedEntity
+};
+typeNames.interfaces["VmFaultToleranceConfigIssueWrapper"] = {
+entityName: "string",
+        entity: ManagedEntity,
+        error: "MethodFault"
+};
+typeNames.interfaces["VmFaultToleranceInvalidFileBacking"] = {
+backingType: "string",
+        backingFilename: "string"
+};
+typeNames.interfaces["VmFaultToleranceTooManyFtVcpusOnHost"] = {
+hostName: "string",
+        maxNumFtVcpus: "number"
+};
+typeNames.interfaces["VmFaultToleranceTooManyVMsOnHost"] = {
+hostName: "string",
+        maxNumFtVms: "number"
+};
+typeNames.interfaces["VmPowerOnDisabled"] = {
+
+};
+typeNames.interfaces["VmSmpFaultToleranceTooManyVMsOnHost"] = {
+hostName: "string",
+        maxNumSmpFtVms: "number"
+};
+typeNames.interfaces["VmWwnConflict"] = {
+vm: VirtualMachine,
+        host: HostSystem,
+        name: "string",
+        wwn: "number"
+};
+typeNames.interfaces["VmfsMountFault"] = {
+uuid: "string"
+};
+typeNames.interfaces["VmotionInterfaceNotEnabled"] = {
+
+};
+typeNames.interfaces["VolumeEditorError"] = {
+
+};
+typeNames.interfaces["VsanClusterUuidMismatch"] = {
+hostClusterUuid: "string",
+        destinationClusterUuid: "string"
+};
+typeNames.interfaces["VsanDiskFault"] = {
+device: "string"
+};
+typeNames.interfaces["VsanIncompatibleDiskMapping"] = {
+
+};
+typeNames.interfaces["VspanDestPortConflict"] = {
+vspanSessionKey1: "string",
+        vspanSessionKey2: "string",
+        portKey: "string"
+};
+typeNames.interfaces["VspanPortConflict"] = {
+vspanSessionKey1: "string",
+        vspanSessionKey2: "string",
+        portKey: "string"
+};
+typeNames.interfaces["VspanPortMoveFault"] = {
+srcPortgroupName: "string",
+        destPortgroupName: "string",
+        portKey: "string"
+};
+typeNames.interfaces["VspanPortPromiscChangeFault"] = {
+portKey: "string"
+};
+typeNames.interfaces["VspanPortgroupPromiscChangeFault"] = {
+portgroupName: "string"
+};
+typeNames.interfaces["VspanPortgroupTypeChangeFault"] = {
+portgroupName: "string"
+};
+typeNames.interfaces["VspanPromiscuousPortNotSupported"] = {
+vspanSessionKey: "string",
+        portKey: "string"
+};
+typeNames.interfaces["VspanSameSessionPortConflict"] = {
+vspanSessionKey: "string",
+        portKey: "string"
+};
+typeNames.interfaces["WakeOnLanNotSupported"] = {
+
+};
+typeNames.interfaces["WakeOnLanNotSupportedByVmotionNIC"] = {
+
+};
+typeNames.interfaces["WillLoseHAProtection"] = {
+resolution: "string"
+};
+typeNames.interfaces["WillModifyConfigCpuRequirements"] = {
+
+};
+typeNames.interfaces["WillResetSnapshotDirectory"] = {
+
+};
+typeNames.interfaces["HostActiveDirectoryInfo"] = {
+joinedDomain: "string",
+        trustedDomain: "string",
+        domainMembershipStatus: "string",
+        smartCardAuthenticationEnabled: "boolean"
+};
+typeNames.interfaces["HostBlockAdapterTargetTransport"] = {
+
+};
+typeNames.interfaces["HostBlockHba"] = {
+
+};
+typeNames.interfaces["HostBootDeviceInfo"] = {
+bootDevices: "HostBootDevice",
+        currentBootDeviceKey: "string"
+};
+typeNames.interfaces["HostConfigSpec"] = {
+nasDatastore: "HostNasVolumeConfig",
+        network: "HostNetworkConfig",
+        nicTypeSelection: "HostVirtualNicManagerNicTypeSelection",
+        service: "HostServiceConfig",
+        firewall: "HostFirewallConfig",
+        option: "OptionValue",
+        datastorePrincipal: "string",
+        datastorePrincipalPasswd: "string",
+        datetime: "HostDateTimeConfig",
+        storageDevice: "HostStorageDeviceInfo",
+        license: "HostLicenseSpec",
+        security: "HostSecuritySpec",
+        userAccount: "HostAccountSpec",
+        usergroupAccount: "HostAccountSpec",
+        memory: "HostMemorySpec",
+        activeDirectory: "HostActiveDirectory",
+        genericConfig: "KeyAnyValue",
+        graphicsConfig: "HostGraphicsConfig",
+        assignableHardwareConfig: "HostAssignableHardwareConfig"
+};
+typeNames.interfaces["HostConnectSpec"] = {
+hostName: "string",
+        port: "number",
+        sslThumbprint: "string",
+        userName: "string",
+        password: "string",
+        vmFolder: Folder,
+        force: "boolean",
+        vimAccountName: "string",
+        vimAccountPassword: "string",
+        managementIp: "string",
+        lockdownMode: "HostLockdownMode",
+        hostGateway: "HostGatewaySpec"
+};
+typeNames.interfaces["HostDatastoreSystemCapabilities"] = {
+nfsMountCreationRequired: "boolean",
+        nfsMountCreationSupported: "boolean",
+        localDatastoreSupported: "boolean",
+        vmfsExtentExpansionSupported: "boolean"
+};
+typeNames.interfaces["HostDatastoreSystemDatastoreResult"] = {
+key: Datastore,
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostDatastoreSystemVvolDatastoreSpec"] = {
+name: "string",
+        scId: "string"
+};
+typeNames.interfaces["HostDateTimeInfo"] = {
+timeZone: "HostDateTimeSystemTimeZone",
+        systemClockProtocol: "string",
+        ntpConfig: "HostNtpConfig"
+};
+typeNames.interfaces["HostFibreChannelHba"] = {
+portWorldWideName: "number",
+        nodeWorldWideName: "number",
+        portType: "FibreChannelPortType",
+        speed: "number"
+};
+typeNames.interfaces["HostFibreChannelOverEthernetHba"] = {
+underlyingNic: "string",
+        linkInfo: "HostFibreChannelOverEthernetHbaLinkInfo",
+        isSoftwareFcoe: "boolean",
+        markedForRemoval: "boolean"
+};
+typeNames.interfaces["HostFibreChannelOverEthernetHbaLinkInfo"] = {
+vnportMac: "string",
+        fcfMac: "string",
+        vlanId: "number"
+};
+typeNames.interfaces["HostFibreChannelTargetTransport"] = {
+portWorldWideName: "number",
+        nodeWorldWideName: "number"
+};
+typeNames.interfaces["HostFirewallConfig"] = {
+rule: "HostFirewallConfigRuleSetConfig",
+        defaultBlockingPolicy: "HostFirewallDefaultPolicy"
+};
+typeNames.interfaces["HostFirewallConfigRuleSetConfig"] = {
+rulesetId: "string",
+        enabled: "boolean",
+        allowedHosts: "HostFirewallRulesetIpList"
+};
+typeNames.interfaces["HostInternetScsiHba"] = {
+isSoftwareBased: "boolean",
+        canBeDisabled: "boolean",
+        networkBindingSupport: "HostInternetScsiHbaNetworkBindingSupportType",
+        discoveryCapabilities: "HostInternetScsiHbaDiscoveryCapabilities",
+        discoveryProperties: "HostInternetScsiHbaDiscoveryProperties",
+        authenticationCapabilities: "HostInternetScsiHbaAuthenticationCapabilities",
+        authenticationProperties: "HostInternetScsiHbaAuthenticationProperties",
+        digestCapabilities: "HostInternetScsiHbaDigestCapabilities",
+        digestProperties: "HostInternetScsiHbaDigestProperties",
+        ipCapabilities: "HostInternetScsiHbaIPCapabilities",
+        ipProperties: "HostInternetScsiHbaIPProperties",
+        supportedAdvancedOptions: "OptionDef",
+        advancedOptions: "HostInternetScsiHbaParamValue",
+        iScsiName: "string",
+        iScsiAlias: "string",
+        configuredSendTarget: "HostInternetScsiHbaSendTarget",
+        configuredStaticTarget: "HostInternetScsiHbaStaticTarget",
+        maxSpeedMb: "number",
+        currentSpeedMb: "number"
+};
+typeNames.interfaces["HostInternetScsiHbaAuthenticationCapabilities"] = {
+chapAuthSettable: "boolean",
+        krb5AuthSettable: "boolean",
+        srpAuthSettable: "boolean",
+        spkmAuthSettable: "boolean",
+        mutualChapSettable: "boolean",
+        targetChapSettable: "boolean",
+        targetMutualChapSettable: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaAuthenticationProperties"] = {
+chapAuthEnabled: "boolean",
+        chapName: "string",
+        chapSecret: "string",
+        chapAuthenticationType: "string",
+        chapInherited: "boolean",
+        mutualChapName: "string",
+        mutualChapSecret: "string",
+        mutualChapAuthenticationType: "string",
+        mutualChapInherited: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaDigestCapabilities"] = {
+headerDigestSettable: "boolean",
+        dataDigestSettable: "boolean",
+        targetHeaderDigestSettable: "boolean",
+        targetDataDigestSettable: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaDigestProperties"] = {
+headerDigestType: "string",
+        headerDigestInherited: "boolean",
+        dataDigestType: "string",
+        dataDigestInherited: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaDiscoveryCapabilities"] = {
+iSnsDiscoverySettable: "boolean",
+        slpDiscoverySettable: "boolean",
+        staticTargetDiscoverySettable: "boolean",
+        sendTargetsDiscoverySettable: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaDiscoveryProperties"] = {
+iSnsDiscoveryEnabled: "boolean",
+        iSnsDiscoveryMethod: "string",
+        iSnsHost: "string",
+        slpDiscoveryEnabled: "boolean",
+        slpDiscoveryMethod: "string",
+        slpHost: "string",
+        staticTargetDiscoveryEnabled: "boolean",
+        sendTargetsDiscoveryEnabled: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaIPCapabilities"] = {
+addressSettable: "boolean",
+        ipConfigurationMethodSettable: "boolean",
+        subnetMaskSettable: "boolean",
+        defaultGatewaySettable: "boolean",
+        primaryDnsServerAddressSettable: "boolean",
+        alternateDnsServerAddressSettable: "boolean",
+        ipv6Supported: "boolean",
+        arpRedirectSettable: "boolean",
+        mtuSettable: "boolean",
+        hostNameAsTargetAddress: "boolean",
+        nameAliasSettable: "boolean",
+        ipv4EnableSettable: "boolean",
+        ipv6EnableSettable: "boolean",
+        ipv6PrefixLengthSettable: "boolean",
+        ipv6PrefixLength: "number",
+        ipv6DhcpConfigurationSettable: "boolean",
+        ipv6LinkLocalAutoConfigurationSettable: "boolean",
+        ipv6RouterAdvertisementConfigurationSettable: "boolean",
+        ipv6DefaultGatewaySettable: "boolean",
+        ipv6MaxStaticAddressesSupported: "number"
+};
+typeNames.interfaces["HostInternetScsiHbaIPProperties"] = {
+mac: "string",
+        address: "string",
+        dhcpConfigurationEnabled: "boolean",
+        subnetMask: "string",
+        defaultGateway: "string",
+        primaryDnsServerAddress: "string",
+        alternateDnsServerAddress: "string",
+        ipv6Address: "string",
+        ipv6SubnetMask: "string",
+        ipv6DefaultGateway: "string",
+        arpRedirectEnabled: "boolean",
+        mtu: "number",
+        jumboFramesEnabled: "boolean",
+        ipv4Enabled: "boolean",
+        ipv6Enabled: "boolean",
+        ipv6properties: "HostInternetScsiHbaIPv6Properties"
+};
+typeNames.interfaces["HostInternetScsiHbaIPv6Properties"] = {
+iscsiIpv6Address: "HostInternetScsiHbaIscsiIpv6Address",
+        ipv6DhcpConfigurationEnabled: "boolean",
+        ipv6LinkLocalAutoConfigurationEnabled: "boolean",
+        ipv6RouterAdvertisementConfigurationEnabled: "boolean",
+        ipv6DefaultGateway: "string"
+};
+typeNames.interfaces["HostInternetScsiHbaIscsiIpv6Address"] = {
+address: "string",
+        prefixLength: "number",
+        origin: "string",
+        operation: "string"
+};
+typeNames.interfaces["HostInternetScsiHbaParamValue"] = {
+isInherited: "boolean"
+};
+typeNames.interfaces["HostInternetScsiHbaSendTarget"] = {
+address: "string",
+        port: "number",
+        authenticationProperties: "HostInternetScsiHbaAuthenticationProperties",
+        digestProperties: "HostInternetScsiHbaDigestProperties",
+        supportedAdvancedOptions: "OptionDef",
+        advancedOptions: "HostInternetScsiHbaParamValue",
+        parent: "string"
+};
+typeNames.interfaces["HostInternetScsiHbaStaticTarget"] = {
+address: "string",
+        port: "number",
+        iScsiName: "string",
+        discoveryMethod: "string",
+        authenticationProperties: "HostInternetScsiHbaAuthenticationProperties",
+        digestProperties: "HostInternetScsiHbaDigestProperties",
+        supportedAdvancedOptions: "OptionDef",
+        advancedOptions: "HostInternetScsiHbaParamValue",
+        parent: "string"
+};
+typeNames.interfaces["HostInternetScsiHbaTargetSet"] = {
+staticTargets: "HostInternetScsiHbaStaticTarget",
+        sendTargets: "HostInternetScsiHbaSendTarget"
+};
+typeNames.interfaces["HostInternetScsiTargetTransport"] = {
+iScsiName: "string",
+        iScsiAlias: "string",
+        address: "string"
+};
+typeNames.interfaces["HostNetworkConfig"] = {
+vswitch: "HostVirtualSwitchConfig",
+        proxySwitch: "HostProxySwitchConfig",
+        portgroup: "HostPortGroupConfig",
+        pnic: "PhysicalNicConfig",
+        vnic: "HostVirtualNicConfig",
+        consoleVnic: "HostVirtualNicConfig",
+        dnsConfig: "HostDnsConfig",
+        ipRouteConfig: "HostIpRouteConfig",
+        consoleIpRouteConfig: "HostIpRouteConfig",
+        routeTableConfig: "HostIpRouteTableConfig",
+        dhcp: "HostDhcpServiceConfig",
+        nat: "HostNatServiceConfig",
+        ipV6Enabled: "boolean",
+        netStackSpec: "HostNetworkConfigNetStackSpec"
+};
+typeNames.interfaces["HostNetworkConfigNetStackSpec"] = {
+netStackInstance: "HostNetStackInstance",
+        operation: "string"
+};
+typeNames.interfaces["HostNetworkConfigResult"] = {
+vnicDevice: "string",
+        consoleVnicDevice: "string"
+};
+typeNames.interfaces["HostNvmeConnectSpec"] = {
+subnqn: "string",
+        controllerId: "number",
+        adminQueueSize: "number",
+        keepAliveTimeout: "number"
+};
+typeNames.interfaces["HostNvmeDiscoverSpec"] = {
+autoConnect: "boolean"
+};
+typeNames.interfaces["HostNvmeOpaqueTransportParameters"] = {
+trtype: "string",
+        traddr: "string",
+        adrfam: "string",
+        trsvcid: "string",
+        tsas: "Buffer"
+};
+typeNames.interfaces["HostNvmeOverFibreChannelParameters"] = {
+nodeWorldWideName: "number",
+        portWorldWideName: "number"
+};
+typeNames.interfaces["HostNvmeOverRdmaParameters"] = {
+address: "string",
+        addressFamily: "string",
+        portNumber: "number"
+};
+typeNames.interfaces["HostOpaqueNetworkInfo"] = {
+opaqueNetworkId: "string",
+        opaqueNetworkName: "string",
+        opaqueNetworkType: "string",
+        pnicZone: "string",
+        capability: "OpaqueNetworkCapability",
+        extraConfig: "OptionValue"
+};
+typeNames.interfaces["HostParallelScsiTargetTransport"] = {
+
+};
+typeNames.interfaces["HostPcieTargetTransport"] = {
+
+};
+typeNames.interfaces["HostRdmaTargetTransport"] = {
+
+};
+typeNames.interfaces["HostScsiDisk"] = {
+capacity: "HostDiskDimensionsLba",
+        devicePath: "string",
+        ssd: "boolean",
+        localDisk: "boolean",
+        physicalLocation: "string",
+        emulatedDIXDIFEnabled: "boolean",
+        vsanDiskInfo: "VsanHostVsanDiskInfo",
+        scsiDiskType: "string"
+};
+typeNames.interfaces["HostScsiDiskPartition"] = {
+diskName: "string",
+        partition: "number"
+};
+typeNames.interfaces["HostSecuritySpec"] = {
+adminPassword: "string",
+        removePermission: "Permission",
+        addPermission: "Permission"
+};
+typeNames.interfaces["HostSerialAttachedTargetTransport"] = {
+
+};
+typeNames.interfaces["HostListSummary"] = {
+host: HostSystem,
+        hardware: "HostHardwareSummary",
+        runtime: "HostRuntimeInfo",
+        config: "HostConfigSummary",
+        quickStats: "HostListSummaryQuickStats",
+        overallStatus: "ManagedEntityStatus",
+        rebootRequired: "boolean",
+        customValue: "CustomFieldValue",
+        managementServerIp: "string",
+        maxEVCModeKey: "string",
+        currentEVCModeKey: "string",
+        currentEVCGraphicsModeKey: "string",
+        gateway: "HostListSummaryGatewaySummary",
+        tpmAttestation: "HostTpmAttestationInfo",
+        trustAuthorityAttestationInfos: "HostTrustAuthorityAttestationInfo"
+};
+typeNames.interfaces["HostConfigSummary"] = {
+name: "string",
+        port: "number",
+        sslThumbprint: "string",
+        product: "AboutInfo",
+        vmotionEnabled: "boolean",
+        faultToleranceEnabled: "boolean",
+        featureVersion: "HostFeatureVersionInfo",
+        agentVmDatastore: Datastore,
+        agentVmNetwork: Network
+};
+typeNames.interfaces["HostListSummaryGatewaySummary"] = {
+gatewayType: "string",
+        gatewayId: "string"
+};
+typeNames.interfaces["HostHardwareSummary"] = {
+vendor: "string",
+        model: "string",
+        uuid: "string",
+        otherIdentifyingInfo: "HostSystemIdentificationInfo",
+        memorySize: "number",
+        cpuModel: "string",
+        cpuMhz: "number",
+        numCpuPkgs: "number",
+        numCpuCores: "number",
+        numCpuThreads: "number",
+        numNics: "number",
+        numHBAs: "number"
+};
+typeNames.interfaces["HostListSummaryQuickStats"] = {
+overallCpuUsage: "number",
+        overallMemoryUsage: "number",
+        distributedCpuFairness: "number",
+        distributedMemoryFairness: "number",
+        availablePMemCapacity: "number",
+        uptime: "number"
+};
+typeNames.interfaces["HostTpmBootSecurityOptionEventDetails"] = {
+bootSecurityOption: "string"
+};
+typeNames.interfaces["HostTpmCommandEventDetails"] = {
+commandLine: "string"
+};
+typeNames.interfaces["HostUnresolvedVmfsExtent"] = {
+device: "HostScsiDiskPartition",
+        devicePath: "string",
+        vmfsUuid: "string",
+        isHeadExtent: "boolean",
+        ordinal: "number",
+        startBlock: "number",
+        endBlock: "number",
+        reason: "string"
+};
+typeNames.interfaces["HostVFlashManagerVFlashCacheConfigInfo"] = {
+vFlashModuleConfigOption: "HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption",
+        defaultVFlashModule: "string",
+        swapCacheReservationInGB: "number"
+};
+typeNames.interfaces["HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption"] = {
+vFlashModule: "string",
+        vFlashModuleVersion: "string",
+        minSupportedModuleVersion: "string",
+        cacheConsistencyType: "ChoiceOption",
+        cacheMode: "ChoiceOption",
+        blockSizeInKBOption: "LongOption",
+        reservationInMBOption: "LongOption",
+        maxDiskSizeInKB: "number"
+};
+typeNames.interfaces["HostVFlashManagerVFlashCacheConfigSpec"] = {
+defaultVFlashModule: "string",
+        swapCacheReservationInGB: "number"
+};
+typeNames.interfaces["HostVFlashManagerVFlashConfigInfo"] = {
+vFlashResourceConfigInfo: "HostVFlashManagerVFlashResourceConfigInfo",
+        vFlashCacheConfigInfo: "HostVFlashManagerVFlashCacheConfigInfo"
+};
+typeNames.interfaces["HostVFlashManagerVFlashResourceConfigInfo"] = {
+vffs: "HostVffsVolume",
+        capacity: "number"
+};
+typeNames.interfaces["HostVFlashManagerVFlashResourceConfigSpec"] = {
+vffsUuid: "string"
+};
+typeNames.interfaces["HostVFlashManagerVFlashResourceRunTimeInfo"] = {
+usage: "number",
+        capacity: "number",
+        accessible: "boolean",
+        capacityForVmCache: "number",
+        freeForVmCache: "number"
+};
+typeNames.interfaces["HostVMotionInfo"] = {
+netConfig: "HostVMotionNetConfig",
+        ipConfig: "HostIpConfig"
+};
+typeNames.interfaces["HostVffsVolume"] = {
+majorVersion: "number",
+        version: "string",
+        uuid: "string",
+        extent: "HostScsiDiskPartition"
+};
+typeNames.interfaces["HostVffsSpec"] = {
+devicePath: "string",
+        partition: "HostDiskPartitionSpec",
+        majorVersion: "number",
+        volumeName: "string"
+};
+typeNames.interfaces["VmfsDatastoreExpandSpec"] = {
+partition: "HostDiskPartitionSpec",
+        extent: "HostScsiDiskPartition"
+};
+typeNames.interfaces["VmfsDatastoreExtendSpec"] = {
+partition: "HostDiskPartitionSpec",
+        extent: "HostScsiDiskPartition"
+};
+typeNames.interfaces["HostVmfsVolume"] = {
+blockSizeMb: "number",
+        blockSize: "number",
+        unmapGranularity: "number",
+        unmapPriority: "string",
+        unmapBandwidthSpec: "VmfsUnmapBandwidthSpec",
+        maxBlocks: "number",
+        majorVersion: "number",
+        version: "string",
+        uuid: "string",
+        extent: "HostScsiDiskPartition",
+        vmfsUpgradable: "boolean",
+        forceMountedInfo: "HostForceMountedInfo",
+        ssd: "boolean",
+        local: "boolean",
+        scsiDiskType: "string"
+};
+typeNames.interfaces["VmfsConfigOption"] = {
+blockSizeOption: "number",
+        unmapGranularityOption: "number",
+        unmapBandwidthFixedValue: "LongOption",
+        unmapBandwidthDynamicMin: "LongOption",
+        unmapBandwidthDynamicMax: "LongOption",
+        unmapBandwidthIncrement: "number"
+};
+typeNames.interfaces["HostVmfsSpec"] = {
+extent: "HostScsiDiskPartition",
+        blockSizeMb: "number",
+        majorVersion: "number",
+        volumeName: "string",
+        blockSize: "number",
+        unmapGranularity: "number",
+        unmapPriority: "string",
+        unmapBandwidthSpec: "VmfsUnmapBandwidthSpec"
+};
+typeNames.interfaces["VmfsUnmapBandwidthSpec"] = {
+policy: "string",
+        fixedValue: "number",
+        dynamicMin: "number",
+        dynamicMax: "number"
+};
+typeNames.interfaces["BoolOption"] = {
+supported: "boolean",
+        defaultValue: "boolean"
+};
+typeNames.interfaces["ChoiceOption"] = {
+choiceInfo: "ElementDescription",
+        defaultIndex: "number"
+};
+typeNames.interfaces["FloatOption"] = {
+min: "number",
+        max: "number",
+        defaultValue: "number"
+};
+typeNames.interfaces["IntOption"] = {
+min: "number",
+        max: "number",
+        defaultValue: "number"
+};
+typeNames.interfaces["LongOption"] = {
+min: "number",
+        max: "number",
+        defaultValue: "number"
+};
+typeNames.interfaces["ProfileCompositeExpression"] = {
+operator: "string",
+        expressionName: "string"
+};
+typeNames.interfaces["CompositePolicyOption"] = {
+option: "PolicyOption"
+};
+typeNames.interfaces["ProfileCompositePolicyOptionMetadata"] = {
+option: "string"
+};
+typeNames.interfaces["DvsHostVNicProfile"] = {
+
+};
+typeNames.interfaces["DvsServiceConsoleVNicProfile"] = {
+
+};
+typeNames.interfaces["HostPortGroupProfile"] = {
+ipConfig: "IpAddressProfile"
+};
+typeNames.interfaces["HostProfileCompleteConfigSpec"] = {
+applyProfile: "HostApplyProfile",
+        customComplyProfile: "ComplianceProfile",
+        disabledExpressionListChanged: "boolean",
+        disabledExpressionList: "string",
+        validatorHost: HostSystem,
+        validating: "boolean",
+        hostConfig: "HostProfileConfigInfo"
+};
+typeNames.interfaces["HostProfileConfigInfo"] = {
+applyProfile: "HostApplyProfile",
+        defaultComplyProfile: "ComplianceProfile",
+        defaultComplyLocator: "ComplianceLocator",
+        customComplyProfile: "ComplianceProfile",
+        disabledExpressionList: "string",
+        description: "ProfileDescription"
+};
+typeNames.interfaces["HostProfileConfigSpec"] = {
+
+};
+typeNames.interfaces["HostProfileHostBasedConfigSpec"] = {
+host: HostSystem,
+        useHostProfileEngine: "boolean"
+};
+typeNames.interfaces["HostProfileSerializedHostProfileSpec"] = {
+validatorHost: HostSystem,
+        validating: "boolean"
+};
+typeNames.interfaces["HostProfileValidationFailureInfo"] = {
+name: "string",
+        annotation: "string",
+        updateType: "string",
+        host: HostSystem,
+        applyProfile: "HostApplyProfile",
+        failures: "ProfileUpdateFailedUpdateFailure",
+        faults: "MethodFault"
+};
+typeNames.interfaces["NetStackInstanceProfile"] = {
+key: "string",
+        dnsConfig: "NetworkProfileDnsConfigProfile",
+        ipRouteConfig: "IpRouteProfile"
+};
+typeNames.interfaces["AnswerFileCreateSpec"] = {
+validating: "boolean"
+};
+typeNames.interfaces["AnswerFileOptionsCreateSpec"] = {
+userInput: "ProfileDeferredPolicyOptionParameter"
+};
+typeNames.interfaces["AnswerFileSerializedCreateSpec"] = {
+answerFileConfigString: "string"
+};
+typeNames.interfaces["ApplyHostProfileConfigurationResult"] = {
+startTime: "Date",
+        completeTime: "Date",
+        host: HostSystem,
+        status: "string",
+        errors: "MethodFault"
+};
+typeNames.interfaces["ApplyHostProfileConfigurationSpec"] = {
+host: HostSystem,
+        taskListRequirement: "string",
+        taskDescription: "LocalizableMessage",
+        rebootStateless: "boolean",
+        rebootHost: "boolean",
+        faultData: "MethodFault"
+};
+typeNames.interfaces["HostProfileManagerCompositionResult"] = {
+errors: "LocalizableMessage",
+        results: "HostProfileManagerCompositionResultResultElement"
+};
+typeNames.interfaces["HostProfileManagerCompositionResultResultElement"] = {
+target: Profile,
+        status: "string",
+        errors: "LocalizableMessage"
+};
+typeNames.interfaces["HostProfileManagerCompositionValidationResult"] = {
+results: "HostProfileManagerCompositionValidationResultResultElement",
+        errors: "LocalizableMessage"
+};
+typeNames.interfaces["HostProfileManagerCompositionValidationResultResultElement"] = {
+target: Profile,
+        status: "string",
+        errors: "LocalizableMessage",
+        sourceDiffForToBeMerged: "HostApplyProfile",
+        targetDiffForToBeMerged: "HostApplyProfile",
+        toBeAdded: "HostApplyProfile",
+        toBeDeleted: "HostApplyProfile",
+        toBeDisabled: "HostApplyProfile",
+        toBeEnabled: "HostApplyProfile",
+        toBeReenableCC: "HostApplyProfile"
+};
+typeNames.interfaces["HostProfileManagerConfigTaskList"] = {
+configSpec: "HostConfigSpec",
+        taskDescription: "LocalizableMessage",
+        taskListRequirement: "string"
+};
+typeNames.interfaces["HostProfilesEntityCustomizations"] = {
+
+};
+typeNames.interfaces["HostProfileManagerHostToConfigSpecMap"] = {
+host: HostSystem,
+        configSpec: "AnswerFileCreateSpec"
+};
+typeNames.interfaces["StructuredCustomizations"] = {
+entity: ManagedEntity,
+        customizations: "AnswerFile"
+};
+typeNames.interfaces["AfterStartupTaskScheduler"] = {
+minute: "number"
+};
+typeNames.interfaces["OnceTaskScheduler"] = {
+runAt: "Date"
+};
+typeNames.interfaces["RecurrentTaskScheduler"] = {
+interval: "number"
+};
+typeNames.interfaces["ScheduledTaskInfo"] = {
+scheduledTask: ScheduledTask,
+        entity: ManagedEntity,
+        lastModifiedTime: "Date",
+        lastModifiedUser: "string",
+        nextRunTime: "Date",
+        prevRunTime: "Date",
+        state: "TaskInfoState",
+        error: "MethodFault",
+        result: "any",
+        progress: "number",
+        activeTask: Task,
+        taskObject: "ManagedObject"
+};
+typeNames.interfaces["StorageDrsPodSelectionSpec"] = {
+initialVmConfig: "VmPodConfigForPlacement",
+        storagePod: StoragePod
+};
+typeNames.interfaces["PodDiskLocator"] = {
+diskId: "number",
+        diskMoveType: "string",
+        diskBackingInfo: "VirtualDeviceBackingInfo",
+        profile: "VirtualMachineProfileSpec"
+};
+typeNames.interfaces["VmPodConfigForPlacement"] = {
+storagePod: StoragePod,
+        disk: "PodDiskLocator",
+        vmConfig: "StorageDrsVmConfigInfo",
+        interVmRule: "ClusterRuleInfo"
+};
+typeNames.interfaces["StoragePlacementSpec"] = {
+type: "string",
+        priority: "VirtualMachineMovePriority",
+        vm: VirtualMachine,
+        podSelectionSpec: "StorageDrsPodSelectionSpec",
+        cloneSpec: "VirtualMachineCloneSpec",
+        cloneName: "string",
+        configSpec: "VirtualMachineConfigSpec",
+        relocateSpec: "VirtualMachineRelocateSpec",
+        resourcePool: ResourcePool,
+        host: HostSystem,
+        folder: Folder,
+        disallowPrerequisiteMoves: "boolean",
+        resourceLeaseDurationSec: "number"
+};
+typeNames.interfaces["VirtualDiskAntiAffinityRuleSpec"] = {
+diskId: "number"
+};
+typeNames.interfaces["VirtualDiskRuleSpec"] = {
+diskRuleType: "string",
+        diskId: "number"
+};
+typeNames.interfaces["VAppConfigInfo"] = {
+entityConfig: "VAppEntityConfigInfo",
+        annotation: "string",
+        instanceUuid: "string",
+        managedBy: "ManagedByInfo"
+};
+typeNames.interfaces["VAppConfigSpec"] = {
+entityConfig: "VAppEntityConfigInfo",
+        annotation: "string",
+        instanceUuid: "string",
+        managedBy: "ManagedByInfo"
+};
+typeNames.interfaces["VirtualAppImportSpec"] = {
+name: "string",
+        vAppConfigSpec: "VAppConfigSpec",
+        resourcePoolSpec: "ResourceConfigSpec",
+        child: "ImportSpec"
+};
+typeNames.interfaces["VirtualMachineCdromInfo"] = {
+description: "string"
+};
+typeNames.interfaces["ConfigTarget"] = {
+numCpus: "number",
+        numCpuCores: "number",
+        numNumaNodes: "number",
+        maxCpusPerHost: "number",
+        smcPresent: "boolean",
+        datastore: "VirtualMachineDatastoreInfo",
+        network: "VirtualMachineNetworkInfo",
+        opaqueNetwork: "OpaqueNetworkTargetInfo",
+        distributedVirtualPortgroup: "DistributedVirtualPortgroupInfo",
+        distributedVirtualSwitch: "DistributedVirtualSwitchInfo",
+        cdRom: "VirtualMachineCdromInfo",
+        serial: "VirtualMachineSerialInfo",
+        parallel: "VirtualMachineParallelInfo",
+        sound: "VirtualMachineSoundInfo",
+        usb: "VirtualMachineUsbInfo",
+        floppy: "VirtualMachineFloppyInfo",
+        legacyNetworkInfo: "VirtualMachineLegacyNetworkSwitchInfo",
+        scsiPassthrough: "VirtualMachineScsiPassthroughInfo",
+        scsiDisk: "VirtualMachineScsiDiskDeviceInfo",
+        ideDisk: "VirtualMachineIdeDiskDeviceInfo",
+        maxMemMBOptimalPerf: "number",
+        supportedMaxMemMB: "number",
+        resourcePool: "ResourcePoolRuntimeInfo",
+        autoVmotion: "boolean",
+        pciPassthrough: "VirtualMachinePciPassthroughInfo",
+        sriov: "VirtualMachineSriovInfo",
+        vFlashModule: "VirtualMachineVFlashModuleInfo",
+        sharedGpuPassthroughTypes: "VirtualMachinePciSharedGpuPassthroughInfo",
+        availablePersistentMemoryReservationMB: "number",
+        dynamicPassthrough: "VirtualMachineDynamicPassthroughInfo",
+        sgxTargetInfo: "VirtualMachineSgxTargetInfo",
+        precisionClockInfo: "VirtualMachinePrecisionClockInfo",
+        sevSupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineDefaultProfileSpec"] = {
+
+};
+typeNames.interfaces["VirtualMachineDefinedProfileSpec"] = {
+profileId: "string",
+        replicationSpec: "ReplicationSpec",
+        profileData: "VirtualMachineProfileRawData",
+        profileParams: "KeyValue"
+};
+typeNames.interfaces["VirtualMachineDiskDeviceInfo"] = {
+capacity: "number",
+        vm: VirtualMachine
+};
+typeNames.interfaces["VirtualMachineDynamicPassthroughInfo"] = {
+vendorName: "string",
+        deviceName: "string",
+        customLabel: "string",
+        vendorId: "number",
+        deviceId: "number"
+};
+typeNames.interfaces["VirtualMachineEmptyProfileSpec"] = {
+
+};
+typeNames.interfaces["VirtualMachineFloppyInfo"] = {
+
+};
+typeNames.interfaces["VirtualMachineIdeDiskDeviceInfo"] = {
+partitionTable: "VirtualMachineIdeDiskDevicePartitionInfo"
+};
+typeNames.interfaces["VirtualMachineIdeDiskDevicePartitionInfo"] = {
+id: "number",
+        capacity: "number"
+};
+typeNames.interfaces["VirtualMachineNetworkInfo"] = {
+network: "NetworkSummary",
+        vswitch: "string"
+};
+typeNames.interfaces["OpaqueNetworkTargetInfo"] = {
+network: "OpaqueNetworkSummary",
+        networkReservationSupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineParallelInfo"] = {
+
+};
+typeNames.interfaces["VirtualMachinePciPassthroughInfo"] = {
+pciDevice: "HostPciDevice",
+        systemId: "string"
+};
+typeNames.interfaces["VirtualMachinePciSharedGpuPassthroughInfo"] = {
+vgpu: "string"
+};
+typeNames.interfaces["VirtualMachinePrecisionClockInfo"] = {
+systemClockProtocol: "string"
+};
+typeNames.interfaces["VirtualMachineRelocateSpec"] = {
+service: "ServiceLocator",
+        folder: Folder,
+        datastore: Datastore,
+        diskMoveType: "string",
+        pool: ResourcePool,
+        host: HostSystem,
+        disk: "VirtualMachineRelocateSpecDiskLocator",
+        transform: "VirtualMachineRelocateTransformation",
+        deviceChange: "VirtualDeviceConfigSpec",
+        profile: "VirtualMachineProfileSpec",
+        cryptoSpec: "CryptoSpec"
+};
+typeNames.interfaces["VirtualMachineRelocateSpecDiskLocator"] = {
+diskId: "number",
+        datastore: Datastore,
+        diskMoveType: "string",
+        diskBackingInfo: "VirtualDeviceBackingInfo",
+        profile: "VirtualMachineProfileSpec",
+        backing: "VirtualMachineRelocateSpecDiskLocatorBackingSpec"
+};
+typeNames.interfaces["VirtualMachineRelocateSpecDiskLocatorBackingSpec"] = {
+parent: "VirtualMachineRelocateSpecDiskLocatorBackingSpec",
+        crypto: "CryptoSpec"
+};
+typeNames.interfaces["VirtualMachineRuntimeInfo"] = {
+device: "VirtualMachineDeviceRuntimeInfo",
+        host: HostSystem,
+        connectionState: "VirtualMachineConnectionState",
+        powerState: "VirtualMachinePowerState",
+        faultToleranceState: "VirtualMachineFaultToleranceState",
+        dasVmProtection: "VirtualMachineRuntimeInfoDasProtectionState",
+        toolsInstallerMounted: "boolean",
+        suspendTime: "Date",
+        bootTime: "Date",
+        suspendInterval: "number",
+        question: "VirtualMachineQuestionInfo",
+        memoryOverhead: "number",
+        maxCpuUsage: "number",
+        maxMemoryUsage: "number",
+        numMksConnections: "number",
+        recordReplayState: "VirtualMachineRecordReplayState",
+        cleanPowerOff: "boolean",
+        needSecondaryReason: "string",
+        onlineStandby: "boolean",
+        minRequiredEVCModeKey: "string",
+        consolidationNeeded: "boolean",
+        offlineFeatureRequirement: "VirtualMachineFeatureRequirement",
+        featureRequirement: "VirtualMachineFeatureRequirement",
+        featureMask: "HostFeatureMask",
+        vFlashCacheAllocation: "number",
+        paused: "boolean",
+        snapshotInBackground: "boolean",
+        quiescedForkParent: "boolean",
+        instantCloneFrozen: "boolean",
+        cryptoState: "string"
+};
+typeNames.interfaces["VirtualMachineRuntimeInfoDasProtectionState"] = {
+dasProtected: "boolean"
+};
+typeNames.interfaces["VirtualMachineScsiDiskDeviceInfo"] = {
+disk: "HostScsiDisk",
+        transportHint: "string",
+        lunNumber: "number"
+};
+typeNames.interfaces["VirtualMachineScsiPassthroughInfo"] = {
+scsiClass: "string",
+        vendor: "string",
+        physicalUnitNumber: "number"
+};
+typeNames.interfaces["VirtualMachineSerialInfo"] = {
+
+};
+typeNames.interfaces["VirtualMachineSgxTargetInfo"] = {
+maxEpcSize: "number",
+        flcModes: "string",
+        lePubKeyHashes: "string"
+};
+typeNames.interfaces["VirtualMachineSnapshotTree"] = {
+snapshot: VirtualMachineSnapshot,
+        vm: VirtualMachine,
+        name: "string",
+        description: "string",
+        id: "number",
+        createTime: "Date",
+        state: "VirtualMachinePowerState",
+        quiesced: "boolean",
+        backupManifest: "string",
+        childSnapshotList: "VirtualMachineSnapshotTree",
+        replaySupported: "boolean"
+};
+typeNames.interfaces["VirtualMachineSoundInfo"] = {
+
+};
+typeNames.interfaces["VirtualMachineSriovInfo"] = {
+virtualFunction: "boolean",
+        pnic: "string",
+        devicePool: "VirtualMachineSriovDevicePoolInfo"
+};
+typeNames.interfaces["VirtualMachineSummary"] = {
+vm: VirtualMachine,
+        runtime: "VirtualMachineRuntimeInfo",
+        guest: "VirtualMachineGuestSummary",
+        config: "VirtualMachineConfigSummary",
+        storage: "VirtualMachineStorageSummary",
+        quickStats: "VirtualMachineQuickStats",
+        overallStatus: "ManagedEntityStatus",
+        customValue: "CustomFieldValue"
+};
+typeNames.interfaces["VirtualMachineConfigSummary"] = {
+name: "string",
+        template: "boolean",
+        vmPathName: "string",
+        memorySizeMB: "number",
+        cpuReservation: "number",
+        memoryReservation: "number",
+        numCpu: "number",
+        numEthernetCards: "number",
+        numVirtualDisks: "number",
+        uuid: "string",
+        instanceUuid: "string",
+        guestId: "string",
+        guestFullName: "string",
+        annotation: "string",
+        product: "VAppProductInfo",
+        installBootRequired: "boolean",
+        ftInfo: "FaultToleranceConfigInfo",
+        managedBy: "ManagedByInfo",
+        tpmPresent: "boolean",
+        numVmiopBackings: "number",
+        hwVersion: "string"
+};
+typeNames.interfaces["VirtualMachineGuestSummary"] = {
+guestId: "string",
+        guestFullName: "string",
+        toolsStatus: "VirtualMachineToolsStatus",
+        toolsVersionStatus: "string",
+        toolsVersionStatus2: "string",
+        toolsRunningStatus: "string",
+        hostName: "string",
+        ipAddress: "string",
+        hwVersion: "string"
+};
+typeNames.interfaces["VirtualMachineQuickStats"] = {
+overallCpuUsage: "number",
+        overallCpuDemand: "number",
+        overallCpuReadiness: "number",
+        guestMemoryUsage: "number",
+        hostMemoryUsage: "number",
+        guestHeartbeatStatus: "ManagedEntityStatus",
+        distributedCpuEntitlement: "number",
+        distributedMemoryEntitlement: "number",
+        staticCpuEntitlement: "number",
+        staticMemoryEntitlement: "number",
+        grantedMemory: "number",
+        privateMemory: "number",
+        sharedMemory: "number",
+        swappedMemory: "number",
+        balloonedMemory: "number",
+        consumedOverheadMemory: "number",
+        ftLogBandwidth: "number",
+        ftSecondaryLatency: "number",
+        ftLatencyStatus: "ManagedEntityStatus",
+        compressedMemory: "number",
+        uptimeSeconds: "number",
+        ssdSwappedMemory: "number"
+};
+typeNames.interfaces["VirtualMachineStorageSummary"] = {
+committed: "number",
+        uncommitted: "number",
+        unshared: "number",
+        timestamp: "Date"
+};
+typeNames.interfaces["VirtualMachineVFlashModuleInfo"] = {
+vFlashModule: "HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption"
+};
+typeNames.interfaces["VirtualMachineImportSpec"] = {
+configSpec: "VirtualMachineConfigSpec",
+        resPoolEntity: ResourcePool
+};
+typeNames.interfaces["CustomizationAutoIpV6Generator"] = {
+
+};
+typeNames.interfaces["CustomizationCustomIpGenerator"] = {
+argument: "string"
+};
+typeNames.interfaces["CustomizationCustomIpV6Generator"] = {
+argument: "string"
+};
+typeNames.interfaces["CustomizationCustomName"] = {
+argument: "string"
+};
+typeNames.interfaces["CustomizationDhcpIpGenerator"] = {
+
+};
+typeNames.interfaces["CustomizationDhcpIpV6Generator"] = {
+
+};
+typeNames.interfaces["CustomizationFixedIp"] = {
+ipAddress: "string"
+};
+typeNames.interfaces["CustomizationFixedIpV6"] = {
+ipAddress: "string",
+        subnetMask: "number"
+};
+typeNames.interfaces["CustomizationFixedName"] = {
+name: "string"
+};
+typeNames.interfaces["CustomizationLinuxOptions"] = {
+
+};
+typeNames.interfaces["VirtualCdrom"] = {
+
+};
+typeNames.interfaces["VirtualCdromAtapiBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualCdromIsoBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualCdromPassthroughBackingInfo"] = {
+exclusive: "boolean"
+};
+typeNames.interfaces["VirtualCdromRemoteAtapiBackingInfo"] = {
+
+};
+typeNames.interfaces["VirtualCdromRemotePassthroughBackingInfo"] = {
+exclusive: "boolean"
+};
+typeNames.interfaces["VirtualCdromOption"] = {
+
+};
+typeNames.interfaces["VirtualCdromAtapiBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualCdromIsoBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualCdromPassthroughBackingOption"] = {
+exclusive: "BoolOption"
+};
+typeNames.interfaces["VirtualCdromRemoteAtapiBackingOption"] = {
+
+};
+typeNames.interfaces["VirtualCdromRemotePassthroughBackingOption"] = {
+exclusive: "BoolOption"
+};
+typeNames.interfaces["VirtualController"] = {
+busNumber: "number",
+        device: "number"
+};
+typeNames.interfaces["VirtualControllerOption"] = {
+devices: "IntOption",
+        supportedDevice: "string"
+};
+typeNames.interfaces["VirtualE1000"] = {
+
+};
+typeNames.interfaces["VirtualE1000Option"] = {
+
+};
+typeNames.interfaces["VirtualE1000e"] = {
+
+};
+typeNames.interfaces["VirtualE1000eOption"] = {
+
+};
+typeNames.interfaces["VirtualEnsoniq1371"] = {
+
+};
+typeNames.interfaces["VirtualEnsoniq1371Option"] = {
+
+};
+typeNames.interfaces["VirtualHdAudioCard"] = {
+
+};
+typeNames.interfaces["VirtualHdAudioCardOption"] = {
+
+};
+typeNames.interfaces["VirtualIDEController"] = {
+
+};
+typeNames.interfaces["VirtualIDEControllerOption"] = {
+numIDEDisks: "IntOption",
+        numIDECdroms: "IntOption"
+};
+typeNames.interfaces["VirtualNVDIMMController"] = {
+
+};
+typeNames.interfaces["VirtualNVDIMMControllerOption"] = {
+numNVDIMMControllers: "IntOption"
+};
+typeNames.interfaces["VirtualNVMEController"] = {
+
+};
+typeNames.interfaces["VirtualNVMEControllerOption"] = {
+numNVMEDisks: "IntOption"
+};
+typeNames.interfaces["VirtualPCIController"] = {
+
+};
+typeNames.interfaces["VirtualPCIControllerOption"] = {
+numSCSIControllers: "IntOption",
+        numEthernetCards: "IntOption",
+        numVideoCards: "IntOption",
+        numSoundCards: "IntOption",
+        numVmiRoms: "IntOption",
+        numVmciDevices: "IntOption",
+        numPCIPassthroughDevices: "IntOption",
+        numSasSCSIControllers: "IntOption",
+        numVmxnet3EthernetCards: "IntOption",
+        numParaVirtualSCSIControllers: "IntOption",
+        numSATAControllers: "IntOption",
+        numNVMEControllers: "IntOption",
+        numVmxnet3VrdmaEthernetCards: "IntOption"
+};
+typeNames.interfaces["VirtualPS2Controller"] = {
+
+};
+typeNames.interfaces["VirtualPS2ControllerOption"] = {
+numKeyboards: "IntOption",
+        numPointingDevices: "IntOption"
+};
+typeNames.interfaces["VirtualSATAController"] = {
+
+};
+typeNames.interfaces["VirtualSATAControllerOption"] = {
+numSATADisks: "IntOption",
+        numSATACdroms: "IntOption"
+};
+typeNames.interfaces["VirtualSCSIController"] = {
+hotAddRemove: "boolean",
+        sharedBus: "VirtualSCSISharing",
+        scsiCtlrUnitNumber: "number"
+};
+typeNames.interfaces["VirtualSCSIControllerOption"] = {
+numSCSIDisks: "IntOption",
+        numSCSICdroms: "IntOption",
+        numSCSIPassthrough: "IntOption",
+        sharing: "VirtualSCSISharing",
+        defaultSharedIndex: "number",
+        hotAddRemove: "BoolOption",
+        scsiCtlrUnitNumber: "number"
+};
+typeNames.interfaces["VirtualSIOController"] = {
+
+};
+typeNames.interfaces["VirtualSIOControllerOption"] = {
+numFloppyDrives: "IntOption",
+        numSerialPorts: "IntOption",
+        numParallelPorts: "IntOption"
+};
+typeNames.interfaces["VirtualSoundBlaster16"] = {
+
+};
+typeNames.interfaces["VirtualSoundBlaster16Option"] = {
+
+};
+typeNames.interfaces["VirtualUSBController"] = {
+autoConnectDevices: "boolean",
+        ehciEnabled: "boolean"
+};
+typeNames.interfaces["VirtualUSBControllerPciBusSlotInfo"] = {
+ehciPciSlotNumber: "number"
+};
+typeNames.interfaces["VirtualUSBControllerOption"] = {
+autoConnectDevices: "BoolOption",
+        ehciSupported: "BoolOption",
+        supportedSpeeds: "string"
+};
+typeNames.interfaces["VirtualUSBXHCIController"] = {
+autoConnectDevices: "boolean"
+};
+typeNames.interfaces["VirtualUSBXHCIControllerOption"] = {
+autoConnectDevices: "BoolOption",
+        supportedSpeeds: "string"
+};
+typeNames.interfaces["VirtualVmxnet2Option"] = {
+
+};
+typeNames.interfaces["VirtualVmxnet3Option"] = {
+
+};
+typeNames.interfaces["VirtualVmxnet3VrdmaOption"] = {
+deviceProtocol: "ChoiceOption"
+};
+typeNames.interfaces["VslmCloneSpec"] = {
+name: "string",
+        keepAfterDeleteVm: "boolean",
+        metadata: "KeyValue"
+};
+typeNames.interfaces["ComputeResourceConfigInfo"] = {
+vmSwapPlacement: "string",
+        spbmEnabled: "boolean",
+        defaultHardwareVersionKey: "string"
+};
+typeNames.interfaces["ComputeResourceConfigSpec"] = {
+vmSwapPlacement: "string",
+        spbmEnabled: "boolean",
+        defaultHardwareVersionKey: "string",
+        desiredSoftwareSpec: "DesiredSoftwareSpec"
+};
+typeNames.interfaces["ComputeResourceHostSPBMLicenseInfo"] = {
+host: HostSystem,
+        licenseState: "ComputeResourceHostSPBMLicenseInfoHostSPBMLicenseState"
+};
+typeNames.interfaces["ComputeResourceSummary"] = {
+totalCpu: "number",
+        totalMemory: "number",
+        numCpuCores: "number",
+        numCpuThreads: "number",
+        effectiveCpu: "number",
+        effectiveMemory: "number",
+        numHosts: "number",
+        numEffectiveHosts: "number",
+        overallStatus: "ManagedEntityStatus"
+};
+typeNames.interfaces["DatacenterBasicConnectInfo"] = {
+hostname: "string",
+        error: "MethodFault",
+        serverIp: "string",
+        numVm: "number",
+        numPoweredOnVm: "number",
+        hostProductInfo: "AboutInfo",
+        hardwareVendor: "string",
+        hardwareModel: "string"
+};
+typeNames.interfaces["DatacenterConfigInfo"] = {
+defaultHardwareVersionKey: "string"
+};
+typeNames.interfaces["DatacenterConfigSpec"] = {
+defaultHardwareVersionKey: "string"
+};
+typeNames.interfaces["DatastoreCapability"] = {
+directoryHierarchySupported: "boolean",
+        rawDiskMappingsSupported: "boolean",
+        perFileThinProvisioningSupported: "boolean",
+        storageIORMSupported: "boolean",
+        nativeSnapshotSupported: "boolean",
+        topLevelDirectoryCreateSupported: "boolean",
+        seSparseSupported: "boolean",
+        vmfsSparseSupported: "boolean",
+        vsanSparseSupported: "boolean",
+        upitSupported: "boolean",
+        vmdkExpandSupported: "boolean",
+        clusteredVmdkSupported: "boolean"
+};
+typeNames.interfaces["DatastoreHostMount"] = {
+key: HostSystem,
+        mountInfo: "HostMountInfo"
+};
+typeNames.interfaces["DatastoreInfo"] = {
+name: "string",
+        url: "string",
+        freeSpace: "number",
+        maxFileSize: "number",
+        maxVirtualDiskCapacity: "number",
+        maxMemoryFileSize: "number",
+        timestamp: "Date",
+        containerId: "string",
+        aliasOf: "string"
+};
+typeNames.interfaces["DatastoreMountPathDatastorePair"] = {
+oldMountPath: "string",
+        datastore: Datastore
+};
+typeNames.interfaces["DatastoreSummary"] = {
+datastore: Datastore,
+        name: "string",
+        url: "string",
+        capacity: "number",
+        freeSpace: "number",
+        uncommitted: "number",
+        accessible: "boolean",
+        multipleHostAccess: "boolean",
+        type: "string",
+        maintenanceMode: "string"
+};
+typeNames.interfaces["DatastoreVVolContainerFailoverPair"] = {
+srcContainer: "string",
+        tgtContainer: "string",
+        vvolMapping: "KeyValue"
+};
+typeNames.interfaces["DVSBackupRestoreCapability"] = {
+backupRestoreSupported: "boolean"
+};
+typeNames.interfaces["DVSCapability"] = {
+dvsOperationSupported: "boolean",
+        dvPortGroupOperationSupported: "boolean",
+        dvPortOperationSupported: "boolean",
+        compatibleHostComponentProductInfo: "DistributedVirtualSwitchHostProductSpec",
+        featuresSupported: "DVSFeatureCapability"
+};
+typeNames.interfaces["DVSConfigInfo"] = {
+uuid: "string",
+        name: "string",
+        numStandalonePorts: "number",
+        numPorts: "number",
+        maxPorts: "number",
+        uplinkPortPolicy: "DVSUplinkPortPolicy",
+        uplinkPortgroup: DistributedVirtualPortgroup,
+        defaultPortConfig: "DVPortSetting",
+        host: "DistributedVirtualSwitchHostMember",
+        productInfo: "DistributedVirtualSwitchProductSpec",
+        targetInfo: "DistributedVirtualSwitchProductSpec",
+        extensionKey: "string",
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob",
+        policy: "DVSPolicy",
+        description: "string",
+        configVersion: "string",
+        contact: "DVSContactInfo",
+        switchIpAddress: "string",
+        createTime: "Date",
+        networkResourceManagementEnabled: "boolean",
+        defaultProxySwitchMaxNumPorts: "number",
+        healthCheckConfig: "DVSHealthCheckConfig",
+        infrastructureTrafficResourceConfig: "DvsHostInfrastructureTrafficResource",
+        netResourcePoolTrafficResourceConfig: "DvsHostInfrastructureTrafficResource",
+        networkResourceControlVersion: "string",
+        vmVnicNetworkResourcePool: "DVSVmVnicNetworkResourcePool",
+        pnicCapacityRatioForReservation: "number"
+};
+typeNames.interfaces["DVSConfigSpec"] = {
+configVersion: "string",
+        name: "string",
+        numStandalonePorts: "number",
+        maxPorts: "number",
+        uplinkPortPolicy: "DVSUplinkPortPolicy",
+        uplinkPortgroup: DistributedVirtualPortgroup,
+        defaultPortConfig: "DVPortSetting",
+        host: "DistributedVirtualSwitchHostMemberConfigSpec",
+        extensionKey: "string",
+        description: "string",
+        policy: "DVSPolicy",
+        vendorSpecificConfig: "DistributedVirtualSwitchKeyedOpaqueBlob",
+        contact: "DVSContactInfo",
+        switchIpAddress: "string",
+        defaultProxySwitchMaxNumPorts: "number",
+        infrastructureTrafficResourceConfig: "DvsHostInfrastructureTrafficResource",
+        netResourcePoolTrafficResourceConfig: "DvsHostInfrastructureTrafficResource",
+        networkResourceControlVersion: "string"
+};
+typeNames.interfaces["DVSContactInfo"] = {
+name: "string",
+        contact: "string"
+};
+typeNames.interfaces["DVSCreateSpec"] = {
+configSpec: "DVSConfigSpec",
+        productInfo: "DistributedVirtualSwitchProductSpec",
+        capability: "DVSCapability"
+};
+typeNames.interfaces["DVSFeatureCapability"] = {
+networkResourceManagementSupported: "boolean",
+        vmDirectPathGen2Supported: "boolean",
+        nicTeamingPolicy: "string",
+        networkResourcePoolHighShareValue: "number",
+        networkResourceManagementCapability: "DVSNetworkResourceManagementCapability",
+        healthCheckCapability: "DVSHealthCheckCapability",
+        rollbackCapability: "DVSRollbackCapability",
+        backupRestoreCapability: "DVSBackupRestoreCapability",
+        networkFilterSupported: "boolean",
+        macLearningSupported: "boolean"
+};
+typeNames.interfaces["DVSHealthCheckConfig"] = {
+enable: "boolean",
+        interval: "number"
+};
+typeNames.interfaces["DVSHealthCheckCapability"] = {
+
+};
+typeNames.interfaces["DvsHostInfrastructureTrafficResource"] = {
+key: "string",
+        description: "string",
+        allocationInfo: "DvsHostInfrastructureTrafficResourceAllocation"
+};
+typeNames.interfaces["DvsHostInfrastructureTrafficResourceAllocation"] = {
+limit: "number",
+        shares: "SharesInfo",
+        reservation: "number"
+};
+typeNames.interfaces["DVSNameArrayUplinkPortPolicy"] = {
+uplinkPortName: "string"
+};
+typeNames.interfaces["DVSNetworkResourceManagementCapability"] = {
+networkResourceManagementSupported: "boolean",
+        networkResourcePoolHighShareValue: "number",
+        qosSupported: "boolean",
+        userDefinedNetworkResourcePoolsSupported: "boolean",
+        networkResourceControlVersion3Supported: "boolean",
+        userDefinedInfraTrafficPoolSupported: "boolean"
+};
+typeNames.interfaces["DvsResourceRuntimeInfo"] = {
+capacity: "number",
+        usage: "number",
+        available: "number",
+        allocatedResource: "DvsVnicAllocatedResource",
+        vmVnicNetworkResourcePoolRuntime: "DvsVmVnicNetworkResourcePoolRuntimeInfo"
+};
+typeNames.interfaces["DVSRollbackCapability"] = {
+rollbackSupported: "boolean"
+};
+typeNames.interfaces["DVSRuntimeInfo"] = {
+hostMemberRuntime: "HostMemberRuntimeInfo",
+        resourceRuntimeInfo: "DvsResourceRuntimeInfo"
+};
+typeNames.interfaces["DVSSummary"] = {
+name: "string",
+        uuid: "string",
+        numPorts: "number",
+        productInfo: "DistributedVirtualSwitchProductSpec",
+        hostMember: HostSystem,
+        vm: VirtualMachine,
+        host: HostSystem,
+        portgroupName: "string",
+        description: "string",
+        contact: "DVSContactInfo",
+        numHosts: "number"
+};
+typeNames.interfaces["DVSPolicy"] = {
+autoPreInstallAllowed: "boolean",
+        autoUpgradeAllowed: "boolean",
+        partialUpgradeAllowed: "boolean"
+};
+typeNames.interfaces["DVSUplinkPortPolicy"] = {
+
+};
+typeNames.interfaces["FolderBatchAddHostsToClusterResult"] = {
+hostsAddedToCluster: HostSystem,
+        hostsFailedInventoryAdd: "FolderFailedHostResult",
+        hostsFailedMoveToCluster: "FolderFailedHostResult"
+};
+typeNames.interfaces["FolderBatchAddStandaloneHostsResult"] = {
+addedHosts: HostSystem,
+        hostsFailedInventoryAdd: "FolderFailedHostResult"
+};
+typeNames.interfaces["FolderFailedHostResult"] = {
+hostName: "string",
+        host: HostSystem,
+        context: "LocalizableMessage",
+        fault: "MethodFault"
+};
+typeNames.interfaces["FolderNewHostSpec"] = {
+hostCnxSpec: "HostConnectSpec",
+        esxLicense: "string"
+};
+typeNames.interfaces["HealthUpdate"] = {
+entity: ManagedEntity,
+        healthUpdateInfoId: "string",
+        id: "string",
+        status: "ManagedEntityStatus",
+        remediation: "string"
+};
+typeNames.interfaces["HostSystemComplianceCheckState"] = {
+state: "string",
+        checkTime: "Date"
+};
+typeNames.interfaces["HostSystemReconnectSpec"] = {
+syncState: "boolean"
+};
+typeNames.interfaces["HostSystemRemediationState"] = {
+state: "string",
+        operationTime: "Date"
+};
+typeNames.interfaces["HostVMotionCompatibility"] = {
+host: HostSystem,
+        compatibility: "string"
+};
+typeNames.interfaces["ProductComponentInfo"] = {
+id: "string",
+        name: "string",
+        version: "string",
+        release: "number"
+};
+typeNames.interfaces["StoragePodSummary"] = {
+name: "string",
+        capacity: "number",
+        freeSpace: "number"
+};
+typeNames.interfaces["VasaProviderContainerSpec"] = {
+vasaProviderInfo: "VimVasaProviderInfo",
+        scId: "string",
+        deleted: "boolean"
+};
+typeNames.interfaces["ClusterAffinityRuleSpec"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["ClusterAntiAffinityRuleSpec"] = {
+vm: VirtualMachine
+};
+typeNames.interfaces["ClusterConfigInfoEx"] = {
+dasConfig: "ClusterDasConfigInfo",
+        dasVmConfig: "ClusterDasVmConfigInfo",
+        drsConfig: "ClusterDrsConfigInfo",
+        drsVmConfig: "ClusterDrsVmConfigInfo",
+        rule: "ClusterRuleInfo",
+        orchestration: "ClusterOrchestrationInfo",
+        vmOrchestration: "ClusterVmOrchestrationInfo",
+        dpmConfigInfo: "ClusterDpmConfigInfo",
+        dpmHostConfig: "ClusterDpmHostConfigInfo",
+        vsanConfigInfo: "VsanClusterConfigInfo",
+        vsanHostConfig: "VsanHostConfigInfo",
+        group: "ClusterGroupInfo",
+        infraUpdateHaConfig: "ClusterInfraUpdateHaConfigInfo",
+        proactiveDrsConfig: "ClusterProactiveDrsConfigInfo",
+        cryptoConfig: "ClusterCryptoConfigInfo"
+};
+typeNames.interfaces["ClusterConfigSpecEx"] = {
+dasConfig: "ClusterDasConfigInfo",
+        dasVmConfigSpec: "ClusterDasVmConfigSpec",
+        drsConfig: "ClusterDrsConfigInfo",
+        drsVmConfigSpec: "ClusterDrsVmConfigSpec",
+        rulesSpec: "ClusterRuleSpec",
+        orchestration: "ClusterOrchestrationInfo",
+        vmOrchestrationSpec: "ClusterVmOrchestrationSpec",
+        dpmConfig: "ClusterDpmConfigInfo",
+        dpmHostConfigSpec: "ClusterDpmHostConfigSpec",
+        vsanConfig: "VsanClusterConfigInfo",
+        vsanHostConfigSpec: "VsanHostConfigInfo",
+        groupSpec: "ClusterGroupSpec",
+        infraUpdateHaConfig: "ClusterInfraUpdateHaConfigInfo",
+        proactiveDrsConfig: "ClusterProactiveDrsConfigInfo",
+        inHciWorkflow: "boolean",
+        cryptoConfig: "ClusterCryptoConfigInfo"
+};
+typeNames.interfaces["ClusterDependencyRuleInfo"] = {
+vmGroup: "string",
+        dependsOnVmGroup: "string"
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerCompatibilityResult"] = {
+host: HostSystem,
+        error: "MethodFault"
+};
+typeNames.interfaces["DVSManagerDvsConfigTarget"] = {
+distributedVirtualPortgroup: "DistributedVirtualPortgroupInfo",
+        distributedVirtualSwitch: "DistributedVirtualSwitchInfo"
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerDvsProductSpec"] = {
+newSwitchProductSpec: "DistributedVirtualSwitchProductSpec",
+        distributedVirtualSwitch: DistributedVirtualSwitch
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerHostArrayFilter"] = {
+host: HostSystem
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerHostContainer"] = {
+container: ManagedEntity,
+        recursive: "boolean"
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerHostContainerFilter"] = {
+hostContainer: "DistributedVirtualSwitchManagerHostContainer"
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerHostDvsFilterSpec"] = {
+inclusive: "boolean"
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerHostDvsMembershipFilter"] = {
+distributedVirtualSwitch: DistributedVirtualSwitch
+};
+typeNames.interfaces["DistributedVirtualSwitchManagerImportResult"] = {
+distributedVirtualSwitch: DistributedVirtualSwitch,
+        distributedVirtualPortgroup: DistributedVirtualPortgroup,
+        importFault: "ImportOperationBulkFaultFaultOnImport"
+};
+typeNames.interfaces["VMwareDVSConfigInfo"] = {
+vspanSession: "VMwareVspanSession",
+        pvlanConfig: "VMwareDVSPvlanMapEntry",
+        maxMtu: "number",
+        linkDiscoveryProtocolConfig: "LinkDiscoveryProtocolConfig",
+        ipfixConfig: "VMwareIpfixConfig",
+        lacpGroupConfig: "VMwareDvsLacpGroupConfig",
+        lacpApiVersion: "string",
+        multicastFilteringMode: "string"
+};
+typeNames.interfaces["VMwareDVSConfigSpec"] = {
+pvlanConfigSpec: "VMwareDVSPvlanConfigSpec",
+        vspanConfigSpec: "VMwareDVSVspanConfigSpec",
+        maxMtu: "number",
+        linkDiscoveryProtocolConfig: "LinkDiscoveryProtocolConfig",
+        ipfixConfig: "VMwareIpfixConfig",
+        lacpApiVersion: "string",
+        multicastFilteringMode: "string"
+};
+typeNames.interfaces["DVSFailureCriteria"] = {
+checkSpeed: "StringPolicy",
+        speed: "IntPolicy",
+        checkDuplex: "BoolPolicy",
+        fullDuplex: "BoolPolicy",
+        checkErrorPercent: "BoolPolicy",
+        percentage: "IntPolicy",
+        checkBeacon: "BoolPolicy"
+};
+typeNames.interfaces["VMwareDVSFeatureCapability"] = {
+vspanSupported: "boolean",
+        lldpSupported: "boolean",
+        ipfixSupported: "boolean",
+        ipfixCapability: "VMwareDvsIpfixCapability",
+        multicastSnoopingSupported: "boolean",
+        vspanCapability: "VMwareDVSVspanCapability",
+        lacpCapability: "VMwareDvsLacpCapability",
+        nsxSupported: "boolean"
+};
+typeNames.interfaces["VMwareIpfixConfig"] = {
+collectorIpAddress: "string",
+        collectorPort: "number",
+        observationDomainId: "number",
+        activeFlowTimeout: "number",
+        idleFlowTimeout: "number",
+        samplingRate: "number",
+        internalFlowsOnly: "boolean"
+};
+typeNames.interfaces["VMwareDvsIpfixCapability"] = {
+ipfixSupported: "boolean",
+        ipv6ForIpfixSupported: "boolean",
+        observationDomainIdSupported: "boolean"
+};
+typeNames.interfaces["VMwareDvsLacpCapability"] = {
+lacpSupported: "boolean",
+        multiLacpGroupSupported: "boolean"
+};
+typeNames.interfaces["VMwareDvsLacpGroupConfig"] = {
+key: "string",
+        name: "string",
+        mode: "string",
+        uplinkNum: "number",
+        loadbalanceAlgorithm: "string",
+        vlan: "VMwareDvsLagVlanConfig",
+        ipfix: "VMwareDvsLagIpfixConfig",
+        uplinkName: "string",
+        uplinkPortKey: "string"
+};
+typeNames.interfaces["VMwareDvsLacpGroupSpec"] = {
+lacpGroupConfig: "VMwareDvsLacpGroupConfig",
+        operation: "string"
+};
+typeNames.interfaces["VMwareDvsLagIpfixConfig"] = {
+ipfixEnabled: "boolean"
+};
+typeNames.interfaces["VMwareDvsLagVlanConfig"] = {
+vlanId: "NumericRange"
+};
+typeNames.interfaces["DVSMacLearningPolicy"] = {
+enabled: "boolean",
+        allowUnicastFlooding: "boolean",
+        limit: "number",
+        limitPolicy: "string"
+};
+typeNames.interfaces["DVSMacManagementPolicy"] = {
+allowPromiscuous: "boolean",
+        macChanges: "boolean",
+        forgedTransmits: "boolean",
+        macLearningPolicy: "DVSMacLearningPolicy"
+};
+typeNames.interfaces["VMwareDVSMtuHealthCheckResult"] = {
+mtuMismatch: "boolean",
+        vlanSupportSwitchMtu: "NumericRange",
+        vlanNotSupportSwitchMtu: "NumericRange"
+};
+typeNames.interfaces["VMwareDVSPvlanConfigSpec"] = {
+pvlanEntry: "VMwareDVSPvlanMapEntry",
+        operation: "string"
+};
+typeNames.interfaces["VMwareDVSPvlanMapEntry"] = {
+primaryVlanId: "number",
+        secondaryVlanId: "number",
+        pvlanType: "string"
+};
+typeNames.interfaces["VmwareDistributedVirtualSwitchPvlanSpec"] = {
+pvlanId: "number"
+};
+typeNames.interfaces["DVSSecurityPolicy"] = {
+allowPromiscuous: "BoolPolicy",
+        macChanges: "BoolPolicy",
+        forgedTransmits: "BoolPolicy"
+};
+typeNames.interfaces["VMwareDVSTeamingHealthCheckConfig"] = {
+
+};
+typeNames.interfaces["VMwareDVSTeamingHealthCheckResult"] = {
+teamingStatus: "string"
+};
+typeNames.interfaces["VmwareDistributedVirtualSwitchTrunkVlanSpec"] = {
+vlanId: "NumericRange"
+};
+typeNames.interfaces["VMwareUplinkLacpPolicy"] = {
+enable: "BoolPolicy",
+        mode: "StringPolicy"
+};
+typeNames.interfaces["VMwareUplinkPortOrderPolicy"] = {
+activeUplinkPort: "string",
+        standbyUplinkPort: "string"
+};
+typeNames.interfaces["VmwareUplinkPortTeamingPolicy"] = {
+policy: "StringPolicy",
+        reversePolicy: "BoolPolicy",
+        notifySwitches: "BoolPolicy",
+        rollingOrder: "BoolPolicy",
+        failureCriteria: "DVSFailureCriteria",
+        uplinkPortOrder: "VMwareUplinkPortOrderPolicy"
+};
+typeNames.interfaces["VMwareDVSPortgroupPolicy"] = {
+vlanOverrideAllowed: "boolean",
+        uplinkTeamingOverrideAllowed: "boolean",
+        securityPolicyOverrideAllowed: "boolean",
+        ipfixOverrideAllowed: "boolean",
+        macManagementOverrideAllowed: "boolean"
+};
+typeNames.interfaces["VMwareDVSVlanHealthCheckResult"] = {
+trunkedVlan: "NumericRange",
+        untrunkedVlan: "NumericRange"
+};
+typeNames.interfaces["VmwareDistributedVirtualSwitchVlanIdSpec"] = {
+vlanId: "number"
+};
+typeNames.interfaces["VMwareDVSVlanMtuHealthCheckConfig"] = {
+
+};
+typeNames.interfaces["VmwareDistributedVirtualSwitchVlanSpec"] = {
+
+};
+typeNames.interfaces["VMwareDVSHealthCheckConfig"] = {
+
+};
+typeNames.interfaces["VMwareDVSHealthCheckCapability"] = {
+vlanMtuSupported: "boolean",
+        teamingSupported: "boolean"
+};
+typeNames.interfaces["VMwareDVSPortSetting"] = {
+vlan: "VmwareDistributedVirtualSwitchVlanSpec",
+        qosTag: "IntPolicy",
+        uplinkTeamingPolicy: "VmwareUplinkPortTeamingPolicy",
+        securityPolicy: "DVSSecurityPolicy",
+        ipfixEnabled: "BoolPolicy",
+        txUplink: "BoolPolicy",
+        lacpPolicy: "VMwareUplinkLacpPolicy",
+        macManagementPolicy: "DVSMacManagementPolicy",
+        VNI: "IntPolicy"
+};
+typeNames.interfaces["VMwareDVSVspanConfigSpec"] = {
+vspanSession: "VMwareVspanSession",
+        operation: "string"
+};
+typeNames.interfaces["VMwareDVSVspanCapability"] = {
+mixedDestSupported: "boolean",
+        dvportSupported: "boolean",
+        remoteSourceSupported: "boolean",
+        remoteDestSupported: "boolean",
+        encapRemoteSourceSupported: "boolean",
+        erspanProtocolSupported: "boolean",
+        mirrorNetstackSupported: "boolean"
+};
+typeNames.interfaces["VMwareVspanPort"] = {
+portKey: "string",
+        uplinkPortName: "string",
+        wildcardPortConnecteeType: "string",
+        vlans: "number",
+        ipAddress: "string"
+};
+typeNames.interfaces["VMwareVspanSession"] = {
+key: "string",
+        name: "string",
+        description: "string",
+        enabled: "boolean",
+        sourcePortTransmitted: "VMwareVspanPort",
+        sourcePortReceived: "VMwareVspanPort",
+        destinationPort: "VMwareVspanPort",
+        encapsulationVlanId: "number",
+        stripOriginalVlan: "boolean",
+        mirroredPacketLength: "number",
+        normalTrafficAllowed: "boolean",
+        sessionType: "string",
+        samplingRate: "number",
+        encapType: "string",
+        erspanId: "number",
+        erspanCOS: "number",
+        erspanGraNanosec: "boolean",
+        netstack: "string"
+};
+typeNames.interfaces["AlarmAcknowledgedEvent"] = {
+source: "ManagedEntityEventArgument",
+        entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["AlarmActionTriggeredEvent"] = {
+source: "ManagedEntityEventArgument",
+        entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["AlarmClearedEvent"] = {
+source: "ManagedEntityEventArgument",
+        entity: "ManagedEntityEventArgument",
+        from: "string"
+};
+typeNames.interfaces["AlarmCreatedEvent"] = {
+entity: "ManagedEntityEventArgument"
+};
+typeNames.interfaces["AlarmEmailCompletedEvent"] = {
+entity: "ManagedEntityEventArgument",
+        to: "string"
+};
+typeNames.interfaces["AlarmEmailFailedEvent"] = {
+entity: "ManagedEntityEventArgument",
+        to: "string",
+        reason: "MethodFault"
+};
+typeNames.interfaces["AlarmEventArgument"] = {
+alarm: Alarm
+};
+typeNames.interfaces["ClusterComplianceCheckedEvent"] = {
+profile: "ProfileEventArgument"
+};
+typeNames.interfaces["ClusterCreatedEvent"] = {
+parent: "FolderEventArgument"
+};
+typeNames.interfaces["ClusterDestroyedEvent"] = {
+
+};
+typeNames.interfaces["ComputeResourceEventArgument"] = {
+computeResource: ComputeResource
+};
+typeNames.interfaces["CustomFieldDefEvent"] = {
+fieldKey: "number",
+        name: "string"
+};
+typeNames.interfaces["CustomFieldDefRemovedEvent"] = {
+
+};
+typeNames.interfaces["CustomFieldDefRenamedEvent"] = {
+newName: "string"
+};
+typeNames.interfaces["DVPortgroupCreatedEvent"] = {
+
+};
+typeNames.interfaces["DVPortgroupDestroyedEvent"] = {
+
+};
+typeNames.interfaces["DatacenterCreatedEvent"] = {
+parent: "FolderEventArgument"
+};
+typeNames.interfaces["DatacenterEventArgument"] = {
+datacenter: Datacenter
+};
+typeNames.interfaces["DatastoreCapacityIncreasedEvent"] = {
+oldCapacity: "number",
+        newCapacity: "number"
+};
+typeNames.interfaces["DatastoreDestroyedEvent"] = {
+
+};
+typeNames.interfaces["DatastoreDuplicatedEvent"] = {
+
+};
+typeNames.interfaces["DatastoreEventArgument"] = {
+datastore: Datastore
+};
+typeNames.interfaces["DatastoreFileCopiedEvent"] = {
+sourceDatastore: "DatastoreEventArgument",
+        sourceFile: "string"
+};
+typeNames.interfaces["DatastoreFileDeletedEvent"] = {
+
+};
+typeNames.interfaces["DrsEnteredStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["DrsEnteringStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["DrsExitStandbyModeFailedEvent"] = {
+
+};
+typeNames.interfaces["DrsExitedStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["DrsExitingStandbyModeEvent"] = {
+
+};
+typeNames.interfaces["DvsCreatedEvent"] = {
+parent: "FolderEventArgument"
+};
+typeNames.interfaces["DvsDestroyedEvent"] = {
+
+};
+typeNames.interfaces["DvsEventArgument"] = {
+dvs: DistributedVirtualSwitch
+};
+typeNames.interfaces["DvsReconfiguredEvent"] = {
+configSpec: "DVSConfigSpec",
+        configChanges: "ChangesInfoEventArgument"
+};
+typeNames.interfaces["MigrationErrorEvent"] = {
+
+};
+typeNames.interfaces["PermissionAddedEvent"] = {
+role: "RoleEventArgument",
+        propagate: "boolean"
+};
+typeNames.interfaces["RoleAddedEvent"] = {
+privilegeList: "string"
+};
+typeNames.interfaces["VmBeingClonedEvent"] = {
+destFolder: "FolderEventArgument",
+        destName: "string",
+        destHost: "HostEventArgument"
+};
+typeNames.interfaces["VmBeingClonedNoFolderEvent"] = {
+destName: "string",
+        destHost: "HostEventArgument"
+};
+typeNames.interfaces["ActiveVMsBlockingEVC"] = {
+evcMode: "string",
+        host: HostSystem,
+        hostName: "string"
+};
+typeNames.interfaces["AdminDisabled"] = {
+
+};
+typeNames.interfaces["AdminNotDisabled"] = {
+
+};
+typeNames.interfaces["AffinityConfigured"] = {
+configuredAffinity: "string"
+};
+typeNames.interfaces["AgentInstallFailed"] = {
+reason: "string",
+        statusCode: "number",
+        installerOutput: "string"
+};
+typeNames.interfaces["AlreadyBeingManaged"] = {
+ipAddress: "string"
+};
+typeNames.interfaces["AlreadyConnected"] = {
+name: "string"
+};
+typeNames.interfaces["ApplicationQuiesceFault"] = {
+
+};
+typeNames.interfaces["BackupBlobReadFailure"] = {
+entityName: "string",
+        entityType: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["BackupBlobWriteFailure"] = {
+entityName: "string",
+        entityType: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["BlockedByFirewall"] = {
+
+};
+typeNames.interfaces["CAMServerRefusedConnection"] = {
+
+};
+typeNames.interfaces["CannotAccessFile"] = {
+
+};
+typeNames.interfaces["CannotAccessNetwork"] = {
+network: Network
+};
+typeNames.interfaces["CannotAddHostWithFTVmAsStandalone"] = {
+
+};
+typeNames.interfaces["CannotAddHostWithFTVmToDifferentCluster"] = {
+
+};
+typeNames.interfaces["CannotAddHostWithFTVmToNonHACluster"] = {
+
+};
+typeNames.interfaces["CannotCreateFile"] = {
+
+};
+typeNames.interfaces["CannotDecryptPasswords"] = {
+
+};
+typeNames.interfaces["CannotDeleteFile"] = {
+
+};
+typeNames.interfaces["CannotModifyConfigCpuRequirements"] = {
+
+};
+typeNames.interfaces["CannotMoveVmWithDeltaDisk"] = {
+device: "string"
+};
+typeNames.interfaces["CannotMoveVmWithNativeDeltaDisk"] = {
+
+};
+typeNames.interfaces["CannotPowerOffVmInCluster"] = {
+operation: "string",
+        vm: VirtualMachine,
+        vmName: "string"
+};
+typeNames.interfaces["ClockSkew"] = {
+
+};
+typeNames.interfaces["CloneFromSnapshotNotSupported"] = {
+
+};
+typeNames.interfaces["CollectorAddressUnset"] = {
+
+};
+typeNames.interfaces["ConflictingConfiguration"] = {
+configInConflict: "ConflictingConfigurationConfig"
+};
+typeNames.interfaces["ConflictingConfigurationConfig"] = {
+entity: ManagedEntity,
+        propertyPath: "string"
+};
+typeNames.interfaces["CpuIncompatible"] = {
+level: "number",
+        registerName: "string",
+        registerBits: "string",
+        desiredBits: "string",
+        host: HostSystem
+};
+typeNames.interfaces["CpuIncompatible1ECX"] = {
+sse3: "boolean",
+        pclmulqdq: "boolean",
+        ssse3: "boolean",
+        sse41: "boolean",
+        sse42: "boolean",
+        aes: "boolean",
+        other: "boolean",
+        otherOnly: "boolean"
+};
+typeNames.interfaces["CpuIncompatible81EDX"] = {
+nx: "boolean",
+        ffxsr: "boolean",
+        rdtscp: "boolean",
+        lm: "boolean",
+        other: "boolean",
+        otherOnly: "boolean"
+};
+typeNames.interfaces["DatacenterMismatch"] = {
+invalidArgument: "DatacenterMismatchArgument",
+        expectedDatacenter: Datacenter
+};
+typeNames.interfaces["DatacenterMismatchArgument"] = {
+entity: ManagedEntity,
+        inputDatacenter: Datacenter
+};
+typeNames.interfaces["DatastoreNotWritableOnHost"] = {
+host: HostSystem
+};
+typeNames.interfaces["DestinationSwitchFull"] = {
+
+};
+typeNames.interfaces["DeviceNotSupported"] = {
+device: "string",
+        reason: "string"
+};
+typeNames.interfaces["DigestNotSupported"] = {
+
+};
+typeNames.interfaces["DirectoryNotEmpty"] = {
+
+};
+typeNames.interfaces["DisableAdminNotSupported"] = {
+
+};
+typeNames.interfaces["DisallowedMigrationDeviceAttached"] = {
+fault: "MethodFault"
+};
+typeNames.interfaces["DisconnectedHostsBlockingEVC"] = {
+
+};
+typeNames.interfaces["DiskHasPartitions"] = {
+
+};
+typeNames.interfaces["DiskIsLastRemainingNonSSD"] = {
+
+};
+typeNames.interfaces["DiskIsNonLocal"] = {
+
+};
+typeNames.interfaces["DiskIsUSB"] = {
+
+};
+typeNames.interfaces["DiskMoveTypeNotSupported"] = {
+
+};
+typeNames.interfaces["DiskNotSupported"] = {
+disk: "number"
+};
+typeNames.interfaces["DiskTooSmall"] = {
+
+};
+typeNames.interfaces["DrsVmotionIncompatibleFault"] = {
+host: HostSystem
+};
+typeNames.interfaces["DuplicateDisks"] = {
+
+};
+typeNames.interfaces["DvsApplyOperationFault"] = {
+objectFault: "DvsApplyOperationFaultFaultOnObject"
+};
+typeNames.interfaces["DvsApplyOperationFaultFaultOnObject"] = {
+objectId: "string",
+        type: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["EVCAdmissionFailed"] = {
+faults: "MethodFault"
+};
+typeNames.interfaces["EVCAdmissionFailedCPUFeaturesForMode"] = {
+currentEVCModeKey: "string"
+};
+typeNames.interfaces["EVCAdmissionFailedCPUModel"] = {
+
+};
+typeNames.interfaces["EVCAdmissionFailedCPUModelForMode"] = {
+currentEVCModeKey: "string"
+};
+typeNames.interfaces["EVCAdmissionFailedCPUVendor"] = {
+clusterCPUVendor: "string",
+        hostCPUVendor: "string"
+};
+typeNames.interfaces["EVCAdmissionFailedCPUVendorUnknown"] = {
+
+};
+typeNames.interfaces["EVCAdmissionFailedHostDisconnected"] = {
+
+};
+typeNames.interfaces["EVCAdmissionFailedHostSoftware"] = {
+
+};
+typeNames.interfaces["EVCAdmissionFailedHostSoftwareForMode"] = {
+
+};
+typeNames.interfaces["EVCAdmissionFailedVmActive"] = {
+
+};
+typeNames.interfaces["EncryptionKeyRequired"] = {
+requiredKey: "CryptoKeyId"
+};
+typeNames.interfaces["FailToEnableSPBM"] = {
+cs: ComputeResource,
+        csName: "string",
+        hostLicenseStates: "ComputeResourceHostSPBMLicenseInfo"
+};
+typeNames.interfaces["FaultToleranceAntiAffinityViolated"] = {
+hostName: "string",
+        host: HostSystem
+};
+typeNames.interfaces["FaultToleranceCpuIncompatible"] = {
+model: "boolean",
+        family: "boolean",
+        stepping: "boolean"
+};
+typeNames.interfaces["FaultToleranceNeedsThickDisk"] = {
+vmName: "string"
+};
+typeNames.interfaces["FaultToleranceNotSameBuild"] = {
+build: "string"
+};
+typeNames.interfaces["FeatureRequirementsNotMet"] = {
+featureRequirement: "VirtualMachineFeatureRequirement",
+        vm: VirtualMachine,
+        host: HostSystem
+};
+typeNames.interfaces["FileAlreadyExists"] = {
+
+};
+typeNames.interfaces["FileBackedPortNotSupported"] = {
+
+};
+typeNames.interfaces["FilesystemQuiesceFault"] = {
+
+};
+typeNames.interfaces["FilterInUse"] = {
+disk: "VirtualDiskId"
+};
+typeNames.interfaces["FullStorageVMotionNotSupported"] = {
+
+};
+typeNames.interfaces["GatewayConnectFault"] = {
+gatewayType: "string",
+        gatewayId: "string",
+        gatewayInfo: "string",
+        details: "LocalizableMessage"
+};
+typeNames.interfaces["GatewayNotFound"] = {
+
+};
+typeNames.interfaces["GatewayNotReachable"] = {
+
+};
+typeNames.interfaces["GatewayOperationRefused"] = {
+
+};
+typeNames.interfaces["GatewayToHostConnectFault"] = {
+hostname: "string",
+        port: "number"
+};
+typeNames.interfaces["GatewayToHostTrustVerifyFault"] = {
+verificationToken: "string",
+        propertiesToVerify: "KeyValue"
+};
+typeNames.interfaces["GuestAuthenticationChallenge"] = {
+serverChallenge: "GuestAuthentication",
+        sessionID: "number"
+};
+typeNames.interfaces["GuestComponentsOutOfDate"] = {
+
+};
+typeNames.interfaces["GuestMultipleMappings"] = {
+
+};
+typeNames.interfaces["GuestRegistryKeyAlreadyExists"] = {
+
+};
+typeNames.interfaces["HAErrorsAtDest"] = {
+
+};
+typeNames.interfaces["HostConfigFailed"] = {
+failure: "MethodFault"
+};
+typeNames.interfaces["HotSnapshotMoveNotSupported"] = {
+
+};
+typeNames.interfaces["IDEDiskNotSupported"] = {
+
+};
+typeNames.interfaces["InaccessibleDatastore"] = {
+detail: "string"
+};
+typeNames.interfaces["InaccessibleFTMetadataDatastore"] = {
+
+};
+typeNames.interfaces["IncompatibleDefaultDevice"] = {
+device: "string"
+};
+typeNames.interfaces["IncompatibleHostForVmReplication"] = {
+vmName: "string",
+        hostName: "string",
+        reason: "string"
+};
+typeNames.interfaces["IndependentDiskVMotionNotSupported"] = {
+
+};
+typeNames.interfaces["InsufficientAgentVmsDeployed"] = {
+hostName: "string",
+        requiredNumAgentVms: "number",
+        currentNumAgentVms: "number"
+};
+typeNames.interfaces["InsufficientCpuResourcesFault"] = {
+unreserved: "number",
+        requested: "number"
+};
+typeNames.interfaces["InsufficientDisks"] = {
+
+};
+typeNames.interfaces["InsufficientFailoverResourcesFault"] = {
+
+};
+typeNames.interfaces["InsufficientGraphicsResourcesFault"] = {
+
+};
+typeNames.interfaces["InsufficientHostCapacityFault"] = {
+host: HostSystem
+};
+typeNames.interfaces["InsufficientHostCpuCapacityFault"] = {
+unreserved: "number",
+        requested: "number"
+};
+typeNames.interfaces["InsufficientHostMemoryCapacityFault"] = {
+unreserved: "number",
+        requested: "number"
+};
+typeNames.interfaces["InsufficientMemoryResourcesFault"] = {
+unreserved: "number",
+        requested: "number"
+};
+typeNames.interfaces["InsufficientNetworkCapacity"] = {
+
+};
+typeNames.interfaces["InsufficientNetworkResourcePoolCapacity"] = {
+dvsName: "string",
+        dvsUuid: "string",
+        resourcePoolKey: "string",
+        available: "number",
+        requested: "number",
+        device: "string"
+};
+typeNames.interfaces["InsufficientPerCpuCapacity"] = {
+
+};
+typeNames.interfaces["InsufficientStandbyCpuResource"] = {
+available: "number",
+        requested: "number"
+};
+typeNames.interfaces["InsufficientStandbyMemoryResource"] = {
+available: "number",
+        requested: "number"
+};
+typeNames.interfaces["InvalidBundle"] = {
+
+};
+typeNames.interfaces["InvalidCAMCertificate"] = {
+
+};
+typeNames.interfaces["InvalidClientCertificate"] = {
+
+};
+typeNames.interfaces["InvalidDatastoreState"] = {
+datastoreName: "string"
+};
+typeNames.interfaces["InvalidDeviceSpec"] = {
+deviceIndex: "number"
+};
+typeNames.interfaces["InvalidDiskFormat"] = {
+
+};
+typeNames.interfaces["InvalidHostState"] = {
+host: HostSystem
+};
+typeNames.interfaces["InvalidNasCredentials"] = {
+userName: "string"
+};
+typeNames.interfaces["InvalidNetworkInType"] = {
+
+};
+typeNames.interfaces["InvalidNetworkResource"] = {
+remoteHost: "string",
+        remotePath: "string"
+};
+typeNames.interfaces["InvalidPowerState"] = {
+requestedState: "VirtualMachinePowerState",
+        existingState: "VirtualMachinePowerState"
+};
+typeNames.interfaces["InvalidPropertyType"] = {
+
+};
+typeNames.interfaces["InvalidPropertyValue"] = {
+
+};
+typeNames.interfaces["LargeRDMConversionNotSupported"] = {
+device: "string"
+};
+typeNames.interfaces["LegacyNetworkInterfaceInUse"] = {
+
+};
+typeNames.interfaces["MaintenanceModeFileMove"] = {
+
+};
+typeNames.interfaces["MemoryFileFormatNotSupportedByDatastore"] = {
+datastoreName: "string",
+        type: "string"
+};
+typeNames.interfaces["MemorySizeNotRecommended"] = {
+memorySizeMB: "number",
+        minMemorySizeMB: "number",
+        maxMemorySizeMB: "number"
+};
+typeNames.interfaces["MemorySizeNotSupported"] = {
+memorySizeMB: "number",
+        minMemorySizeMB: "number",
+        maxMemorySizeMB: "number"
+};
+typeNames.interfaces["MemorySizeNotSupportedByDatastore"] = {
+datastore: Datastore,
+        memorySizeMB: "number",
+        maxMemorySizeMB: "number"
+};
+typeNames.interfaces["MemorySnapshotOnIndependentDisk"] = {
+
+};
+typeNames.interfaces["MigrationDisabled"] = {
+
+};
+typeNames.interfaces["MissingController"] = {
+
+};
+typeNames.interfaces["MissingIpPool"] = {
+
+};
+typeNames.interfaces["MissingNetworkIpConfig"] = {
+
+};
+typeNames.interfaces["MissingPowerOffConfiguration"] = {
+
+};
+typeNames.interfaces["MissingPowerOnConfiguration"] = {
+
+};
+typeNames.interfaces["MultiWriterNotSupported"] = {
+
+};
+typeNames.interfaces["MultipleSnapshotsNotSupported"] = {
+
+};
+typeNames.interfaces["NoAvailableIp"] = {
+network: Network
+};
+typeNames.interfaces["NoVcManagedIpConfigured"] = {
+
+};
+typeNames.interfaces["NoVmInVApp"] = {
+
+};
+typeNames.interfaces["NonPersistentDisksNotSupported"] = {
+
+};
+typeNames.interfaces["NonVmwareOuiMacNotSupportedHost"] = {
+hostName: "string"
+};
+typeNames.interfaces["NotEnoughCpus"] = {
+numCpuDest: "number",
+        numCpuVm: "number"
+};
+typeNames.interfaces["NotEnoughLogicalCpus"] = {
+host: HostSystem
+};
+typeNames.interfaces["NotUserConfigurableProperty"] = {
+
+};
+typeNames.interfaces["NumVirtualCoresPerSocketNotSupported"] = {
+maxSupportedCoresPerSocketDest: "number",
+        numCoresPerSocketVm: "number"
+};
+typeNames.interfaces["NumVirtualCpusNotSupported"] = {
+maxSupportedVcpusDest: "number",
+        numCpuVm: "number"
+};
+typeNames.interfaces["OvfAttribute"] = {
+elementName: "string",
+        attributeName: "string"
+};
+typeNames.interfaces["OvfConstraint"] = {
+name: "string"
+};
+typeNames.interfaces["OvfConsumerCallbackFault"] = {
+extensionKey: "string",
+        extensionName: "string"
+};
+typeNames.interfaces["OvfConsumerCommunicationError"] = {
+description: "string"
+};
+typeNames.interfaces["OvfConsumerFault"] = {
+errorKey: "string",
+        message: "string",
+        params: "KeyValue"
+};
+typeNames.interfaces["OvfConsumerInvalidSection"] = {
+lineNumber: "number",
+        description: "string"
+};
+typeNames.interfaces["OvfConsumerUndeclaredSection"] = {
+qualifiedSectionType: "string"
+};
+typeNames.interfaces["OvfConsumerUndefinedPrefix"] = {
+prefix: "string"
+};
+typeNames.interfaces["OvfCpuCompatibility"] = {
+registerName: "string",
+        level: "number",
+        registerValue: "string",
+        desiredRegisterValue: "string"
+};
+typeNames.interfaces["OvfCpuCompatibilityCheckNotSupported"] = {
+
+};
+typeNames.interfaces["OvfDiskMappingNotFound"] = {
+diskName: "string",
+        vmName: "string"
+};
+typeNames.interfaces["OvfDiskOrderConstraint"] = {
+
+};
+typeNames.interfaces["OvfElement"] = {
+name: "string"
+};
+typeNames.interfaces["OvfElementInvalidValue"] = {
+value: "string"
+};
+typeNames.interfaces["OvfExport"] = {
+
+};
+typeNames.interfaces["OvfExportFailed"] = {
+
+};
+typeNames.interfaces["OvfHardwareCheck"] = {
+
+};
+typeNames.interfaces["OvfHardwareExport"] = {
+device: "VirtualDevice",
+        vmPath: "string"
+};
+typeNames.interfaces["OvfHostResourceConstraint"] = {
+value: "string"
+};
+typeNames.interfaces["OvfHostValueNotParsed"] = {
+property: "string",
+        value: "string"
+};
+typeNames.interfaces["OvfInternalError"] = {
+
+};
+typeNames.interfaces["OvfInvalidValue"] = {
+value: "string"
+};
+typeNames.interfaces["OvfInvalidValueConfiguration"] = {
+
+};
+typeNames.interfaces["OvfInvalidValueEmpty"] = {
+
+};
+typeNames.interfaces["OvfInvalidValueFormatMalformed"] = {
+
+};
+typeNames.interfaces["OvfInvalidValueReference"] = {
+
+};
+typeNames.interfaces["OvfInvalidVmName"] = {
+name: "string"
+};
+typeNames.interfaces["OvfMissingAttribute"] = {
+
+};
+typeNames.interfaces["OvfMissingElement"] = {
+
+};
+typeNames.interfaces["OvfMissingElementNormalBoundary"] = {
+boundary: "string"
+};
+typeNames.interfaces["OvfNoHostNic"] = {
+
+};
+typeNames.interfaces["OvfNoSupportedHardwareFamily"] = {
+version: "string"
+};
+typeNames.interfaces["OvfPropertyExport"] = {
+type: "string",
+        value: "string"
+};
+typeNames.interfaces["OvfPropertyNetworkExport"] = {
+network: "string"
+};
+typeNames.interfaces["OvfUnableToExportDisk"] = {
+diskName: "string"
+};
+typeNames.interfaces["OvfUnexpectedElement"] = {
+
+};
+typeNames.interfaces["OvfUnknownDeviceBacking"] = {
+backing: "VirtualDeviceBackingInfo"
+};
+typeNames.interfaces["OvfUnsupportedAttribute"] = {
+elementName: "string",
+        attributeName: "string"
+};
+typeNames.interfaces["OvfUnsupportedAttributeValue"] = {
+value: "string"
+};
+typeNames.interfaces["OvfUnsupportedDeviceExport"] = {
+
+};
+typeNames.interfaces["OvfUnsupportedElement"] = {
+name: "string"
+};
+typeNames.interfaces["OvfUnsupportedElementValue"] = {
+value: "string"
+};
+typeNames.interfaces["OvfUnsupportedSection"] = {
+info: "string"
+};
+typeNames.interfaces["OvfWrongElement"] = {
+
+};
+typeNames.interfaces["PatchAlreadyInstalled"] = {
+
+};
+typeNames.interfaces["PatchInstallFailed"] = {
+rolledBack: "boolean"
+};
+typeNames.interfaces["PatchIntegrityError"] = {
+
+};
+typeNames.interfaces["PatchMetadataCorrupted"] = {
+
+};
+typeNames.interfaces["PatchMissingDependencies"] = {
+prerequisitePatch: "string",
+        prerequisiteLib: "string"
+};
+typeNames.interfaces["PowerOnFtSecondaryTimedout"] = {
+vm: VirtualMachine,
+        vmName: "string",
+        timeout: "number"
+};
+typeNames.interfaces["QuiesceDatastoreIOForHAFailed"] = {
+host: HostSystem,
+        hostName: "string",
+        ds: Datastore,
+        dsName: "string"
+};
+typeNames.interfaces["RDMNotSupported"] = {
+
+};
+typeNames.interfaces["RawDiskNotSupported"] = {
+
+};
+typeNames.interfaces["RemoteDeviceNotSupported"] = {
+
+};
+typeNames.interfaces["ReplicationConfigFault"] = {
+
+};
+typeNames.interfaces["ReplicationDiskConfigFault"] = {
+reason: "string",
+        vmRef: VirtualMachine,
+        key: "number"
+};
+typeNames.interfaces["ReplicationVmConfigFault"] = {
+reason: "string",
+        vmRef: VirtualMachine
+};
+typeNames.interfaces["SharedBusControllerNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotCloneNotSupported"] = {
+
+};
+typeNames.interfaces["SnapshotDisabled"] = {
+
+};
+typeNames.interfaces["StorageVmotionIncompatible"] = {
+datastore: Datastore
+};
+typeNames.interfaces["SwapDatastoreNotWritableOnHost"] = {
+
+};
+typeNames.interfaces["UnSupportedDatastoreForVFlash"] = {
+datastoreName: "string",
+        type: "string"
+};
+typeNames.interfaces["UnconfiguredPropertyValue"] = {
+
+};
+typeNames.interfaces["VMINotSupported"] = {
+
+};
+typeNames.interfaces["VMOnConflictDVPort"] = {
+
+};
+typeNames.interfaces["VMOnVirtualIntranet"] = {
+
+};
+typeNames.interfaces["VirtualDiskModeNotSupported"] = {
+mode: "string"
+};
+typeNames.interfaces["VirtualEthernetCardNotSupported"] = {
+
+};
+typeNames.interfaces["VmfsAlreadyMounted"] = {
+
+};
+typeNames.interfaces["VmfsAmbiguousMount"] = {
+
+};
+typeNames.interfaces["HostConfigInfo"] = {
+host: HostSystem,
+        product: "AboutInfo",
+        deploymentInfo: "HostDeploymentInfo",
+        hyperThread: "HostHyperThreadScheduleInfo",
+        consoleReservation: "ServiceConsoleReservationInfo",
+        virtualMachineReservation: "VirtualMachineMemoryReservationInfo",
+        storageDevice: "HostStorageDeviceInfo",
+        multipathState: "HostMultipathStateInfo",
+        fileSystemVolume: "HostFileSystemVolumeInfo",
+        systemFile: "string",
+        network: "HostNetworkInfo",
+        vmotion: "HostVMotionInfo",
+        virtualNicManagerInfo: "HostVirtualNicManagerInfo",
+        capabilities: "HostNetCapabilities",
+        datastoreCapabilities: "HostDatastoreSystemCapabilities",
+        offloadCapabilities: "HostNetOffloadCapabilities",
+        service: "HostServiceInfo",
+        firewall: "HostFirewallInfo",
+        autoStart: "HostAutoStartManagerConfig",
+        activeDiagnosticPartition: "HostDiagnosticPartition",
+        option: "OptionValue",
+        optionDef: "OptionDef",
+        datastorePrincipal: "string",
+        localSwapDatastore: Datastore,
+        systemSwapConfiguration: "HostSystemSwapConfiguration",
+        systemResources: "HostSystemResourceInfo",
+        dateTimeInfo: "HostDateTimeInfo",
+        flags: "HostFlagInfo",
+        adminDisabled: "boolean",
+        lockdownMode: "HostLockdownMode",
+        ipmi: "HostIpmiInfo",
+        sslThumbprintInfo: "HostSslThumbprintInfo",
+        sslThumbprintData: "HostSslThumbprintInfo",
+        certificate: "number",
+        pciPassthruInfo: "HostPciPassthruInfo",
+        authenticationManagerInfo: "HostAuthenticationManagerInfo",
+        featureVersion: "HostFeatureVersionInfo",
+        powerSystemCapability: "PowerSystemCapability",
+        powerSystemInfo: "PowerSystemInfo",
+        cacheConfigurationInfo: "HostCacheConfigurationInfo",
+        wakeOnLanCapable: "boolean",
+        featureCapability: "HostFeatureCapability",
+        maskedFeatureCapability: "HostFeatureCapability",
+        vFlashConfigInfo: "HostVFlashManagerVFlashConfigInfo",
+        vsanHostConfig: "VsanHostConfigInfo",
+        domainList: "string",
+        scriptCheckSum: "Buffer",
+        hostConfigCheckSum: "Buffer",
+        descriptionTreeCheckSum: "Buffer",
+        graphicsInfo: "HostGraphicsInfo",
+        sharedPassthruGpuTypes: "string",
+        graphicsConfig: "HostGraphicsConfig",
+        sharedGpuCapabilities: "HostSharedGpuCapabilities",
+        ioFilterInfo: "HostIoFilterInfo",
+        sriovDevicePool: "HostSriovDevicePoolInfo",
+        assignableHardwareBinding: "HostAssignableHardwareBinding",
+        assignableHardwareConfig: "HostAssignableHardwareConfig"
+};
+typeNames.interfaces["HostConnectInfo"] = {
+serverIp: "string",
+        inDasCluster: "boolean",
+        host: "HostListSummary",
+        vm: "VirtualMachineSummary",
+        vimAccountNameRequired: "boolean",
+        clusterSupported: "boolean",
+        network: "HostConnectInfoNetworkInfo",
+        datastore: "HostDatastoreConnectInfo",
+        license: "HostLicenseConnectInfo",
+        capability: "HostCapability"
+};
+typeNames.interfaces["HostDatastoreExistsConnectInfo"] = {
+newDatastoreName: "string"
+};
+typeNames.interfaces["HostDatastoreConnectInfo"] = {
+summary: "DatastoreSummary"
+};
+typeNames.interfaces["HostDatastoreNameConflictConnectInfo"] = {
+newDatastoreName: "string"
+};
+typeNames.interfaces["HostLicenseConnectInfo"] = {
+license: "LicenseManagerLicenseInfo",
+        evaluation: "LicenseManagerEvaluationInfo",
+        resource: "HostLicensableResourceInfo"
+};
+typeNames.interfaces["HostConnectInfoNetworkInfo"] = {
+summary: "NetworkSummary"
+};
+typeNames.interfaces["HostNewNetworkConnectInfo"] = {
+
+};
+typeNames.interfaces["HostDiagnosticPartition"] = {
+storageType: "string",
+        diagnosticType: "string",
+        slots: "number",
+        id: "HostScsiDiskPartition"
+};
+typeNames.interfaces["HostDiagnosticPartitionCreateDescription"] = {
+layout: "HostDiskPartitionLayout",
+        diskUuid: "string",
+        spec: "HostDiagnosticPartitionCreateSpec"
+};
+typeNames.interfaces["HostDiagnosticPartitionCreateOption"] = {
+storageType: "string",
+        diagnosticType: "string",
+        disk: "HostScsiDisk"
+};
+typeNames.interfaces["HostDiagnosticPartitionCreateSpec"] = {
+storageType: "string",
+        diagnosticType: "string",
+        id: "HostScsiDiskPartition",
+        partition: "HostDiskPartitionSpec",
+        active: "boolean"
+};
+typeNames.interfaces["HostFibreChannelOverEthernetTargetTransport"] = {
+vnportMac: "string",
+        fcfMac: "string",
+        vlanId: "number"
+};
+typeNames.interfaces["LocalDatastoreInfo"] = {
+path: "string"
+};
+typeNames.interfaces["NasDatastoreInfo"] = {
+nas: "HostNasVolume"
+};
+typeNames.interfaces["PMemDatastoreInfo"] = {
+pmem: "HostPMemVolume"
+};
+typeNames.interfaces["HostRuntimeInfo"] = {
+connectionState: "HostSystemConnectionState",
+        powerState: "HostSystemPowerState",
+        standbyMode: "string",
+        inMaintenanceMode: "boolean",
+        inQuarantineMode: "boolean",
+        bootTime: "Date",
+        healthSystemRuntime: "HealthSystemRuntime",
+        dasHostState: "ClusterDasFdmHostState",
+        tpmPcrValues: "HostTpmDigestInfo",
+        vsanRuntimeInfo: "VsanHostRuntimeInfo",
+        networkRuntimeInfo: "HostRuntimeInfoNetworkRuntimeInfo",
+        vFlashResourceRuntimeInfo: "HostVFlashManagerVFlashResourceRunTimeInfo",
+        hostMaxVirtualDiskCapacity: "number",
+        cryptoState: "string",
+        cryptoKeyId: "CryptoKeyId"
+};
+typeNames.interfaces["HostRuntimeInfoNetStackInstanceRuntimeInfo"] = {
+netStackInstanceKey: "string",
+        state: "string",
+        vmknicKeys: "string",
+        maxNumberOfConnections: "number",
+        currentIpV6Enabled: "boolean"
+};
+typeNames.interfaces["HostNetworkResourceRuntime"] = {
+pnicResourceInfo: "HostPnicNetworkResourceInfo"
+};
+typeNames.interfaces["HostRuntimeInfoNetworkRuntimeInfo"] = {
+netStackInstanceRuntimeInfo: "HostRuntimeInfoNetStackInstanceRuntimeInfo",
+        networkResourceRuntime: "HostNetworkResourceRuntime"
+};
+typeNames.interfaces["HostPlacedVirtualNicIdentifier"] = {
+vm: VirtualMachine,
+        vnicKey: "string",
+        reservation: "number"
+};
+typeNames.interfaces["HostPnicNetworkResourceInfo"] = {
+pnicDevice: "string",
+        availableBandwidthForVMTraffic: "number",
+        unusedBandwidthForVMTraffic: "number",
+        placedVirtualNics: "HostPlacedVirtualNicIdentifier"
+};
+typeNames.interfaces["HostStorageSystemDiskLocatorLedResult"] = {
+key: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostStorageSystemScsiLunResult"] = {
+key: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostStorageSystemVmfsVolumeResult"] = {
+key: "string",
+        fault: "MethodFault"
+};
+typeNames.interfaces["HostVMotionManagerDstInstantCloneResult"] = {
+dstVmId: "number",
+        startTime: "number",
+        cptLoadTime: "number",
+        cptLoadDoneTime: "number",
+        replicateMemDoneTime: "number",
+        endTime: "number",
+        cptXferTime: "number",
+        cptCacheUsed: "number",
+        devCptStreamSize: "number",
+        devCptStreamTime: "number"
+};
+typeNames.interfaces["HostVMotionManagerSrcInstantCloneResult"] = {
+startTime: "number",
+        quiesceTime: "number",
+        quiesceDoneTime: "number",
+        resumeDoneTime: "number",
+        endTime: "number"
+};
+typeNames.interfaces["VmfsDatastoreCreateSpec"] = {
+partition: "HostDiskPartitionSpec",
+        vmfs: "HostVmfsSpec",
+        extent: "HostScsiDiskPartition"
+};
+typeNames.interfaces["VmfsDatastoreInfo"] = {
+maxPhysicalRDMFileSize: "number",
+        maxVirtualRDMFileSize: "number",
+        vmfs: "HostVmfsVolume"
+};
+typeNames.interfaces["VsanDatastoreInfo"] = {
+membershipUuid: "string",
+        accessGenNo: "number"
+};
+typeNames.interfaces["VvolDatastoreInfo"] = {
+vvolDS: "HostVvolVolume"
+};
+typeNames.interfaces["HourlyTaskScheduler"] = {
+minute: "number"
+};
+typeNames.interfaces["VirtualMachineDatastoreInfo"] = {
+datastore: "DatastoreSummary",
+        capability: "DatastoreCapability",
+        maxFileSize: "number",
+        maxVirtualDiskCapacity: "number",
+        maxPhysicalRDMFileSize: "number",
+        maxVirtualRDMFileSize: "number",
+        mode: "string",
+        vStorageSupport: "string"
+};
+typeNames.interfaces["ParaVirtualSCSIController"] = {
+
+};
+typeNames.interfaces["ParaVirtualSCSIControllerOption"] = {
+
+};
+typeNames.interfaces["VirtualAHCIController"] = {
+
+};
+typeNames.interfaces["VirtualAHCIControllerOption"] = {
+
+};
+typeNames.interfaces["VirtualBusLogicController"] = {
+
+};
+typeNames.interfaces["VirtualBusLogicControllerOption"] = {
+
+};
+typeNames.interfaces["VirtualLsiLogicController"] = {
+
+};
+typeNames.interfaces["VirtualLsiLogicControllerOption"] = {
+
+};
+typeNames.interfaces["VirtualLsiLogicSASController"] = {
+
+};
+typeNames.interfaces["VirtualLsiLogicSASControllerOption"] = {
+
+};
+typeNames.interfaces["ClusterComputeResourceClusterConfigResult"] = {
+failedHosts: "FolderFailedHostResult",
+        configuredHosts: HostSystem
+};
+typeNames.interfaces["ClusterComputeResourceDVSConfigurationValidation"] = {
+isDvsValid: "boolean",
+        isDvpgValid: "boolean"
+};
+typeNames.interfaces["ClusterComputeResourceDVSSetting"] = {
+dvSwitch: DistributedVirtualSwitch,
+        pnicDevices: "string",
+        dvPortgroupSetting: "ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping"
+};
+typeNames.interfaces["ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping"] = {
+dvPortgroup: DistributedVirtualPortgroup,
+        service: "string"
+};
+typeNames.interfaces["ClusterComputeResourceDvsProfile"] = {
+dvsName: "string",
+        dvSwitch: DistributedVirtualSwitch,
+        pnicDevices: "string",
+        dvPortgroupMapping: "ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping"
+};
+typeNames.interfaces["ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping"] = {
+dvPortgroupSpec: "DVPortgroupConfigSpec",
+        dvPortgroup: DistributedVirtualPortgroup,
+        service: "string"
+};
+typeNames.interfaces["ClusterComputeResourceHCIConfigInfo"] = {
+workflowState: "string",
+        dvsSetting: "ClusterComputeResourceDVSSetting",
+        configuredHosts: HostSystem,
+        hostConfigProfile: "ClusterComputeResourceHostConfigurationProfile"
+};
+typeNames.interfaces["ClusterComputeResourceHCIConfigSpec"] = {
+dvsProf: "ClusterComputeResourceDvsProfile",
+        hostConfigProfile: "ClusterComputeResourceHostConfigurationProfile",
+        vSanConfigSpec: "SDDCBase",
+        vcProf: "ClusterComputeResourceVCProfile"
+};
+typeNames.interfaces["ClusterComputeResourceHostConfigurationInput"] = {
+host: HostSystem,
+        hostVmkNics: "ClusterComputeResourceHostVmkNicInfo",
+        allowedInNonMaintenanceMode: "boolean"
+};
+typeNames.interfaces["ClusterComputeResourceHostConfigurationProfile"] = {
+dateTimeConfig: "HostDateTimeConfig",
+        lockdownMode: "HostLockdownMode"
+};
+typeNames.interfaces["ClusterComputeResourceHostConfigurationValidation"] = {
+host: HostSystem,
+        isDvsSettingValid: "boolean",
+        isVmknicSettingValid: "boolean",
+        isNtpSettingValid: "boolean",
+        isLockdownModeValid: "boolean"
+};
+typeNames.interfaces["ClusterComputeResourceHostVmkNicInfo"] = {
+nicSpec: "HostVirtualNicSpec",
+        service: "string"
+};
+typeNames.interfaces["ClusterComputeResourceSummary"] = {
+currentFailoverLevel: "number",
+        admissionControlInfo: "ClusterDasAdmissionControlInfo",
+        numVmotions: "number",
+        targetBalance: "number",
+        currentBalance: "number",
+        drsScore: "number",
+        numVmsPerDrsScoreBucket: "number",
+        usageSummary: "ClusterUsageSummary",
+        currentEVCModeKey: "string",
+        currentEVCGraphicsModeKey: "string",
+        dasData: "ClusterDasData",
+        clusterMaintenanceModeStatus: "string"
+};
+typeNames.interfaces["ClusterComputeResourceVCProfile"] = {
+clusterSpec: "ClusterConfigSpecEx",
+        evcModeKey: "string",
+        evcGraphicsModeKey: "string"
+};
+typeNames.interfaces["ClusterComputeResourceValidationResultBase"] = {
+info: "LocalizableMessage"
+};
+typeNames.interfaces["CustomFieldDefAddedEvent"] = {
+
+};
+typeNames.interfaces["ConnectedIso"] = {
+cdrom: "VirtualCdrom",
+        filename: "string"
+};
+typeNames.interfaces["CpuCompatibilityUnknown"] = {
+
+};
+typeNames.interfaces["DeviceBackingNotSupported"] = {
+backing: "string"
+};
+typeNames.interfaces["DeviceControllerNotSupported"] = {
+controller: "string"
+};
+typeNames.interfaces["DeviceHotPlugNotSupported"] = {
+
+};
+typeNames.interfaces["DeviceNotFound"] = {
+
+};
+typeNames.interfaces["DeviceUnsupportedForVmPlatform"] = {
+
+};
+typeNames.interfaces["DeviceUnsupportedForVmVersion"] = {
+currentVersion: "string",
+        expectedVersion: "string"
+};
+typeNames.interfaces["DisallowedDiskModeChange"] = {
+
+};
+typeNames.interfaces["GatewayHostNotReachable"] = {
+
+};
+typeNames.interfaces["GatewayToHostAuthFault"] = {
+invalidProperties: "string",
+        missingProperties: "string"
+};
+typeNames.interfaces["InvalidController"] = {
+controllerKey: "number"
+};
+typeNames.interfaces["InvalidDeviceBacking"] = {
+
+};
+typeNames.interfaces["InvalidDeviceOperation"] = {
+badOp: "VirtualDeviceConfigSpecOperation",
+        badFileOp: "VirtualDeviceConfigSpecFileOperation"
+};
+typeNames.interfaces["InvalidHostConnectionState"] = {
+
+};
+typeNames.interfaces["OvfConnectedDevice"] = {
+
+};
+typeNames.interfaces["OvfConnectedDeviceFloppy"] = {
+filename: "string"
+};
+typeNames.interfaces["OvfConnectedDeviceIso"] = {
+filename: "string"
+};
+typeNames.interfaces["OvfDuplicateElement"] = {
+
+};
+typeNames.interfaces["OvfDuplicatedElementBoundary"] = {
+boundary: "string"
+};
+typeNames.interfaces["OvfDuplicatedPropertyIdExport"] = {
+fqid: "string"
+};
+typeNames.interfaces["OvfDuplicatedPropertyIdImport"] = {
+
+};
+typeNames.interfaces["OvfNoSpaceOnController"] = {
+parent: "string"
+};
+typeNames.interfaces["PhysCompatRDMNotSupported"] = {
+
+};
+typeNames.interfaces["UnusedVirtualDiskBlocksNotScrubbed"] = {
+
+};
+typeNames.interfaces["VirtualDiskBlocksNotFullyProvisioned"] = {
+
+};
+typeNames.interfaces["DailyTaskScheduler"] = {
+hour: "number"
+};
+typeNames.interfaces["MonthlyTaskScheduler"] = {
+
+};
+typeNames.interfaces["WeeklyTaskScheduler"] = {
+sunday: "boolean",
+        monday: "boolean",
+        tuesday: "boolean",
+        wednesday: "boolean",
+        thursday: "boolean",
+        friday: "boolean",
+        saturday: "boolean"
+};
+typeNames.interfaces["DVPortNotSupported"] = {
+
+};
+typeNames.interfaces["MonthlyByDayTaskScheduler"] = {
+day: "number"
+};
+typeNames.interfaces["MonthlyByWeekdayTaskScheduler"] = {
+offset: "WeekOfMonth",
+        weekday: "DayOfWeek"
+};
+typeNames.classes["PropertyCollector"] = {
+filter: PropertyFilter,
+        _this: PropertyCollector
+};
+typeNames.classes["PropertyFilter"] = {
+spec: "PropertyFilterSpec",
+        partialUpdates: "boolean",
+        _this: PropertyFilter
+};
+typeNames.classes["CertificateManager"] = {
+
+};
+typeNames.classes["CustomFieldsManager"] = {
+field: "CustomFieldDef",
+        _this: CustomFieldsManager
+};
+typeNames.classes["CustomizationSpecManager"] = {
+info: "CustomizationSpecInfo",
+        encryptionKey: "number",
+        _this: CustomizationSpecManager
+};
+typeNames.classes["DatastoreNamespaceManager"] = {
+
+};
+typeNames.classes["DiagnosticManager"] = {
+
+};
+typeNames.classes["EnvironmentBrowser"] = {
+datastoreBrowser: HostDatastoreBrowser,
+        _this: EnvironmentBrowser
+};
+typeNames.classes["ExtensibleManagedObject"] = {
+value: "CustomFieldValue",
+        availableField: "CustomFieldDef",
+        _this: ExtensibleManagedObject
+};
+typeNames.classes["ExtensionManager"] = {
+extensionList: "Extension",
+        _this: ExtensionManager
+};
+typeNames.classes["FileManager"] = {
+
+};
+typeNames.classes["HealthUpdateManager"] = {
+
+};
+typeNames.classes["HistoryCollector"] = {
+filter: "any",
+        _this: HistoryCollector
+};
+typeNames.classes["HttpNfcLease"] = {
+initializeProgress: "number",
+        transferProgress: "number",
+        mode: "string",
+        capabilities: "HttpNfcLeaseCapabilities",
+        info: "HttpNfcLeaseInfo",
+        state: "HttpNfcLeaseState",
+        error: "MethodFault",
+        _this: HttpNfcLease
+};
+typeNames.classes["IoFilterManager"] = {
+
+};
+typeNames.classes["IpPoolManager"] = {
+
+};
+typeNames.classes["LicenseManager"] = {
+source: "LicenseSource",
+        sourceAvailable: "boolean",
+        diagnostics: "LicenseDiagnostics",
+        featureInfo: "LicenseFeatureInfo",
+        licensedEdition: "string",
+        licenses: "LicenseManagerLicenseInfo",
+        licenseAssignmentManager: LicenseAssignmentManager,
+        evaluation: "LicenseManagerEvaluationInfo",
+        _this: LicenseManager
+};
+typeNames.classes["LocalizationManager"] = {
+catalog: "LocalizationManagerMessageCatalog",
+        _this: LocalizationManager
+};
+typeNames.classes["OverheadMemoryManager"] = {
+
+};
+typeNames.classes["OvfManager"] = {
+ovfImportOption: "OvfOptionInfo",
+        ovfExportOption: "OvfOptionInfo",
+        _this: OvfManager
+};
+typeNames.classes["PerformanceManager"] = {
+description: "PerformanceDescription",
+        historicalInterval: "PerfInterval",
+        perfCounter: "PerfCounterInfo",
+        _this: PerformanceManager
+};
+typeNames.classes["ResourcePlanningManager"] = {
+
+};
+typeNames.classes["SearchIndex"] = {
+
+};
+typeNames.classes["ServiceManager"] = {
+service: "ServiceManagerServiceInfo",
+        _this: ServiceManager
+};
+typeNames.classes["SessionManager"] = {
+sessionList: "UserSession",
+        currentSession: "UserSession",
+        message: "string",
+        messageLocaleList: "string",
+        supportedLocaleList: "string",
+        defaultLocale: "string",
+        _this: SessionManager
+};
+typeNames.classes["SimpleCommand"] = {
+encodingType: "SimpleCommandEncoding",
+        entity: "ServiceManagerServiceInfo",
+        _this: SimpleCommand
+};
+typeNames.classes["SiteInfoManager"] = {
+
+};
+typeNames.classes["StorageQueryManager"] = {
+
+};
+typeNames.classes["StorageResourceManager"] = {
+
+};
+typeNames.classes["TaskHistoryCollector"] = {
+latestPage: "TaskInfo",
+        _this: TaskHistoryCollector
+};
+typeNames.classes["TaskManager"] = {
+recentTask: Task,
+        description: "TaskDescription",
+        maxCollector: "number",
+        _this: TaskManager
+};
+typeNames.classes["UserDirectory"] = {
+domainList: "string",
+        _this: UserDirectory
+};
+typeNames.classes["VirtualizationManager"] = {
+
+};
+typeNames.classes["VsanUpgradeSystem"] = {
+
+};
+typeNames.classes["Alarm"] = {
+info: "AlarmInfo",
+        _this: Alarm
+};
+typeNames.classes["ClusterEVCManager"] = {
+managedCluster: ClusterComputeResource,
+        evcState: "ClusterEVCManagerEVCState",
+        _this: ClusterEVCManager
+};
+typeNames.classes["CryptoManager"] = {
+enabled: "boolean",
+        _this: CryptoManager
+};
+typeNames.classes["CryptoManagerHost"] = {
+
+};
+typeNames.classes["CryptoManagerHostKMS"] = {
+
+};
+typeNames.classes["EventHistoryCollector"] = {
+latestPage: "Event",
+        _this: EventHistoryCollector
+};
+typeNames.classes["EventManager"] = {
+description: "EventDescription",
+        latestEvent: "Event",
+        maxCollector: "number",
+        _this: EventManager
+};
+typeNames.classes["HostAssignableHardwareManager"] = {
+binding: "HostAssignableHardwareBinding",
+        config: "HostAssignableHardwareConfig",
+        _this: HostAssignableHardwareManager
+};
+typeNames.classes["HostAuthenticationManager"] = {
+info: "HostAuthenticationManagerInfo",
+        supportedStore: HostAuthenticationStore,
+        _this: HostAuthenticationManager
+};
+typeNames.classes["HostAuthenticationStore"] = {
+info: "HostAuthenticationStoreInfo",
+        _this: HostAuthenticationStore
+};
+typeNames.classes["HostAutoStartManager"] = {
+config: "HostAutoStartManagerConfig",
+        _this: HostAutoStartManager
+};
+typeNames.classes["HostBootDeviceSystem"] = {
+
+};
+typeNames.classes["HostCacheConfigurationManager"] = {
+cacheConfigurationInfo: "HostCacheConfigurationInfo",
+        _this: HostCacheConfigurationManager
+};
+typeNames.classes["HostCertificateManager"] = {
+certificateInfo: "HostCertificateManagerCertificateInfo",
+        _this: HostCertificateManager
+};
+typeNames.classes["HostCpuSchedulerSystem"] = {
+hyperthreadInfo: "HostHyperThreadScheduleInfo",
+        _this: HostCpuSchedulerSystem
+};
+typeNames.classes["HostDatastoreBrowser"] = {
+datastore: Datastore,
+        supportedType: "FileQuery",
+        _this: HostDatastoreBrowser
+};
+typeNames.classes["HostDateTimeSystem"] = {
+dateTimeInfo: "HostDateTimeInfo",
+        _this: HostDateTimeSystem
+};
+typeNames.classes["HostDirectoryStore"] = {
+
+};
+typeNames.classes["HostEsxAgentHostManager"] = {
+configInfo: "HostEsxAgentHostManagerConfigInfo",
+        _this: HostEsxAgentHostManager
+};
+typeNames.classes["HostFirmwareSystem"] = {
+
+};
+typeNames.classes["HostGraphicsManager"] = {
+graphicsInfo: "HostGraphicsInfo",
+        graphicsConfig: "HostGraphicsConfig",
+        sharedPassthruGpuTypes: "string",
+        sharedGpuCapabilities: "HostSharedGpuCapabilities",
+        _this: HostGraphicsManager
+};
+typeNames.classes["HostHealthStatusSystem"] = {
+runtime: "HealthSystemRuntime",
+        _this: HostHealthStatusSystem
+};
+typeNames.classes["HostAccessManager"] = {
+lockdownMode: "HostLockdownMode",
+        _this: HostAccessManager
+};
+typeNames.classes["HostImageConfigManager"] = {
+
+};
+typeNames.classes["IscsiManager"] = {
+
+};
+typeNames.classes["HostKernelModuleSystem"] = {
+
+};
+typeNames.classes["HostLocalAccountManager"] = {
+
+};
+typeNames.classes["HostLocalAuthentication"] = {
+
+};
+typeNames.classes["HostMemorySystem"] = {
+consoleReservationInfo: "ServiceConsoleReservationInfo",
+        virtualMachineReservationInfo: "VirtualMachineMemoryReservationInfo",
+        _this: HostMemorySystem
+};
+typeNames.classes["MessageBusProxy"] = {
+
+};
+typeNames.classes["HostNvdimmSystem"] = {
+nvdimmSystemInfo: "NvdimmSystemInfo",
+        _this: HostNvdimmSystem
+};
+typeNames.classes["HostPatchManager"] = {
+
+};
+typeNames.classes["HostPciPassthruSystem"] = {
+pciPassthruInfo: "HostPciPassthruInfo",
+        sriovDevicePoolInfo: "HostSriovDevicePoolInfo",
+        _this: HostPciPassthruSystem
+};
+typeNames.classes["HostPowerSystem"] = {
+capability: "PowerSystemCapability",
+        info: "PowerSystemInfo",
+        _this: HostPowerSystem
+};
+typeNames.classes["HostServiceSystem"] = {
+serviceInfo: "HostServiceInfo",
+        _this: HostServiceSystem
+};
+typeNames.classes["HostSnmpSystem"] = {
+configuration: "HostSnmpConfigSpec",
+        limits: "HostSnmpSystemAgentLimits",
+        _this: HostSnmpSystem
+};
+typeNames.classes["HostVMotionSystem"] = {
+netConfig: "HostVMotionNetConfig",
+        ipConfig: "HostIpConfig",
+        _this: HostVMotionSystem
+};
+typeNames.classes["HostVirtualNicManager"] = {
+info: "HostVirtualNicManagerInfo",
+        _this: HostVirtualNicManager
+};
+typeNames.classes["HostVsanInternalSystem"] = {
+
+};
+typeNames.classes["HostVsanSystem"] = {
+config: "VsanHostConfigInfo",
+        _this: HostVsanSystem
+};
+typeNames.classes["OptionManager"] = {
+supportedOption: "OptionDef",
+        setting: "OptionValue",
+        _this: OptionManager
+};
+typeNames.classes["ProfileComplianceManager"] = {
+
+};
+typeNames.classes["Profile"] = {
+config: "ProfileConfigInfo",
+        description: "ProfileDescription",
+        name: "string",
+        createdTime: "Date",
+        modifiedTime: "Date",
+        entity: ManagedEntity,
+        complianceStatus: "string",
+        _this: Profile
+};
+typeNames.classes["ProfileManager"] = {
+profile: Profile,
+        _this: ProfileManager
+};
+typeNames.classes["ClusterProfile"] = {
+
+};
+typeNames.classes["ClusterProfileManager"] = {
+
+};
+typeNames.classes["HostSpecificationManager"] = {
+
+};
+typeNames.classes["ScheduledTask"] = {
+info: "ScheduledTaskInfo",
+        _this: ScheduledTask
+};
+typeNames.classes["ScheduledTaskManager"] = {
+scheduledTask: ScheduledTask,
+        description: "ScheduledTaskDescription",
+        _this: ScheduledTaskManager
+};
+typeNames.classes["TenantTenantManager"] = {
+
+};
+typeNames.classes["FailoverClusterConfigurator"] = {
+disabledConfigureMethod: "string",
+        _this: FailoverClusterConfigurator
+};
+typeNames.classes["FailoverClusterManager"] = {
+disabledClusterMethod: "string",
+        _this: FailoverClusterManager
+};
+typeNames.classes["View"] = {
+
+};
+typeNames.classes["ViewManager"] = {
+viewList: View,
+        _this: ViewManager
+};
+typeNames.classes["VirtualMachineGuestCustomizationManager"] = {
+
+};
+typeNames.classes["VirtualMachineSnapshot"] = {
+config: "VirtualMachineConfigInfo",
+        childSnapshot: VirtualMachineSnapshot,
+        vm: VirtualMachine,
+        _this: VirtualMachineSnapshot
+};
+typeNames.classes["VirtualMachineCompatibilityChecker"] = {
+
+};
+typeNames.classes["GuestAliasManager"] = {
+
+};
+typeNames.classes["GuestAuthManager"] = {
+
+};
+typeNames.classes["GuestFileManager"] = {
+
+};
+typeNames.classes["GuestOperationsManager"] = {
+authManager: GuestAuthManager,
+        fileManager: GuestFileManager,
+        processManager: GuestProcessManager,
+        guestWindowsRegistryManager: GuestWindowsRegistryManager,
+        aliasManager: GuestAliasManager,
+        _this: GuestOperationsManager
+};
+typeNames.classes["GuestProcessManager"] = {
+
+};
+typeNames.classes["GuestWindowsRegistryManager"] = {
+
+};
+typeNames.classes["VStorageObjectManagerBase"] = {
+
+};
+typeNames.classes["AuthorizationManager"] = {
+privilegeList: "AuthorizationPrivilege",
+        roleList: "AuthorizationRole",
+        description: "AuthorizationDescription",
+        _this: AuthorizationManager
+};
+typeNames.classes["LicenseAssignmentManager"] = {
+
+};
+typeNames.classes["ManagedEntity"] = {
+parent: ManagedEntity,
+        customValue: "CustomFieldValue",
+        overallStatus: "ManagedEntityStatus",
+        configStatus: "ManagedEntityStatus",
+        configIssue: "Event",
+        effectiveRole: "number",
+        permission: "Permission",
+        name: "string",
+        disabledMethod: "string",
+        recentTask: Task,
+        declaredAlarmState: "AlarmState",
+        triggeredAlarmState: "AlarmState",
+        alarmActionsEnabled: "boolean",
+        tag: "Tag",
+        _this: ManagedEntity
+};
+typeNames.classes["Network"] = {
+summary: "NetworkSummary",
+        host: HostSystem,
+        vm: VirtualMachine,
+        _this: Network
+};
+typeNames.classes["OpaqueNetwork"] = {
+capability: "OpaqueNetworkCapability",
+        extraConfig: "OptionValue",
+        _this: OpaqueNetwork
+};
+typeNames.classes["ResourcePool"] = {
+summary: "ResourcePoolSummary",
+        runtime: "ResourcePoolRuntimeInfo",
+        owner: ComputeResource,
+        resourcePool: ResourcePool,
+        vm: VirtualMachine,
+        config: "ResourceConfigSpec",
+        namespace: "string",
+        childConfiguration: "ResourceConfigSpec",
+        _this: ResourcePool
+};
+typeNames.classes["Task"] = {
+info: "TaskInfo",
+        _this: Task
+};
+typeNames.classes["VirtualApp"] = {
+parentFolder: Folder,
+        datastore: Datastore,
+        network: Network,
+        vAppConfig: "VAppConfigInfo",
+        parentVApp: ManagedEntity,
+        childLink: "VirtualAppLinkInfo",
+        _this: VirtualApp
+};
+typeNames.classes["VirtualDiskManager"] = {
+
+};
+typeNames.classes["VirtualMachine"] = {
+capability: "VirtualMachineCapability",
+        config: "VirtualMachineConfigInfo",
+        layout: "VirtualMachineFileLayout",
+        layoutEx: "VirtualMachineFileLayoutEx",
+        storage: "VirtualMachineStorageInfo",
+        environmentBrowser: EnvironmentBrowser,
+        resourcePool: ResourcePool,
+        parentVApp: ManagedEntity,
+        resourceConfig: "ResourceConfigSpec",
+        runtime: "VirtualMachineRuntimeInfo",
+        guest: "GuestInfo",
+        summary: "VirtualMachineSummary",
+        datastore: Datastore,
+        network: Network,
+        snapshot: "VirtualMachineSnapshotInfo",
+        rootSnapshot: VirtualMachineSnapshot,
+        guestHeartbeatStatus: "ManagedEntityStatus",
+        _this: VirtualMachine
+};
+typeNames.classes["AlarmManager"] = {
+defaultExpression: "AlarmExpression",
+        description: "AlarmDescription",
+        _this: AlarmManager
+};
+typeNames.classes["DistributedVirtualPortgroup"] = {
+key: "string",
+        config: "DVPortgroupConfigInfo",
+        portKeys: "string",
+        _this: DistributedVirtualPortgroup
+};
+typeNames.classes["CryptoManagerKmip"] = {
+kmipServers: "KmipClusterInfo",
+        _this: CryptoManagerKmip
+};
+typeNames.classes["HostActiveDirectoryAuthentication"] = {
+
+};
+typeNames.classes["HostDatastoreSystem"] = {
+datastore: Datastore,
+        capabilities: "HostDatastoreSystemCapabilities",
+        _this: HostDatastoreSystem
+};
+typeNames.classes["HostFirewallSystem"] = {
+firewallInfo: "HostFirewallInfo",
+        _this: HostFirewallSystem
+};
+typeNames.classes["HostNetworkSystem"] = {
+capabilities: "HostNetCapabilities",
+        networkInfo: "HostNetworkInfo",
+        offloadCapabilities: "HostNetOffloadCapabilities",
+        networkConfig: "HostNetworkConfig",
+        dnsConfig: "HostDnsConfig",
+        ipRouteConfig: "HostIpRouteConfig",
+        consoleIpRouteConfig: "HostIpRouteConfig",
+        _this: HostNetworkSystem
+};
+typeNames.classes["HostVFlashManager"] = {
+vFlashConfigInfo: "HostVFlashManagerVFlashConfigInfo",
+        _this: HostVFlashManager
+};
+typeNames.classes["HostProfile"] = {
+validationState: "string",
+        validationStateUpdateTime: "Date",
+        validationFailureInfo: "HostProfileValidationFailureInfo",
+        referenceHost: HostSystem,
+        _this: HostProfile
+};
+typeNames.classes["HostProfileManager"] = {
+
+};
+typeNames.classes["ManagedObjectView"] = {
+view: "ManagedObject",
+        _this: ManagedObjectView
+};
+typeNames.classes["VirtualMachineProvisioningChecker"] = {
+
+};
+typeNames.classes["HostVStorageObjectManager"] = {
+
+};
+typeNames.classes["VcenterVStorageObjectManager"] = {
+
+};
+typeNames.classes["ComputeResource"] = {
+resourcePool: ResourcePool,
+        host: HostSystem,
+        datastore: Datastore,
+        network: Network,
+        summary: "ComputeResourceSummary",
+        environmentBrowser: EnvironmentBrowser,
+        configurationEx: "ComputeResourceConfigInfo",
+        lifecycleManaged: "boolean",
+        _this: ComputeResource
+};
+typeNames.classes["Datacenter"] = {
+vmFolder: Folder,
+        hostFolder: Folder,
+        datastoreFolder: Folder,
+        networkFolder: Folder,
+        datastore: Datastore,
+        network: Network,
+        configuration: "DatacenterConfigInfo",
+        _this: Datacenter
+};
+typeNames.classes["Datastore"] = {
+info: "DatastoreInfo",
+        summary: "DatastoreSummary",
+        host: "DatastoreHostMount",
+        vm: VirtualMachine,
+        browser: HostDatastoreBrowser,
+        capability: "DatastoreCapability",
+        iormConfiguration: "StorageIORMInfo",
+        _this: Datastore
+};
+typeNames.classes["DistributedVirtualSwitch"] = {
+uuid: "string",
+        capability: "DVSCapability",
+        summary: "DVSSummary",
+        config: "DVSConfigInfo",
+        networkResourcePool: "DVSNetworkResourcePool",
+        portgroup: DistributedVirtualPortgroup,
+        runtime: "DVSRuntimeInfo",
+        _this: DistributedVirtualSwitch
+};
+typeNames.classes["Folder"] = {
+childType: "string",
+        childEntity: ManagedEntity,
+        namespace: "string",
+        _this: Folder
+};
+typeNames.classes["HostSystem"] = {
+runtime: "HostRuntimeInfo",
+        summary: "HostListSummary",
+        hardware: "HostHardwareInfo",
+        capability: "HostCapability",
+        licensableResource: "HostLicensableResourceInfo",
+        remediationState: "HostSystemRemediationState",
+        precheckRemediationResult: "ApplyHostProfileConfigurationSpec",
+        remediationResult: "ApplyHostProfileConfigurationResult",
+        complianceCheckState: "HostSystemComplianceCheckState",
+        complianceCheckResult: "ComplianceResult",
+        configManager: "HostConfigManager",
+        config: "HostConfigInfo",
+        vm: VirtualMachine,
+        datastore: Datastore,
+        network: Network,
+        datastoreBrowser: HostDatastoreBrowser,
+        systemResources: "HostSystemResourceInfo",
+        answerFileValidationState: "AnswerFileStatusResult",
+        answerFileValidationResult: "AnswerFileStatusResult",
+        _this: HostSystem
+};
+typeNames.classes["ServiceInstance"] = {
+serverClock: "Date",
+        capability: "Capability",
+        content: "ServiceContent",
+        _this: ServiceInstance
+};
+typeNames.classes["StoragePod"] = {
+summary: "StoragePodSummary",
+        podStorageDrsEntry: "PodStorageDrsEntry",
+        _this: StoragePod
+};
+typeNames.classes["DistributedVirtualSwitchManager"] = {
+
+};
+typeNames.classes["VmwareDistributedVirtualSwitch"] = {
+
+};
+typeNames.classes["HostDiagnosticSystem"] = {
+activePartition: "HostDiagnosticPartition",
+        _this: HostDiagnosticSystem
+};
+typeNames.classes["HostStorageSystem"] = {
+storageDeviceInfo: "HostStorageDeviceInfo",
+        fileSystemVolumeInfo: "HostFileSystemVolumeInfo",
+        systemFile: "string",
+        multipathStateInfo: "HostMultipathStateInfo",
+        _this: HostStorageSystem
+};
+typeNames.classes["ContainerView"] = {
+container: ManagedEntity,
+        type: "string",
+        recursive: "boolean",
+        _this: ContainerView
+};
+typeNames.classes["InventoryView"] = {
+
+};
+typeNames.classes["ListView"] = {
+
+};
+typeNames.classes["ClusterComputeResource"] = {
+configuration: "ClusterConfigInfo",
+        recommendation: "ClusterRecommendation",
+        drsRecommendation: "ClusterDrsRecommendation",
+        hciConfig: "ClusterComputeResourceHCIConfigInfo",
+        migrationHistory: "ClusterDrsMigration",
+        actionHistory: "ClusterActionHistory",
+        drsFault: "ClusterDrsFaults",
+        _this: ClusterComputeResource
 }

@@ -20,14 +20,17 @@ type SoapMethodCallback<Params, Result> = (params: Params, callback: (
 export class Connection {
   readonly id = uuid.v4();
 
+  client!: soap.Client;
+
   constructor(
-    readonly client: soap.Client
+    private readonly url: string,
+    private readonly options: soap.IOptions
   ) { }
 
   get hostname(): string {
-    const { hostname } = parseUrl(this.client.lastEndpoint ?? "");
+    const { hostname } = parseUrl(this.url);
     if (hostname === null) {
-      throw new Error(`Couldn't get hostname from URL "${this.client.lastEndpoint ?? "unknown URL"}"`);
+      throw new Error(`Couldn't get hostname from URL "${this.url}"`);
     }
     return hostname;
   }
@@ -56,6 +59,10 @@ export class Connection {
       });
     });
     return { result, headers: this.client.lastResponseHeaders ?? {} };
+  }
+
+  async connect(): Promise<void> {
+    this.client = await soap.createClientAsync(this.url, this.options);
   }
 
   async login(username: string, password: string): Promise<void> {

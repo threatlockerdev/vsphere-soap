@@ -11,9 +11,6 @@
     "generate": "ts-node src/generate src/types.ts",
     "lint": "eslint --ext .ts src"
   },
-  "peerDependencies": {
-    "soap": ">=0.34.0"
-  },
   "dependencies": {
     "cookie": "^0.4.1",
     "lodash": "^4.17.20",

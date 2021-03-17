@@ -57,7 +57,11 @@ export type ObjectReference = string | {
   $value?: string;
 }
 
-export interface DataObject { }
+export interface DataObject {
+  attributes?: {
+    "xsi:type": string;
+  }
+}
 typeNames.interfaces["DataObject"] = {};
 
 export class ManagedObject {

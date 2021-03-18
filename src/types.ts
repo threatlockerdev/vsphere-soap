@@ -133,150 +133,150 @@ export interface RuntimeFault extends MethodFault { }
 typeNames.interfaces["RuntimeFault"] = typeNames.interfaces["MethodFault"];
 
 
-export interface DynamicArray extends DataObject {
+export type DynamicArray = DataObject &  {
   dynamicType?: string;
   val: any[];
 }
-export interface DynamicData extends DataObject {
+export type DynamicData = DataObject &  {
   dynamicType?: string;
   dynamicProperty?: DynamicProperty[];
 }
-export interface DynamicProperty extends DataObject {
+export type DynamicProperty = DataObject &  {
   name: string;
   val: any;
 }
-export interface KeyAnyValue extends DynamicData {
+export type KeyAnyValue = DynamicData &  {
   key: string;
   value: any;
 }
-export interface LocalizableMessage extends DynamicData {
+export type LocalizableMessage = DynamicData &  {
   key: string;
   arg?: KeyAnyValue[];
   message?: string;
 }
-export interface HostCommunication extends RuntimeFault {
+export type HostCommunication = RuntimeFault &  {
   
 }
-export interface HostNotConnected extends HostCommunication {
+export type HostNotConnected = HostCommunication &  {
   
 }
-export interface HostNotReachable extends HostCommunication {
+export type HostNotReachable = HostCommunication &  {
   
 }
-export interface InvalidArgument extends RuntimeFault {
+export type InvalidArgument = RuntimeFault &  {
   invalidProperty?: string;
 }
-export interface InvalidRequest extends RuntimeFault {
+export type InvalidRequest = RuntimeFault &  {
   
 }
-export interface InvalidType extends InvalidRequest {
+export type InvalidType = InvalidRequest &  {
   argument?: string;
 }
-export interface ManagedObjectNotFound extends RuntimeFault {
+export type ManagedObjectNotFound = RuntimeFault &  {
   obj: ManagedObject;
 }
-export interface MethodNotFound extends InvalidRequest {
+export type MethodNotFound = InvalidRequest &  {
   receiver: ManagedObject;
   method: string;
 }
-export interface NotEnoughLicenses extends RuntimeFault {
+export type NotEnoughLicenses = RuntimeFault &  {
   
 }
-export interface NotImplemented extends RuntimeFault {
+export type NotImplemented = RuntimeFault &  {
   
 }
-export interface NotSupported extends RuntimeFault {
+export type NotSupported = RuntimeFault &  {
   
 }
-export interface RequestCanceled extends RuntimeFault {
+export type RequestCanceled = RuntimeFault &  {
   
 }
-export interface SecurityError extends RuntimeFault {
+export type SecurityError = RuntimeFault &  {
   
 }
-export interface SystemError extends RuntimeFault {
+export type SystemError = RuntimeFault &  {
   reason: string;
 }
-export interface UnexpectedFault extends RuntimeFault {
+export type UnexpectedFault = RuntimeFault &  {
   faultName: string;
   fault?: MethodFault;
 }
-export interface InvalidCollectorVersion extends MethodFault {
+export type InvalidCollectorVersion = MethodFault &  {
   
 }
-export interface InvalidProperty extends MethodFault {
+export type InvalidProperty = MethodFault &  {
   name: string;
 }
-export interface PropertyFilterSpec extends DynamicData {
+export type PropertyFilterSpec = DynamicData &  {
   propSet: PropertySpec[];
   objectSet: ObjectSpec[];
   reportMissingObjectsInResults?: boolean;
 }
-export interface PropertySpec extends DynamicData {
+export type PropertySpec = DynamicData &  {
   type: string;
   all?: boolean;
   pathSet?: string[];
 }
-export interface ObjectSpec extends DynamicData {
+export type ObjectSpec = DynamicData &  {
   obj: ManagedObject;
   skip?: boolean;
   selectSet?: SelectionSpec[];
 }
-export interface SelectionSpec extends DynamicData {
+export type SelectionSpec = DynamicData &  {
   name?: string;
 }
-export interface TraversalSpec extends SelectionSpec {
+export type TraversalSpec = SelectionSpec &  {
   type: string;
   path: string;
   skip?: boolean;
   selectSet?: SelectionSpec[];
 }
-export interface ObjectContent extends DynamicData {
+export type ObjectContent = DynamicData &  {
   obj: ManagedObject;
   propSet?: DynamicProperty[];
   missingSet?: MissingProperty[];
 }
-export interface UpdateSet extends DynamicData {
+export type UpdateSet = DynamicData &  {
   version: string;
   filterSet?: PropertyFilterUpdate[];
   truncated?: boolean;
 }
-export interface PropertyFilterUpdate extends DynamicData {
+export type PropertyFilterUpdate = DynamicData &  {
   filter: PropertyFilter;
   objectSet?: ObjectUpdate[];
   missingSet?: MissingObject[];
 }
-export interface ObjectUpdate extends DynamicData {
+export type ObjectUpdate = DynamicData &  {
   kind: ObjectUpdateKind;
   obj: ManagedObject;
   changeSet?: PropertyChange[];
   missingSet?: MissingProperty[];
 }
-export interface PropertyChange extends DynamicData {
+export type PropertyChange = DynamicData &  {
   name: string;
   op: PropertyChangeOp;
   val?: any;
 }
-export interface MissingProperty extends DynamicData {
+export type MissingProperty = DynamicData &  {
   path: string;
   fault: MethodFault;
 }
-export interface MissingObject extends DynamicData {
+export type MissingObject = DynamicData &  {
   obj: ManagedObject;
   fault: MethodFault;
 }
-export interface WaitOptions extends DynamicData {
+export type WaitOptions = DynamicData &  {
   maxWaitSeconds?: number;
   maxObjectUpdates?: number;
 }
-export interface RetrieveOptions extends DynamicData {
+export type RetrieveOptions = DynamicData &  {
   maxObjects?: number;
 }
-export interface RetrieveResult extends DynamicData {
+export type RetrieveResult = DynamicData &  {
   token?: string;
   objects: ObjectContent[];
 }
-export interface AboutInfo extends DynamicData {
+export type AboutInfo = DynamicData &  {
   name: string;
   fullName: string;
   vendor: string;
@@ -292,17 +292,17 @@ export interface AboutInfo extends DynamicData {
   licenseProductName?: string;
   licenseProductVersion?: string;
 }
-export interface AuthorizationDescription extends DynamicData {
+export type AuthorizationDescription = DynamicData &  {
   privilege: ElementDescription[];
   privilegeGroup: ElementDescription[];
 }
-export interface BatchResult extends DynamicData {
+export type BatchResult = DynamicData &  {
   result: string;
   hostKey: string;
   ds?: Datastore;
   fault?: MethodFault;
 }
-export interface Capability extends DynamicData {
+export type Capability = DynamicData &  {
   provisioningSupported: boolean;
   multiHostSupported: boolean;
   userShellAccessSupported: boolean;
@@ -316,7 +316,7 @@ export interface Capability extends DynamicData {
   lifecycleManagementSupported?: boolean;
   scalableSharesSupported?: boolean;
 }
-export interface CustomFieldDef extends DynamicData {
+export type CustomFieldDef = DynamicData &  {
   key: number;
   name: string;
   type: string;
@@ -324,43 +324,43 @@ export interface CustomFieldDef extends DynamicData {
   fieldDefPrivileges?: PrivilegePolicyDef;
   fieldInstancePrivileges?: PrivilegePolicyDef;
 }
-export interface CustomFieldStringValue extends CustomFieldValue {
+export type CustomFieldStringValue = CustomFieldValue &  {
   value: string;
 }
-export interface CustomFieldValue extends DynamicData {
+export type CustomFieldValue = DynamicData &  {
   key: number;
 }
-export interface CustomizationSpecInfo extends DynamicData {
+export type CustomizationSpecInfo = DynamicData &  {
   name: string;
   description: string;
   type: string;
   changeVersion?: string;
   lastUpdateTime?: Date;
 }
-export interface CustomizationSpecItem extends DynamicData {
+export type CustomizationSpecItem = DynamicData &  {
   info: CustomizationSpecInfo;
   spec: CustomizationSpec;
 }
-export interface Description extends DynamicData {
+export type Description = DynamicData &  {
   label: string;
   summary: string;
 }
-export interface DesiredSoftwareSpec extends DynamicData {
+export type DesiredSoftwareSpec = DynamicData &  {
   baseImageSpec: DesiredSoftwareSpecBaseImageSpec;
   vendorAddOnSpec?: DesiredSoftwareSpecVendorAddOnSpec;
 }
-export interface DesiredSoftwareSpecBaseImageSpec extends DynamicData {
+export type DesiredSoftwareSpecBaseImageSpec = DynamicData &  {
   version: string;
 }
-export interface DesiredSoftwareSpecVendorAddOnSpec extends DynamicData {
+export type DesiredSoftwareSpecVendorAddOnSpec = DynamicData &  {
   name: string;
   version: string;
 }
-export interface DiagnosticManagerBundleInfo extends DynamicData {
+export type DiagnosticManagerBundleInfo = DynamicData &  {
   system?: HostSystem;
   url: string;
 }
-export interface DiagnosticManagerLogDescriptor extends DynamicData {
+export type DiagnosticManagerLogDescriptor = DynamicData &  {
   key: string;
   fileName: string;
   creator: string;
@@ -368,32 +368,32 @@ export interface DiagnosticManagerLogDescriptor extends DynamicData {
   mimeType: string;
   info: Description;
 }
-export interface DiagnosticManagerLogHeader extends DynamicData {
+export type DiagnosticManagerLogHeader = DynamicData &  {
   lineStart: number;
   lineEnd: number;
   lineText?: string[];
 }
-export interface ElementDescription extends Description {
+export type ElementDescription = Description &  {
   key: string;
 }
-export interface EnumDescription extends DynamicData {
+export type EnumDescription = DynamicData &  {
   key: string;
   tags: ElementDescription[];
 }
-export interface EnvironmentBrowserConfigOptionQuerySpec extends DynamicData {
+export type EnvironmentBrowserConfigOptionQuerySpec = DynamicData &  {
   key?: string;
   host?: HostSystem;
   guestId?: string[];
 }
-export interface ExtendedDescription extends Description {
+export type ExtendedDescription = Description &  {
   messageCatalogKeyPrefix: string;
   messageArg?: KeyAnyValue[];
 }
-export interface ExtendedElementDescription extends ElementDescription {
+export type ExtendedElementDescription = ElementDescription &  {
   messageCatalogKeyPrefix: string;
   messageArg?: KeyAnyValue[];
 }
-export interface Extension extends DynamicData {
+export type Extension = DynamicData &  {
   description: Description;
   key: string;
   company?: string;
@@ -415,37 +415,37 @@ export interface Extension extends DynamicData {
   shownInSolutionManager?: boolean;
   solutionManagerInfo?: ExtSolutionManagerInfo;
 }
-export interface ExtensionClientInfo extends DynamicData {
+export type ExtensionClientInfo = DynamicData &  {
   version: string;
   description: Description;
   company: string;
   type: string;
   url: string;
 }
-export interface ExtensionEventTypeInfo extends DynamicData {
+export type ExtensionEventTypeInfo = DynamicData &  {
   eventID: string;
   eventTypeSchema?: string;
 }
-export interface ExtensionFaultTypeInfo extends DynamicData {
+export type ExtensionFaultTypeInfo = DynamicData &  {
   faultID: string;
 }
-export interface ExtensionHealthInfo extends DynamicData {
+export type ExtensionHealthInfo = DynamicData &  {
   url: string;
 }
-export interface ExtensionOvfConsumerInfo extends DynamicData {
+export type ExtensionOvfConsumerInfo = DynamicData &  {
   callbackUrl: string;
   sectionType: string[];
 }
-export interface ExtensionPrivilegeInfo extends DynamicData {
+export type ExtensionPrivilegeInfo = DynamicData &  {
   privID: string;
   privGroupName: string;
 }
-export interface ExtensionResourceInfo extends DynamicData {
+export type ExtensionResourceInfo = DynamicData &  {
   locale: string;
   module: string;
   data: KeyValue[];
 }
-export interface ExtensionServerInfo extends DynamicData {
+export type ExtensionServerInfo = DynamicData &  {
   url: string;
   description: Description;
   company: string;
@@ -453,40 +453,40 @@ export interface ExtensionServerInfo extends DynamicData {
   adminEmail: string[];
   serverThumbprint?: string;
 }
-export interface ExtensionTaskTypeInfo extends DynamicData {
+export type ExtensionTaskTypeInfo = DynamicData &  {
   taskID: string;
 }
-export interface ExtensionManagerIpAllocationUsage extends DynamicData {
+export type ExtensionManagerIpAllocationUsage = DynamicData &  {
   extensionKey: string;
   numAddresses: number;
 }
-export interface FaultsByHost extends DynamicData {
+export type FaultsByHost = DynamicData &  {
   host: HostSystem;
   faults?: MethodFault[];
 }
-export interface FaultsByVM extends DynamicData {
+export type FaultsByVM = DynamicData &  {
   vm: VirtualMachine;
   faults?: MethodFault[];
 }
-export interface FeatureEVCMode extends ElementDescription {
+export type FeatureEVCMode = ElementDescription &  {
   mask?: HostFeatureMask[];
   capability?: HostFeatureCapability[];
   requirement?: VirtualMachineFeatureRequirement[];
 }
-export interface HbrManagerReplicationVmInfo extends DynamicData {
+export type HbrManagerReplicationVmInfo = DynamicData &  {
   state: string;
   progressInfo?: ReplicationVmProgressInfo;
   imageId?: string;
   lastError?: MethodFault;
 }
-export interface ReplicationVmProgressInfo extends DynamicData {
+export type ReplicationVmProgressInfo = DynamicData &  {
   progress: number;
   bytesTransferred: number;
   bytesToTransfer: number;
   checksumTotalBytes?: number;
   checksumComparedBytes?: number;
 }
-export interface HbrManagerVmReplicationCapability extends DynamicData {
+export type HbrManagerVmReplicationCapability = DynamicData &  {
   vm: VirtualMachine;
   supportedQuiesceMode: string;
   compressionSupported: boolean;
@@ -494,12 +494,12 @@ export interface HbrManagerVmReplicationCapability extends DynamicData {
   minRpo?: number;
   fault?: MethodFault;
 }
-export interface HealthUpdateInfo extends DynamicData {
+export type HealthUpdateInfo = DynamicData &  {
   id: string;
   componentType: string;
   description: string;
 }
-export interface PerfInterval extends DynamicData {
+export type PerfInterval = DynamicData &  {
   key: number;
   samplingPeriod: number;
   name: string;
@@ -507,7 +507,7 @@ export interface PerfInterval extends DynamicData {
   level?: number;
   enabled: boolean;
 }
-export interface HostServiceTicket extends DynamicData {
+export type HostServiceTicket = DynamicData &  {
   host?: string;
   port?: number;
   sslThumbprint?: string;
@@ -515,15 +515,15 @@ export interface HostServiceTicket extends DynamicData {
   serviceVersion: string;
   sessionId: string;
 }
-export interface HttpNfcLeaseCapabilities extends DynamicData {
+export type HttpNfcLeaseCapabilities = DynamicData &  {
   pullModeSupported: boolean;
   corsSupported: boolean;
 }
-export interface HttpNfcLeaseDatastoreLeaseInfo extends DynamicData {
+export type HttpNfcLeaseDatastoreLeaseInfo = DynamicData &  {
   datastoreKey: string;
   hosts: HttpNfcLeaseHostInfo[];
 }
-export interface HttpNfcLeaseDeviceUrl extends DynamicData {
+export type HttpNfcLeaseDeviceUrl = DynamicData &  {
   key: string;
   importKey: string;
   url: string;
@@ -533,11 +533,11 @@ export interface HttpNfcLeaseDeviceUrl extends DynamicData {
   datastoreKey?: string;
   fileSize?: number;
 }
-export interface HttpNfcLeaseHostInfo extends DynamicData {
+export type HttpNfcLeaseHostInfo = DynamicData &  {
   url: string;
   sslThumbprint: string;
 }
-export interface HttpNfcLeaseInfo extends DynamicData {
+export type HttpNfcLeaseInfo = DynamicData &  {
   lease: HttpNfcLease;
   entity: ManagedEntity;
   deviceUrl?: HttpNfcLeaseDeviceUrl[];
@@ -545,7 +545,7 @@ export interface HttpNfcLeaseInfo extends DynamicData {
   leaseTimeout: number;
   hostMap?: HttpNfcLeaseDatastoreLeaseInfo[];
 }
-export interface HttpNfcLeaseManifestEntry extends DynamicData {
+export type HttpNfcLeaseManifestEntry = DynamicData &  {
   key: string;
   sha1: string;
   checksum?: string;
@@ -555,7 +555,7 @@ export interface HttpNfcLeaseManifestEntry extends DynamicData {
   capacity?: number;
   populatedSize?: number;
 }
-export interface HttpNfcLeaseSourceFile extends DynamicData {
+export type HttpNfcLeaseSourceFile = DynamicData &  {
   targetDeviceId: string;
   url: string;
   memberName?: string;
@@ -564,20 +564,20 @@ export interface HttpNfcLeaseSourceFile extends DynamicData {
   httpHeaders?: KeyValue[];
   size?: number;
 }
-export interface InheritablePolicy extends DynamicData {
+export type InheritablePolicy = DynamicData &  {
   inherited: boolean;
 }
-export interface IntPolicy extends InheritablePolicy {
+export type IntPolicy = InheritablePolicy &  {
   value?: number;
 }
-export interface ClusterIoFilterInfo extends IoFilterInfo {
+export type ClusterIoFilterInfo = IoFilterInfo &  {
   opType: string;
   vibUrl?: string;
 }
-export interface HostIoFilterInfo extends IoFilterInfo {
+export type HostIoFilterInfo = IoFilterInfo &  {
   available: boolean;
 }
-export interface IoFilterInfo extends DynamicData {
+export type IoFilterInfo = DynamicData &  {
   id: string;
   name: string;
   vendor: string;
@@ -586,32 +586,32 @@ export interface IoFilterInfo extends DynamicData {
   summary?: string;
   releaseDate?: string;
 }
-export interface IoFilterQueryIssueResult extends DynamicData {
+export type IoFilterQueryIssueResult = DynamicData &  {
   opType: string;
   hostIssue?: IoFilterHostIssue[];
 }
-export interface IoFilterHostIssue extends DynamicData {
+export type IoFilterHostIssue = DynamicData &  {
   host: HostSystem;
   issue: MethodFault[];
 }
-export interface IpPoolManagerIpAllocation extends DynamicData {
+export type IpPoolManagerIpAllocation = DynamicData &  {
   ipAddress: string;
   allocationId: string;
 }
-export interface KeyValue extends DynamicData {
+export type KeyValue = DynamicData &  {
   key: string;
   value: string;
 }
-export interface LatencySensitivity extends DynamicData {
+export type LatencySensitivity = DynamicData &  {
   level: LatencySensitivitySensitivityLevel;
   sensitivity?: number;
 }
-export interface LicenseAvailabilityInfo extends DynamicData {
+export type LicenseAvailabilityInfo = DynamicData &  {
   feature: LicenseFeatureInfo;
   total: number;
   available: number;
 }
-export interface LicenseDiagnostics extends DynamicData {
+export type LicenseDiagnostics = DynamicData &  {
   sourceLastChanged: Date;
   sourceLost: string;
   sourceLatency: number;
@@ -622,13 +622,13 @@ export interface LicenseDiagnostics extends DynamicData {
   lastStatusUpdate: Date;
   opFailureMessage: string;
 }
-export interface LicenseManagerEvaluationInfo extends DynamicData {
+export type LicenseManagerEvaluationInfo = DynamicData &  {
   properties: KeyAnyValue[];
 }
-export interface EvaluationLicenseSource extends LicenseSource {
+export type EvaluationLicenseSource = LicenseSource &  {
   remainingHours?: number;
 }
-export interface LicenseFeatureInfo extends DynamicData {
+export type LicenseFeatureInfo = DynamicData &  {
   key: string;
   featureName: string;
   featureDescription?: string;
@@ -639,10 +639,10 @@ export interface LicenseFeatureInfo extends DynamicData {
   edition?: boolean;
   expiresOn?: Date;
 }
-export interface HostLicensableResourceInfo extends DynamicData {
+export type HostLicensableResourceInfo = DynamicData &  {
   resource: KeyAnyValue[];
 }
-export interface LicenseManagerLicenseInfo extends DynamicData {
+export type LicenseManagerLicenseInfo = DynamicData &  {
   licenseKey: string;
   editionKey: string;
   name: string;
@@ -652,27 +652,27 @@ export interface LicenseManagerLicenseInfo extends DynamicData {
   properties?: KeyAnyValue[];
   labels?: KeyValue[];
 }
-export interface LicenseServerSource extends LicenseSource {
+export type LicenseServerSource = LicenseSource &  {
   licenseServer: string;
 }
-export interface LicenseSource extends DynamicData {
+export type LicenseSource = DynamicData &  {
   
 }
-export interface LicenseUsageInfo extends DynamicData {
+export type LicenseUsageInfo = DynamicData &  {
   source: LicenseSource;
   sourceAvailable: boolean;
   reservationInfo?: LicenseReservationInfo[];
   featureInfo?: LicenseFeatureInfo[];
 }
-export interface LocalLicenseSource extends LicenseSource {
+export type LocalLicenseSource = LicenseSource &  {
   licenseKeys: string;
 }
-export interface LicenseReservationInfo extends DynamicData {
+export type LicenseReservationInfo = DynamicData &  {
   key: string;
   state: LicenseReservationInfoState;
   required: number;
 }
-export interface LocalizationManagerMessageCatalog extends DynamicData {
+export type LocalizationManagerMessageCatalog = DynamicData &  {
   moduleName: string;
   catalogName: string;
   locale: string;
@@ -681,37 +681,37 @@ export interface LocalizationManagerMessageCatalog extends DynamicData {
   md5sum?: string;
   version?: string;
 }
-export interface LongPolicy extends InheritablePolicy {
+export type LongPolicy = InheritablePolicy &  {
   value?: number;
 }
-export interface MethodDescription extends Description {
+export type MethodDescription = Description &  {
   key: string;
 }
-export interface NegatableExpression extends DynamicData {
+export type NegatableExpression = DynamicData &  {
   negate?: boolean;
 }
-export interface NumericRange extends DynamicData {
+export type NumericRange = DynamicData &  {
   start: number;
   end: number;
 }
-export interface OvfConsumerOstNode extends DynamicData {
+export type OvfConsumerOstNode = DynamicData &  {
   id: string;
   type: string;
   section?: OvfConsumerOvfSection[];
   child?: OvfConsumerOstNode[];
   entity?: ManagedEntity;
 }
-export interface OvfConsumerOvfSection extends DynamicData {
+export type OvfConsumerOvfSection = DynamicData &  {
   lineNumber: number;
   xml: string;
 }
-export interface OvfManagerCommonParams extends DynamicData {
+export type OvfManagerCommonParams = DynamicData &  {
   locale: string;
   deploymentOption: string;
   msgBundle?: KeyValue[];
   importOption?: string[];
 }
-export interface OvfCreateDescriptorParams extends DynamicData {
+export type OvfCreateDescriptorParams = DynamicData &  {
   ovfFiles?: OvfFile[];
   name?: string;
   description?: string;
@@ -719,13 +719,13 @@ export interface OvfCreateDescriptorParams extends DynamicData {
   exportOption?: string[];
   snapshot?: VirtualMachineSnapshot;
 }
-export interface OvfCreateDescriptorResult extends DynamicData {
+export type OvfCreateDescriptorResult = DynamicData &  {
   ovfDescriptor: string;
   error?: MethodFault[];
   warning?: MethodFault[];
   includeImageFiles?: boolean;
 }
-export interface OvfCreateImportSpecParams extends OvfManagerCommonParams {
+export type OvfCreateImportSpecParams = OvfManagerCommonParams &  {
   entityName: string;
   hostSystem?: HostSystem;
   networkMapping?: OvfNetworkMapping[];
@@ -736,18 +736,18 @@ export interface OvfCreateImportSpecParams extends OvfManagerCommonParams {
   diskProvisioning?: string;
   instantiationOst?: OvfConsumerOstNode;
 }
-export interface OvfCreateImportSpecResult extends DynamicData {
+export type OvfCreateImportSpecResult = DynamicData &  {
   importSpec?: ImportSpec;
   fileItem?: OvfFileItem[];
   warning?: MethodFault[];
   error?: MethodFault[];
 }
-export interface OvfDeploymentOption extends DynamicData {
+export type OvfDeploymentOption = DynamicData &  {
   key: string;
   label: string;
   description: string;
 }
-export interface OvfFileItem extends DynamicData {
+export type OvfFileItem = DynamicData &  {
   deviceId: string;
   path: string;
   compressionMethod?: string;
@@ -756,15 +756,15 @@ export interface OvfFileItem extends DynamicData {
   cimType: number;
   create: boolean;
 }
-export interface OvfNetworkInfo extends DynamicData {
+export type OvfNetworkInfo = DynamicData &  {
   name: string;
   description: string;
 }
-export interface OvfNetworkMapping extends DynamicData {
+export type OvfNetworkMapping = DynamicData &  {
   name: string;
   network: Network;
 }
-export interface OvfFile extends DynamicData {
+export type OvfFile = DynamicData &  {
   deviceId: string;
   path: string;
   compressionMethod?: string;
@@ -773,14 +773,14 @@ export interface OvfFile extends DynamicData {
   capacity?: number;
   populatedSize?: number;
 }
-export interface OvfOptionInfo extends DynamicData {
+export type OvfOptionInfo = DynamicData &  {
   option: string;
   description: LocalizableMessage;
 }
-export interface OvfParseDescriptorParams extends OvfManagerCommonParams {
+export type OvfParseDescriptorParams = OvfManagerCommonParams &  {
   
 }
-export interface OvfParseDescriptorResult extends DynamicData {
+export type OvfParseDescriptorResult = DynamicData &  {
   eula?: string[];
   network?: OvfNetworkInfo[];
   ipAllocationScheme?: string[];
@@ -800,16 +800,16 @@ export interface OvfParseDescriptorResult extends DynamicData {
   error?: MethodFault[];
   warning?: MethodFault[];
 }
-export interface OvfResourceMap extends DynamicData {
+export type OvfResourceMap = DynamicData &  {
   source: string;
   parent?: ResourcePool;
   resourceSpec?: ResourceConfigSpec;
   datastore?: Datastore;
 }
-export interface OvfValidateHostParams extends OvfManagerCommonParams {
+export type OvfValidateHostParams = OvfManagerCommonParams &  {
   
 }
-export interface OvfValidateHostResult extends DynamicData {
+export type OvfValidateHostResult = DynamicData &  {
   downloadSize?: number;
   flatDeploymentSize?: number;
   sparseDeploymentSize?: number;
@@ -817,18 +817,18 @@ export interface OvfValidateHostResult extends DynamicData {
   warning?: MethodFault[];
   supportedDiskProvisioning?: string[];
 }
-export interface PasswordField extends DynamicData {
+export type PasswordField = DynamicData &  {
   value: string;
 }
-export interface PerformanceDescription extends DynamicData {
+export type PerformanceDescription = DynamicData &  {
   counterType: ElementDescription[];
   statsType: ElementDescription[];
 }
-export interface PerfCompositeMetric extends DynamicData {
+export type PerfCompositeMetric = DynamicData &  {
   entity?: PerfEntityMetricBase;
   childEntity?: PerfEntityMetricBase[];
 }
-export interface PerfCounterInfo extends DynamicData {
+export type PerfCounterInfo = DynamicData &  {
   key: number;
   nameInfo: ElementDescription;
   groupInfo: ElementDescription;
@@ -839,42 +839,42 @@ export interface PerfCounterInfo extends DynamicData {
   perDeviceLevel?: number;
   associatedCounterId?: number[];
 }
-export interface PerformanceManagerCounterLevelMapping extends DynamicData {
+export type PerformanceManagerCounterLevelMapping = DynamicData &  {
   counterId: number;
   aggregateLevel?: number;
   perDeviceLevel?: number;
 }
-export interface PerfEntityMetric extends PerfEntityMetricBase {
+export type PerfEntityMetric = PerfEntityMetricBase &  {
   sampleInfo?: PerfSampleInfo[];
   value?: PerfMetricSeries[];
 }
-export interface PerfEntityMetricBase extends DynamicData {
+export type PerfEntityMetricBase = DynamicData &  {
   entity: ManagedObject;
 }
-export interface PerfEntityMetricCSV extends PerfEntityMetricBase {
+export type PerfEntityMetricCSV = PerfEntityMetricBase &  {
   sampleInfoCSV: string;
   value?: PerfMetricSeriesCSV[];
 }
-export interface PerfMetricIntSeries extends PerfMetricSeries {
+export type PerfMetricIntSeries = PerfMetricSeries &  {
   value?: number[];
 }
-export interface PerfMetricId extends DynamicData {
+export type PerfMetricId = DynamicData &  {
   counterId: number;
   instance: string;
 }
-export interface PerfMetricSeries extends DynamicData {
+export type PerfMetricSeries = DynamicData &  {
   id: PerfMetricId;
 }
-export interface PerfMetricSeriesCSV extends PerfMetricSeries {
+export type PerfMetricSeriesCSV = PerfMetricSeries &  {
   value?: string;
 }
-export interface PerfProviderSummary extends DynamicData {
+export type PerfProviderSummary = DynamicData &  {
   entity: ManagedObject;
   currentSupported: boolean;
   summarySupported: boolean;
   refreshRate?: number;
 }
-export interface PerfQuerySpec extends DynamicData {
+export type PerfQuerySpec = DynamicData &  {
   entity: ManagedObject;
   startTime?: Date;
   endTime?: Date;
@@ -883,31 +883,31 @@ export interface PerfQuerySpec extends DynamicData {
   intervalId?: number;
   format?: string;
 }
-export interface PerfSampleInfo extends DynamicData {
+export type PerfSampleInfo = DynamicData &  {
   timestamp: Date;
   interval: number;
 }
-export interface PrivilegePolicyDef extends DynamicData {
+export type PrivilegePolicyDef = DynamicData &  {
   createPrivilege: string;
   readPrivilege: string;
   updatePrivilege: string;
   deletePrivilege: string;
 }
-export interface ResourceAllocationInfo extends DynamicData {
+export type ResourceAllocationInfo = DynamicData &  {
   reservation?: number;
   expandableReservation?: boolean;
   limit?: number;
   shares?: SharesInfo;
   overheadLimit?: number;
 }
-export interface ResourceAllocationOption extends DynamicData {
+export type ResourceAllocationOption = DynamicData &  {
   sharesOption: SharesOption;
 }
-export interface ResourceConfigOption extends DynamicData {
+export type ResourceConfigOption = DynamicData &  {
   cpuAllocationOption: ResourceAllocationOption;
   memoryAllocationOption: ResourceAllocationOption;
 }
-export interface ResourceConfigSpec extends DynamicData {
+export type ResourceConfigSpec = DynamicData &  {
   entity?: ManagedEntity;
   changeVersion?: string;
   lastModified?: Date;
@@ -915,14 +915,14 @@ export interface ResourceConfigSpec extends DynamicData {
   memoryAllocation: ResourceAllocationInfo;
   scaleDescendantsShares?: string;
 }
-export interface DatabaseSizeEstimate extends DynamicData {
+export type DatabaseSizeEstimate = DynamicData &  {
   size: number;
 }
-export interface DatabaseSizeParam extends DynamicData {
+export type DatabaseSizeParam = DynamicData &  {
   inventoryDesc: InventoryDescription;
   perfStatsDesc?: PerformanceStatisticsDescription;
 }
-export interface InventoryDescription extends DynamicData {
+export type InventoryDescription = DynamicData &  {
   numHosts: number;
   numVirtualMachines: number;
   numResourcePools?: number;
@@ -934,16 +934,16 @@ export interface InventoryDescription extends DynamicData {
   numvNetDev?: number;
   numvDiskDev?: number;
 }
-export interface PerformanceStatisticsDescription extends DynamicData {
+export type PerformanceStatisticsDescription = DynamicData &  {
   intervals?: PerfInterval[];
 }
-export interface SDDCBase extends DynamicData {
+export type SDDCBase = DynamicData &  {
   
 }
-export interface SelectionSet extends DynamicData {
+export type SelectionSet = DynamicData &  {
   
 }
-export interface ServiceContent extends DynamicData {
+export type ServiceContent = DynamicData &  {
   rootFolder: Folder;
   propertyCollector: PropertyCollector;
   viewManager?: ViewManager;
@@ -995,68 +995,68 @@ export interface ServiceContent extends DynamicData {
   siteInfoManager?: SiteInfoManager;
   storageQueryManager?: StorageQueryManager;
 }
-export interface ServiceLocator extends DynamicData {
+export type ServiceLocator = DynamicData &  {
   instanceUuid: string;
   url: string;
   credential: ServiceLocatorCredential;
   sslThumbprint?: string;
 }
-export interface ServiceLocatorCredential extends DynamicData {
+export type ServiceLocatorCredential = DynamicData &  {
   
 }
-export interface ServiceLocatorNamePassword extends ServiceLocatorCredential {
+export type ServiceLocatorNamePassword = ServiceLocatorCredential &  {
   username: string;
   password: string;
 }
-export interface ServiceLocatorSAMLCredential extends ServiceLocatorCredential {
+export type ServiceLocatorSAMLCredential = ServiceLocatorCredential &  {
   token?: string;
 }
-export interface ServiceManagerServiceInfo extends DynamicData {
+export type ServiceManagerServiceInfo = DynamicData &  {
   serviceName: string;
   location?: string[];
   service: ManagedObject;
   description: string;
 }
-export interface SessionManagerGenericServiceTicket extends DynamicData {
+export type SessionManagerGenericServiceTicket = DynamicData &  {
   id: string;
   hostName?: string;
   sslThumbprint?: string;
 }
-export interface SessionManagerHttpServiceRequestSpec extends SessionManagerServiceRequestSpec {
+export type SessionManagerHttpServiceRequestSpec = SessionManagerServiceRequestSpec &  {
   method?: string;
   url: string;
 }
-export interface SessionManagerLocalTicket extends DynamicData {
+export type SessionManagerLocalTicket = DynamicData &  {
   userName: string;
   passwordFilePath: string;
 }
-export interface SessionManagerServiceRequestSpec extends DynamicData {
+export type SessionManagerServiceRequestSpec = DynamicData &  {
   
 }
-export interface SessionManagerVmomiServiceRequestSpec extends SessionManagerServiceRequestSpec {
+export type SessionManagerVmomiServiceRequestSpec = SessionManagerServiceRequestSpec &  {
   method: string;
 }
-export interface SharesInfo extends DynamicData {
+export type SharesInfo = DynamicData &  {
   shares: number;
   level: SharesLevel;
 }
-export interface SharesOption extends DynamicData {
+export type SharesOption = DynamicData &  {
   sharesOption: IntOption;
   defaultLevel: SharesLevel;
 }
-export interface SiteInfo extends DynamicData {
+export type SiteInfo = DynamicData &  {
   
 }
-export interface StorageIOAllocationInfo extends DynamicData {
+export type StorageIOAllocationInfo = DynamicData &  {
   limit?: number;
   shares?: SharesInfo;
   reservation?: number;
 }
-export interface StorageIOAllocationOption extends DynamicData {
+export type StorageIOAllocationOption = DynamicData &  {
   limitOption: LongOption;
   sharesOption: SharesOption;
 }
-export interface StorageIORMInfo extends DynamicData {
+export type StorageIORMInfo = DynamicData &  {
   enabled: boolean;
   congestionThresholdMode: string;
   congestionThreshold: number;
@@ -1066,13 +1066,13 @@ export interface StorageIORMInfo extends DynamicData {
   statsAggregationDisabled?: boolean;
   reservableIopsThreshold?: number;
 }
-export interface StorageIORMConfigOption extends DynamicData {
+export type StorageIORMConfigOption = DynamicData &  {
   enabledOption: BoolOption;
   congestionThresholdOption: IntOption;
   statsCollectionEnabledOption: BoolOption;
   reservationEnabledOption: BoolOption;
 }
-export interface StorageIORMConfigSpec extends DynamicData {
+export type StorageIORMConfigSpec = DynamicData &  {
   enabled?: boolean;
   congestionThresholdMode?: string;
   congestionThreshold?: number;
@@ -1082,13 +1082,13 @@ export interface StorageIORMConfigSpec extends DynamicData {
   statsAggregationDisabled?: boolean;
   reservableIopsThreshold?: number;
 }
-export interface PodStorageDrsEntry extends DynamicData {
+export type PodStorageDrsEntry = DynamicData &  {
   storageDrsConfig: StorageDrsConfigInfo;
   recommendation?: ClusterRecommendation[];
   drsFault?: ClusterDrsFaults[];
   actionHistory?: ClusterActionHistory[];
 }
-export interface StoragePerformanceSummary extends DynamicData {
+export type StoragePerformanceSummary = DynamicData &  {
   interval: number;
   percentile: number[];
   datastoreReadLatency: number[];
@@ -1098,26 +1098,26 @@ export interface StoragePerformanceSummary extends DynamicData {
   datastoreWriteIops: number[];
   siocActivityDuration: number;
 }
-export interface StorageResourceManagerStorageProfileStatistics extends DynamicData {
+export type StorageResourceManagerStorageProfileStatistics = DynamicData &  {
   profileId: string;
   totalSpaceMB: number;
   usedSpaceMB: number;
 }
-export interface StringExpression extends NegatableExpression {
+export type StringExpression = NegatableExpression &  {
   value?: string;
 }
-export interface StringPolicy extends InheritablePolicy {
+export type StringPolicy = InheritablePolicy &  {
   value?: string;
 }
-export interface Tag extends DynamicData {
+export type Tag = DynamicData &  {
   key: string;
 }
-export interface TaskDescription extends DynamicData {
+export type TaskDescription = DynamicData &  {
   methodInfo: ElementDescription[];
   state: ElementDescription[];
   reason: TypeDescription[];
 }
-export interface TaskInfo extends DynamicData {
+export type TaskInfo = DynamicData &  {
   key: string;
   task: Task;
   description?: LocalizableMessage;
@@ -1142,41 +1142,41 @@ export interface TaskInfo extends DynamicData {
   rootTaskKey?: string;
   activationId?: string;
 }
-export interface TaskReason extends DynamicData {
+export type TaskReason = DynamicData &  {
   
 }
-export interface TaskReasonAlarm extends TaskReason {
+export type TaskReasonAlarm = TaskReason &  {
   alarmName: string;
   alarm: Alarm;
   entityName: string;
   entity: ManagedEntity;
 }
-export interface TaskReasonSchedule extends TaskReason {
+export type TaskReasonSchedule = TaskReason &  {
   name: string;
   scheduledTask: ScheduledTask;
 }
-export interface TaskReasonSystem extends TaskReason {
+export type TaskReasonSystem = TaskReason &  {
   
 }
-export interface TaskReasonUser extends TaskReason {
+export type TaskReasonUser = TaskReason &  {
   userName: string;
 }
-export interface TypeDescription extends Description {
+export type TypeDescription = Description &  {
   key: string;
 }
-export interface UpdateVirtualMachineFilesResult extends DynamicData {
+export type UpdateVirtualMachineFilesResult = DynamicData &  {
   failedVmFile?: UpdateVirtualMachineFilesResultFailedVmFileInfo[];
 }
-export interface UpdateVirtualMachineFilesResultFailedVmFileInfo extends DynamicData {
+export type UpdateVirtualMachineFilesResultFailedVmFileInfo = DynamicData &  {
   vmFile: string;
   fault: MethodFault;
 }
-export interface UserSearchResult extends DynamicData {
+export type UserSearchResult = DynamicData &  {
   principal: string;
   fullName?: string;
   group: boolean;
 }
-export interface UserSession extends DynamicData {
+export type UserSession = DynamicData &  {
   key: string;
   userName: string;
   fullName: string;
@@ -1189,123 +1189,123 @@ export interface UserSession extends DynamicData {
   userAgent: string;
   callCount: number;
 }
-export interface VVolVmConfigFileUpdateResult extends DynamicData {
+export type VVolVmConfigFileUpdateResult = DynamicData &  {
   succeededVmConfigFile?: KeyValue[];
   failedVmConfigFile?: VVolVmConfigFileUpdateResultFailedVmConfigFileInfo[];
 }
-export interface VVolVmConfigFileUpdateResultFailedVmConfigFileInfo extends DynamicData {
+export type VVolVmConfigFileUpdateResultFailedVmConfigFileInfo = DynamicData &  {
   targetConfigVVolId: string;
   dsPath?: string;
   fault: MethodFault;
 }
-export interface VASAStorageArray extends DynamicData {
+export type VASAStorageArray = DynamicData &  {
   name: string;
   uuid: string;
   vendorId: string;
   modelId: string;
 }
-export interface VimVasaProvider extends DynamicData {
+export type VimVasaProvider = DynamicData &  {
   uid?: string;
   url: string;
   name?: string;
   selfSignedCertificate?: string;
 }
-export interface VimVasaProviderStatePerArray extends DynamicData {
+export type VimVasaProviderStatePerArray = DynamicData &  {
   priority: number;
   arrayId: string;
   active: boolean;
 }
-export interface VimVasaProviderInfo extends DynamicData {
+export type VimVasaProviderInfo = DynamicData &  {
   provider: VimVasaProvider;
   arrayState?: VimVasaProviderStatePerArray[];
 }
-export interface VsanUpgradeSystemAPIBrokenIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemAPIBrokenIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   hosts: HostSystem[];
 }
-export interface VsanUpgradeSystemAutoClaimEnabledOnHostsIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemAutoClaimEnabledOnHostsIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   hosts: HostSystem[];
 }
-export interface VsanUpgradeSystemHostsDisconnectedIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemHostsDisconnectedIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   hosts: HostSystem[];
 }
-export interface VsanUpgradeSystemMissingHostsInClusterIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemMissingHostsInClusterIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   hosts: HostSystem[];
 }
-export interface VsanUpgradeSystemNetworkPartitionInfo extends DynamicData {
+export type VsanUpgradeSystemNetworkPartitionInfo = DynamicData &  {
   hosts: HostSystem[];
 }
-export interface VsanUpgradeSystemNetworkPartitionIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemNetworkPartitionIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   partitions: VsanUpgradeSystemNetworkPartitionInfo[];
 }
-export interface VsanUpgradeSystemNotEnoughFreeCapacityIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemNotEnoughFreeCapacityIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   reducedRedundancyUpgradePossible: boolean;
 }
-export interface VsanUpgradeSystemPreflightCheckIssue extends DynamicData {
+export type VsanUpgradeSystemPreflightCheckIssue = DynamicData &  {
   msg: string;
 }
-export interface VsanUpgradeSystemPreflightCheckResult extends DynamicData {
+export type VsanUpgradeSystemPreflightCheckResult = DynamicData &  {
   issues?: VsanUpgradeSystemPreflightCheckIssue[];
   diskMappingToRestore?: VsanHostDiskMapping;
 }
-export interface VsanUpgradeSystemRogueHostsInClusterIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemRogueHostsInClusterIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   uuids: string[];
 }
-export interface VsanUpgradeSystemUpgradeHistoryDiskGroupOp extends VsanUpgradeSystemUpgradeHistoryItem {
+export type VsanUpgradeSystemUpgradeHistoryDiskGroupOp = VsanUpgradeSystemUpgradeHistoryItem &  {
   operation: string;
   diskMapping: VsanHostDiskMapping;
 }
-export interface VsanUpgradeSystemUpgradeHistoryItem extends DynamicData {
+export type VsanUpgradeSystemUpgradeHistoryItem = DynamicData &  {
   timestamp: Date;
   host?: HostSystem;
   message: string;
   task?: Task;
 }
-export interface VsanUpgradeSystemUpgradeHistoryPreflightFail extends VsanUpgradeSystemUpgradeHistoryItem {
+export type VsanUpgradeSystemUpgradeHistoryPreflightFail = VsanUpgradeSystemUpgradeHistoryItem &  {
   preflightResult: VsanUpgradeSystemPreflightCheckResult;
 }
-export interface VsanUpgradeSystemUpgradeStatus extends DynamicData {
+export type VsanUpgradeSystemUpgradeStatus = DynamicData &  {
   inProgress: boolean;
   history?: VsanUpgradeSystemUpgradeHistoryItem[];
   aborted?: boolean;
   completed?: boolean;
   progress?: number;
 }
-export interface VsanUpgradeSystemV2ObjectsPresentDuringDowngradeIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemV2ObjectsPresentDuringDowngradeIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   uuids: string[];
 }
-export interface VsanUpgradeSystemWrongEsxVersionIssue extends VsanUpgradeSystemPreflightCheckIssue {
+export type VsanUpgradeSystemWrongEsxVersionIssue = VsanUpgradeSystemPreflightCheckIssue &  {
   hosts: HostSystem[];
 }
-export interface Action extends DynamicData {
+export type Action = DynamicData &  {
   
 }
-export interface CreateTaskAction extends Action {
+export type CreateTaskAction = Action &  {
   taskTypeId: string;
   cancelable: boolean;
 }
-export interface MethodAction extends Action {
+export type MethodAction = Action &  {
   name: string;
   argument?: MethodActionArgument[];
 }
-export interface MethodActionArgument extends DynamicData {
+export type MethodActionArgument = DynamicData &  {
   value?: any;
 }
-export interface RunScriptAction extends Action {
+export type RunScriptAction = Action &  {
   script: string;
 }
-export interface SendEmailAction extends Action {
+export type SendEmailAction = Action &  {
   toList: string;
   ccList: string;
   subject: string;
   body: string;
 }
-export interface SendSNMPAction extends Action {
+export type SendSNMPAction = Action &  {
   
 }
-export interface AlarmAction extends DynamicData {
+export type AlarmAction = DynamicData &  {
   
 }
-export interface AlarmDescription extends DynamicData {
+export type AlarmDescription = DynamicData &  {
   expr: TypeDescription[];
   stateOperator: ElementDescription[];
   metricOperator: ElementDescription[];
@@ -1317,14 +1317,14 @@ export interface AlarmDescription extends DynamicData {
   entityStatus: ElementDescription[];
   action: TypeDescription[];
 }
-export interface AlarmExpression extends DynamicData {
+export type AlarmExpression = DynamicData &  {
   
 }
-export interface AlarmSetting extends DynamicData {
+export type AlarmSetting = DynamicData &  {
   toleranceRange: number;
   reportingFrequency: number;
 }
-export interface AlarmSpec extends DynamicData {
+export type AlarmSpec = DynamicData &  {
   name: string;
   systemName?: string;
   description: string;
@@ -1334,13 +1334,13 @@ export interface AlarmSpec extends DynamicData {
   actionFrequency?: number;
   setting?: AlarmSetting;
 }
-export interface AndAlarmExpression extends AlarmExpression {
+export type AndAlarmExpression = AlarmExpression &  {
   expression: AlarmExpression[];
 }
-export interface GroupAlarmAction extends AlarmAction {
+export type GroupAlarmAction = AlarmAction &  {
   action: AlarmAction[];
 }
-export interface MetricAlarmExpression extends AlarmExpression {
+export type MetricAlarmExpression = AlarmExpression &  {
   operator: MetricAlarmOperator;
   type: string;
   metric: PerfMetricId;
@@ -1349,71 +1349,71 @@ export interface MetricAlarmExpression extends AlarmExpression {
   red?: number;
   redInterval?: number;
 }
-export interface OrAlarmExpression extends AlarmExpression {
+export type OrAlarmExpression = AlarmExpression &  {
   expression: AlarmExpression[];
 }
-export interface StateAlarmExpression extends AlarmExpression {
+export type StateAlarmExpression = AlarmExpression &  {
   operator: StateAlarmOperator;
   type: string;
   statePath: string;
   yellow?: string;
   red?: string;
 }
-export interface ClusterAction extends DynamicData {
+export type ClusterAction = DynamicData &  {
   type: string;
   target?: ManagedObject;
 }
-export interface ClusterActionHistory extends DynamicData {
+export type ClusterActionHistory = DynamicData &  {
   action: ClusterAction;
   time: Date;
 }
-export interface ClusterAttemptedVmInfo extends DynamicData {
+export type ClusterAttemptedVmInfo = DynamicData &  {
   vm: VirtualMachine;
   task?: Task;
 }
-export interface ClusterConfigInfo extends DynamicData {
+export type ClusterConfigInfo = DynamicData &  {
   dasConfig: ClusterDasConfigInfo;
   dasVmConfig?: ClusterDasVmConfigInfo[];
   drsConfig: ClusterDrsConfigInfo;
   drsVmConfig?: ClusterDrsVmConfigInfo[];
   rule?: ClusterRuleInfo[];
 }
-export interface ClusterConfigSpec extends DynamicData {
+export type ClusterConfigSpec = DynamicData &  {
   dasConfig?: ClusterDasConfigInfo;
   dasVmConfigSpec?: ClusterDasVmConfigSpec[];
   drsConfig?: ClusterDrsConfigInfo;
   drsVmConfigSpec?: ClusterDrsVmConfigSpec[];
   rulesSpec?: ClusterRuleSpec[];
 }
-export interface ClusterCryptoConfigInfo extends DynamicData {
+export type ClusterCryptoConfigInfo = DynamicData &  {
   cryptoMode?: string;
 }
-export interface ClusterDasAamNodeState extends DynamicData {
+export type ClusterDasAamNodeState = DynamicData &  {
   host: HostSystem;
   name: string;
   configState: string;
   runtimeState: string;
 }
-export interface ClusterDasAdmissionControlInfo extends DynamicData {
+export type ClusterDasAdmissionControlInfo = DynamicData &  {
   
 }
-export interface ClusterDasAdmissionControlPolicy extends DynamicData {
+export type ClusterDasAdmissionControlPolicy = DynamicData &  {
   resourceReductionToToleratePercent?: number;
 }
-export interface ClusterDasAdvancedRuntimeInfo extends DynamicData {
+export type ClusterDasAdvancedRuntimeInfo = DynamicData &  {
   dasHostInfo?: ClusterDasHostInfo;
   vmcpSupported?: ClusterDasAdvancedRuntimeInfoVmcpCapabilityInfo;
   heartbeatDatastoreInfo?: DasHeartbeatDatastoreInfo[];
 }
-export interface DasHeartbeatDatastoreInfo extends DynamicData {
+export type DasHeartbeatDatastoreInfo = DynamicData &  {
   datastore: Datastore;
   hosts: HostSystem[];
 }
-export interface ClusterDasAdvancedRuntimeInfoVmcpCapabilityInfo extends DynamicData {
+export type ClusterDasAdvancedRuntimeInfoVmcpCapabilityInfo = DynamicData &  {
   storageAPDSupported: boolean;
   storagePDLSupported: boolean;
 }
-export interface ClusterDasConfigInfo extends DynamicData {
+export type ClusterDasConfigInfo = DynamicData &  {
   enabled?: boolean;
   vmMonitoring?: string;
   hostMonitoring?: string;
@@ -1426,15 +1426,15 @@ export interface ClusterDasConfigInfo extends DynamicData {
   heartbeatDatastore?: Datastore[];
   hBDatastoreCandidatePolicy?: string;
 }
-export interface ClusterDasData extends DynamicData {
+export type ClusterDasData = DynamicData &  {
   
 }
-export interface ClusterDasDataSummary extends ClusterDasData {
+export type ClusterDasDataSummary = ClusterDasData &  {
   hostListVersion: number;
   clusterConfigVersion: number;
   compatListVersion: number;
 }
-export interface ClusterDasFailoverLevelAdvancedRuntimeInfo extends ClusterDasAdvancedRuntimeInfo {
+export type ClusterDasFailoverLevelAdvancedRuntimeInfo = ClusterDasAdvancedRuntimeInfo &  {
   slotInfo: ClusterDasFailoverLevelAdvancedRuntimeInfoSlotInfo;
   totalSlots: number;
   usedSlots: number;
@@ -1445,55 +1445,55 @@ export interface ClusterDasFailoverLevelAdvancedRuntimeInfo extends ClusterDasAd
   hostSlots?: ClusterDasFailoverLevelAdvancedRuntimeInfoHostSlots[];
   vmsRequiringMultipleSlots?: ClusterDasFailoverLevelAdvancedRuntimeInfoVmSlots[];
 }
-export interface ClusterDasFailoverLevelAdvancedRuntimeInfoHostSlots extends DynamicData {
+export type ClusterDasFailoverLevelAdvancedRuntimeInfoHostSlots = DynamicData &  {
   host: HostSystem;
   slots: number;
 }
-export interface ClusterDasFailoverLevelAdvancedRuntimeInfoSlotInfo extends DynamicData {
+export type ClusterDasFailoverLevelAdvancedRuntimeInfoSlotInfo = DynamicData &  {
   numVcpus: number;
   cpuMHz: number;
   memoryMB: number;
 }
-export interface ClusterDasFailoverLevelAdvancedRuntimeInfoVmSlots extends DynamicData {
+export type ClusterDasFailoverLevelAdvancedRuntimeInfoVmSlots = DynamicData &  {
   vm: VirtualMachine;
   slots: number;
 }
-export interface ClusterDasFdmHostState extends DynamicData {
+export type ClusterDasFdmHostState = DynamicData &  {
   state: string;
   stateReporter?: HostSystem;
 }
-export interface ClusterDasHostInfo extends DynamicData {
+export type ClusterDasHostInfo = DynamicData &  {
   
 }
-export interface ClusterDasHostRecommendation extends DynamicData {
+export type ClusterDasHostRecommendation = DynamicData &  {
   host: HostSystem;
   drsRating?: number;
 }
-export interface ClusterDasVmConfigInfo extends DynamicData {
+export type ClusterDasVmConfigInfo = DynamicData &  {
   key: VirtualMachine;
   restartPriority?: DasVmPriority;
   powerOffOnIsolation?: boolean;
   dasSettings?: ClusterDasVmSettings;
 }
-export interface ClusterDasVmSettings extends DynamicData {
+export type ClusterDasVmSettings = DynamicData &  {
   restartPriority?: string;
   restartPriorityTimeout?: number;
   isolationResponse?: string;
   vmToolsMonitoringSettings?: ClusterVmToolsMonitoringSettings;
   vmComponentProtectionSettings?: ClusterVmComponentProtectionSettings;
 }
-export interface ClusterDpmConfigInfo extends DynamicData {
+export type ClusterDpmConfigInfo = DynamicData &  {
   enabled?: boolean;
   defaultDpmBehavior?: DpmBehavior;
   hostPowerActionRate?: number;
   option?: OptionValue[];
 }
-export interface ClusterDpmHostConfigInfo extends DynamicData {
+export type ClusterDpmHostConfigInfo = DynamicData &  {
   key: HostSystem;
   enabled?: boolean;
   behavior?: DpmBehavior;
 }
-export interface ClusterDrsConfigInfo extends DynamicData {
+export type ClusterDrsConfigInfo = DynamicData &  {
   enabled?: boolean;
   enableVmBehaviorOverrides?: boolean;
   defaultVmBehavior?: DrsBehavior;
@@ -1501,18 +1501,18 @@ export interface ClusterDrsConfigInfo extends DynamicData {
   scaleDescendantsShares?: string;
   option?: OptionValue[];
 }
-export interface ClusterDrsFaults extends DynamicData {
+export type ClusterDrsFaults = DynamicData &  {
   reason: string;
   faultsByVm: ClusterDrsFaultsFaultsByVm[];
 }
-export interface ClusterDrsFaultsFaultsByVirtualDisk extends ClusterDrsFaultsFaultsByVm {
+export type ClusterDrsFaultsFaultsByVirtualDisk = ClusterDrsFaultsFaultsByVm &  {
   disk?: VirtualDiskId;
 }
-export interface ClusterDrsFaultsFaultsByVm extends DynamicData {
+export type ClusterDrsFaultsFaultsByVm = DynamicData &  {
   vm?: VirtualMachine;
   fault: MethodFault[];
 }
-export interface ClusterDrsMigration extends DynamicData {
+export type ClusterDrsMigration = DynamicData &  {
   key: string;
   time: Date;
   vm: VirtualMachine;
@@ -1525,24 +1525,24 @@ export interface ClusterDrsMigration extends DynamicData {
   destinationCpuLoad?: number;
   destinationMemoryLoad?: number;
 }
-export interface ClusterDrsRecommendation extends DynamicData {
+export type ClusterDrsRecommendation = DynamicData &  {
   key: string;
   rating: number;
   reason: string;
   reasonText: string;
   migrationList: ClusterDrsMigration[];
 }
-export interface ClusterDrsVmConfigInfo extends DynamicData {
+export type ClusterDrsVmConfigInfo = DynamicData &  {
   key: VirtualMachine;
   enabled?: boolean;
   behavior?: DrsBehavior;
 }
-export interface ClusterEVCManagerCheckResult extends DynamicData {
+export type ClusterEVCManagerCheckResult = DynamicData &  {
   evcModeKey: string;
   error: MethodFault;
   host?: HostSystem[];
 }
-export interface ClusterEVCManagerEVCState extends DynamicData {
+export type ClusterEVCManagerEVCState = DynamicData &  {
   supportedEVCMode: EVCMode[];
   currentEVCModeKey?: string;
   guaranteedCPUFeatures?: HostCpuIdInfo[];
@@ -1550,91 +1550,91 @@ export interface ClusterEVCManagerEVCState extends DynamicData {
   featureMask?: HostFeatureMask[];
   featureRequirement?: VirtualMachineFeatureRequirement[];
 }
-export interface ClusterEnterMaintenanceResult extends DynamicData {
+export type ClusterEnterMaintenanceResult = DynamicData &  {
   recommendations?: ClusterRecommendation[];
   fault?: ClusterDrsFaults;
 }
-export interface ClusterFailoverHostAdmissionControlPolicy extends ClusterDasAdmissionControlPolicy {
+export type ClusterFailoverHostAdmissionControlPolicy = ClusterDasAdmissionControlPolicy &  {
   failoverHosts?: HostSystem[];
   failoverLevel?: number;
 }
-export interface ClusterFailoverLevelAdmissionControlInfo extends ClusterDasAdmissionControlInfo {
+export type ClusterFailoverLevelAdmissionControlInfo = ClusterDasAdmissionControlInfo &  {
   currentFailoverLevel: number;
 }
-export interface ClusterFailoverLevelAdmissionControlPolicy extends ClusterDasAdmissionControlPolicy {
+export type ClusterFailoverLevelAdmissionControlPolicy = ClusterDasAdmissionControlPolicy &  {
   failoverLevel: number;
   slotPolicy?: ClusterSlotPolicy;
 }
-export interface ClusterFailoverResourcesAdmissionControlInfo extends ClusterDasAdmissionControlInfo {
+export type ClusterFailoverResourcesAdmissionControlInfo = ClusterDasAdmissionControlInfo &  {
   currentCpuFailoverResourcesPercent: number;
   currentMemoryFailoverResourcesPercent: number;
 }
-export interface ClusterFailoverResourcesAdmissionControlPolicy extends ClusterDasAdmissionControlPolicy {
+export type ClusterFailoverResourcesAdmissionControlPolicy = ClusterDasAdmissionControlPolicy &  {
   cpuFailoverResourcesPercent: number;
   memoryFailoverResourcesPercent: number;
   failoverLevel?: number;
   autoComputePercentages?: boolean;
 }
-export interface ClusterGroupInfo extends DynamicData {
+export type ClusterGroupInfo = DynamicData &  {
   name: string;
   userCreated?: boolean;
   uniqueID?: string;
 }
-export interface ClusterHostGroup extends ClusterGroupInfo {
+export type ClusterHostGroup = ClusterGroupInfo &  {
   host?: HostSystem[];
 }
-export interface ClusterHostInfraUpdateHaModeAction extends ClusterAction {
+export type ClusterHostInfraUpdateHaModeAction = ClusterAction &  {
   operationType: string;
 }
-export interface ClusterHostPowerAction extends ClusterAction {
+export type ClusterHostPowerAction = ClusterAction &  {
   operationType: HostPowerOperationType;
   powerConsumptionWatt?: number;
   cpuCapacityMHz?: number;
   memCapacityMB?: number;
 }
-export interface ClusterHostRecommendation extends DynamicData {
+export type ClusterHostRecommendation = DynamicData &  {
   host: HostSystem;
   rating: number;
 }
-export interface ClusterInfraUpdateHaConfigInfo extends DynamicData {
+export type ClusterInfraUpdateHaConfigInfo = DynamicData &  {
   enabled?: boolean;
   behavior?: string;
   moderateRemediation?: string;
   severeRemediation?: string;
   providers?: string[];
 }
-export interface ClusterInitialPlacementAction extends ClusterAction {
+export type ClusterInitialPlacementAction = ClusterAction &  {
   targetHost: HostSystem;
   pool?: ResourcePool;
 }
-export interface ClusterMigrationAction extends ClusterAction {
+export type ClusterMigrationAction = ClusterAction &  {
   drsMigration?: ClusterDrsMigration;
 }
-export interface ClusterNotAttemptedVmInfo extends DynamicData {
+export type ClusterNotAttemptedVmInfo = DynamicData &  {
   vm: VirtualMachine;
   fault: MethodFault;
 }
-export interface ClusterOrchestrationInfo extends DynamicData {
+export type ClusterOrchestrationInfo = DynamicData &  {
   defaultVmReadiness?: ClusterVmReadiness;
 }
-export interface PlacementAction extends ClusterAction {
+export type PlacementAction = ClusterAction &  {
   vm?: VirtualMachine;
   targetHost?: HostSystem;
   relocateSpec?: VirtualMachineRelocateSpec;
 }
-export interface PlacementResult extends DynamicData {
+export type PlacementResult = DynamicData &  {
   recommendations?: ClusterRecommendation[];
   drsFault?: ClusterDrsFaults;
 }
-export interface ClusterPowerOnVmResult extends DynamicData {
+export type ClusterPowerOnVmResult = DynamicData &  {
   attempted?: ClusterAttemptedVmInfo[];
   notAttempted?: ClusterNotAttemptedVmInfo[];
   recommendations?: ClusterRecommendation[];
 }
-export interface ClusterProactiveDrsConfigInfo extends DynamicData {
+export type ClusterProactiveDrsConfigInfo = DynamicData &  {
   enabled?: boolean;
 }
-export interface ClusterRecommendation extends DynamicData {
+export type ClusterRecommendation = DynamicData &  {
   key: string;
   type: string;
   time: Date;
@@ -1647,7 +1647,7 @@ export interface ClusterRecommendation extends DynamicData {
   action?: ClusterAction[];
   target?: ManagedObject;
 }
-export interface ClusterResourceUsageSummary extends DynamicData {
+export type ClusterResourceUsageSummary = DynamicData &  {
   cpuUsedMHz: number;
   cpuCapacityMHz: number;
   memUsedMB: number;
@@ -1657,10 +1657,10 @@ export interface ClusterResourceUsageSummary extends DynamicData {
   storageUsedMB: number;
   storageCapacityMB: number;
 }
-export interface ClusterSlotPolicy extends DynamicData {
+export type ClusterSlotPolicy = DynamicData &  {
   
 }
-export interface ClusterUsageSummary extends DynamicData {
+export type ClusterUsageSummary = DynamicData &  {
   totalCpuCapacityMhz: number;
   totalMemCapacityMB: number;
   cpuReservationMhz: number;
@@ -1675,25 +1675,25 @@ export interface ClusterUsageSummary extends DynamicData {
   poweredOffVmCount: number;
   totalVmCount: number;
 }
-export interface ClusterVmComponentProtectionSettings extends DynamicData {
+export type ClusterVmComponentProtectionSettings = DynamicData &  {
   vmStorageProtectionForAPD?: string;
   enableAPDTimeoutForHosts?: boolean;
   vmTerminateDelayForAPDSec?: number;
   vmReactionOnAPDCleared?: string;
   vmStorageProtectionForPDL?: string;
 }
-export interface ClusterVmGroup extends ClusterGroupInfo {
+export type ClusterVmGroup = ClusterGroupInfo &  {
   vm?: VirtualMachine[];
 }
-export interface ClusterVmOrchestrationInfo extends DynamicData {
+export type ClusterVmOrchestrationInfo = DynamicData &  {
   vm: VirtualMachine;
   vmReadiness: ClusterVmReadiness;
 }
-export interface ClusterVmReadiness extends DynamicData {
+export type ClusterVmReadiness = DynamicData &  {
   readyCondition?: string;
   postReadyDelay?: number;
 }
-export interface ClusterVmToolsMonitoringSettings extends DynamicData {
+export type ClusterVmToolsMonitoringSettings = DynamicData &  {
   enabled?: boolean;
   vmMonitoring?: string;
   clusterSettings?: boolean;
@@ -1702,7 +1702,7 @@ export interface ClusterVmToolsMonitoringSettings extends DynamicData {
   maxFailures?: number;
   maxFailureWindow?: number;
 }
-export interface DistributedVirtualPort extends DynamicData {
+export type DistributedVirtualPort = DynamicData &  {
   key: string;
   config: DVPortConfigInfo;
   dvsUuid: string;
@@ -1718,14 +1718,14 @@ export interface DistributedVirtualPort extends DynamicData {
   externalId?: string;
   segmentPortId?: string;
 }
-export interface DVPortConfigInfo extends DynamicData {
+export type DVPortConfigInfo = DynamicData &  {
   name?: string;
   scope?: ManagedEntity[];
   description?: string;
   setting?: DVPortSetting;
   configVersion: string;
 }
-export interface DVPortConfigSpec extends DynamicData {
+export type DVPortConfigSpec = DynamicData &  {
   operation: string;
   key?: string;
   name?: string;
@@ -1734,29 +1734,29 @@ export interface DVPortConfigSpec extends DynamicData {
   setting?: DVPortSetting;
   configVersion?: string;
 }
-export interface DvsFilterConfig extends InheritablePolicy {
+export type DvsFilterConfig = InheritablePolicy &  {
   key?: string;
   agentName?: string;
   slotNumber?: string;
   parameters?: DvsFilterParameter;
   onFailure?: string;
 }
-export interface DvsFilterConfigSpec extends DvsFilterConfig {
+export type DvsFilterConfigSpec = DvsFilterConfig &  {
   operation: string;
 }
-export interface DvsFilterParameter extends DynamicData {
+export type DvsFilterParameter = DynamicData &  {
   parameters?: string[];
 }
-export interface DvsFilterPolicy extends InheritablePolicy {
+export type DvsFilterPolicy = InheritablePolicy &  {
   filterConfig?: DvsFilterConfig[];
 }
-export interface DVSHostLocalPortInfo extends DynamicData {
+export type DVSHostLocalPortInfo = DynamicData &  {
   switchUuid: string;
   portKey: string;
   setting: DVPortSetting;
   vnic: string;
 }
-export interface DVPortStatus extends DynamicData {
+export type DVPortStatus = DynamicData &  {
   linkUp: boolean;
   blocked: boolean;
   vlanIds?: NumericRange[];
@@ -1770,7 +1770,7 @@ export interface DVPortStatus extends DynamicData {
   vmDirectPathGen2InactiveReasonOther?: string[];
   vmDirectPathGen2InactiveReasonExtended?: string;
 }
-export interface DVPortSetting extends DynamicData {
+export type DVPortSetting = DynamicData &  {
   blocked?: BoolPolicy;
   vmDirectPathGen2Allowed?: BoolPolicy;
   inShapingPolicy?: DVSTrafficShapingPolicy;
@@ -1779,27 +1779,27 @@ export interface DVPortSetting extends DynamicData {
   networkResourcePoolKey?: StringPolicy;
   filterPolicy?: DvsFilterPolicy;
 }
-export interface DVPortState extends DynamicData {
+export type DVPortState = DynamicData &  {
   runtimeInfo?: DVPortStatus;
   stats: DistributedVirtualSwitchPortStatistics;
   vendorSpecificState?: DistributedVirtualSwitchKeyedOpaqueBlob[];
 }
-export interface DvsTrafficFilterConfig extends DvsFilterConfig {
+export type DvsTrafficFilterConfig = DvsFilterConfig &  {
   trafficRuleset?: DvsTrafficRuleset;
 }
-export interface DvsTrafficFilterConfigSpec extends DvsTrafficFilterConfig {
+export type DvsTrafficFilterConfigSpec = DvsTrafficFilterConfig &  {
   operation: string;
 }
-export interface DVSTrafficShapingPolicy extends InheritablePolicy {
+export type DVSTrafficShapingPolicy = InheritablePolicy &  {
   enabled?: BoolPolicy;
   averageBandwidth?: LongPolicy;
   peakBandwidth?: LongPolicy;
   burstSize?: LongPolicy;
 }
-export interface DVSVendorSpecificConfig extends InheritablePolicy {
+export type DVSVendorSpecificConfig = InheritablePolicy &  {
   keyValue?: DistributedVirtualSwitchKeyedOpaqueBlob[];
 }
-export interface DistributedVirtualPortgroupInfo extends DynamicData {
+export type DistributedVirtualPortgroupInfo = DynamicData &  {
   switchName: string;
   switchUuid: string;
   portgroupName: string;
@@ -1812,23 +1812,23 @@ export interface DistributedVirtualPortgroupInfo extends DynamicData {
   logicalSwitchUuid?: string;
   segmentId?: string;
 }
-export interface DVPortgroupSelection extends SelectionSet {
+export type DVPortgroupSelection = SelectionSet &  {
   dvsUuid: string;
   portgroupKey: string[];
 }
-export interface DistributedVirtualSwitchInfo extends DynamicData {
+export type DistributedVirtualSwitchInfo = DynamicData &  {
   switchName: string;
   switchUuid: string;
   distributedVirtualSwitch: DistributedVirtualSwitch;
   networkReservationSupported?: boolean;
 }
-export interface DVSSelection extends SelectionSet {
+export type DVSSelection = SelectionSet &  {
   dvsUuid: string;
 }
-export interface EntityBackup extends DynamicData {
+export type EntityBackup = DynamicData &  {
   
 }
-export interface EntityBackupConfig extends DynamicData {
+export type EntityBackupConfig = DynamicData &  {
   entityType: string;
   configBlob: Buffer;
   key?: string;
@@ -1836,7 +1836,7 @@ export interface EntityBackupConfig extends DynamicData {
   container?: ManagedEntity;
   configVersion?: string;
 }
-export interface DistributedVirtualSwitchHostMember extends DynamicData {
+export type DistributedVirtualSwitchHostMember = DynamicData &  {
   runtimeState?: DistributedVirtualSwitchHostMemberRuntimeState;
   config: DistributedVirtualSwitchHostMemberConfigInfo;
   productInfo?: DistributedVirtualSwitchProductSpec;
@@ -1844,10 +1844,10 @@ export interface DistributedVirtualSwitchHostMember extends DynamicData {
   status: string;
   statusDetail?: string;
 }
-export interface DistributedVirtualSwitchHostMemberBacking extends DynamicData {
+export type DistributedVirtualSwitchHostMemberBacking = DynamicData &  {
   
 }
-export interface DistributedVirtualSwitchHostMemberConfigInfo extends DynamicData {
+export type DistributedVirtualSwitchHostMemberConfigInfo = DynamicData &  {
   host?: HostSystem;
   maxProxySwitchPorts: number;
   vendorSpecificConfig?: DistributedVirtualSwitchKeyedOpaqueBlob[];
@@ -1858,26 +1858,26 @@ export interface DistributedVirtualSwitchHostMemberConfigInfo extends DynamicDat
   transportZones?: DistributedVirtualSwitchHostMemberTransportZoneInfo[];
   nsxtUsedUplinkNames?: string[];
 }
-export interface DistributedVirtualSwitchHostMemberConfigSpec extends DynamicData {
+export type DistributedVirtualSwitchHostMemberConfigSpec = DynamicData &  {
   operation: string;
   host: HostSystem;
   backing?: DistributedVirtualSwitchHostMemberBacking;
   maxProxySwitchPorts?: number;
   vendorSpecificConfig?: DistributedVirtualSwitchKeyedOpaqueBlob[];
 }
-export interface HostMemberHealthCheckResult extends DynamicData {
+export type HostMemberHealthCheckResult = DynamicData &  {
   summary?: string;
 }
-export interface DistributedVirtualSwitchHostMemberPnicBacking extends DistributedVirtualSwitchHostMemberBacking {
+export type DistributedVirtualSwitchHostMemberPnicBacking = DistributedVirtualSwitchHostMemberBacking &  {
   pnicSpec?: DistributedVirtualSwitchHostMemberPnicSpec[];
 }
-export interface DistributedVirtualSwitchHostMemberPnicSpec extends DynamicData {
+export type DistributedVirtualSwitchHostMemberPnicSpec = DynamicData &  {
   pnicDevice: string;
   uplinkPortKey?: string;
   uplinkPortgroupKey?: string;
   connectionCookie?: number;
 }
-export interface HostMemberRuntimeInfo extends DynamicData {
+export type HostMemberRuntimeInfo = DynamicData &  {
   host: HostSystem;
   status?: string;
   statusDetail?: string;
@@ -1885,56 +1885,56 @@ export interface HostMemberRuntimeInfo extends DynamicData {
   nsxtStatusDetail?: string;
   healthCheckResult?: HostMemberHealthCheckResult[];
 }
-export interface DistributedVirtualSwitchHostMemberRuntimeState extends DynamicData {
+export type DistributedVirtualSwitchHostMemberRuntimeState = DynamicData &  {
   currentMaxProxySwitchPorts: number;
 }
-export interface DistributedVirtualSwitchHostMemberTransportZoneInfo extends DynamicData {
+export type DistributedVirtualSwitchHostMemberTransportZoneInfo = DynamicData &  {
   uuid: string;
   type: string;
 }
-export interface HostMemberUplinkHealthCheckResult extends HostMemberHealthCheckResult {
+export type HostMemberUplinkHealthCheckResult = HostMemberHealthCheckResult &  {
   uplinkPortKey: string;
 }
-export interface DistributedVirtualSwitchHostProductSpec extends DynamicData {
+export type DistributedVirtualSwitchHostProductSpec = DynamicData &  {
   productLineId?: string;
   version?: string;
 }
-export interface DistributedVirtualSwitchKeyedOpaqueBlob extends DynamicData {
+export type DistributedVirtualSwitchKeyedOpaqueBlob = DynamicData &  {
   key: string;
   opaqueData: string;
 }
-export interface DVSNetworkResourcePool extends DynamicData {
+export type DVSNetworkResourcePool = DynamicData &  {
   key: string;
   name?: string;
   description?: string;
   configVersion: string;
   allocationInfo: DVSNetworkResourcePoolAllocationInfo;
 }
-export interface DVSNetworkResourcePoolAllocationInfo extends DynamicData {
+export type DVSNetworkResourcePoolAllocationInfo = DynamicData &  {
   limit?: number;
   shares?: SharesInfo;
   priorityTag?: number;
 }
-export interface DVSNetworkResourcePoolConfigSpec extends DynamicData {
+export type DVSNetworkResourcePoolConfigSpec = DynamicData &  {
   key: string;
   configVersion?: string;
   allocationInfo?: DVSNetworkResourcePoolAllocationInfo;
   name?: string;
   description?: string;
 }
-export interface DistributedVirtualSwitchPortConnectee extends DynamicData {
+export type DistributedVirtualSwitchPortConnectee = DynamicData &  {
   connectedEntity?: ManagedEntity;
   nicKey?: string;
   type?: string;
   addressHint?: string;
 }
-export interface DistributedVirtualSwitchPortConnection extends DynamicData {
+export type DistributedVirtualSwitchPortConnection = DynamicData &  {
   switchUuid: string;
   portgroupKey?: string;
   portKey?: string;
   connectionCookie?: number;
 }
-export interface DistributedVirtualSwitchPortCriteria extends DynamicData {
+export type DistributedVirtualSwitchPortCriteria = DynamicData &  {
   connected?: boolean;
   active?: boolean;
   uplinkPort?: boolean;
@@ -1945,7 +1945,7 @@ export interface DistributedVirtualSwitchPortCriteria extends DynamicData {
   portKey?: string[];
   host?: HostSystem[];
 }
-export interface DistributedVirtualSwitchPortStatistics extends DynamicData {
+export type DistributedVirtualSwitchPortStatistics = DynamicData &  {
   packetsInMulticast: number;
   packetsOutMulticast: number;
   bytesInMulticast: number;
@@ -1965,7 +1965,7 @@ export interface DistributedVirtualSwitchPortStatistics extends DynamicData {
   bytesInFromPnic?: number;
   bytesOutToPnic?: number;
 }
-export interface DistributedVirtualSwitchProductSpec extends DynamicData {
+export type DistributedVirtualSwitchProductSpec = DynamicData &  {
   name?: string;
   vendor?: string;
   version?: string;
@@ -1974,7 +1974,7 @@ export interface DistributedVirtualSwitchProductSpec extends DynamicData {
   bundleId?: string;
   bundleUrl?: string;
 }
-export interface DvsTrafficRule extends DynamicData {
+export type DvsTrafficRule = DynamicData &  {
   key?: string;
   description?: string;
   sequence?: number;
@@ -1982,29 +1982,29 @@ export interface DvsTrafficRule extends DynamicData {
   action?: DvsNetworkRuleAction;
   direction?: string;
 }
-export interface DvsAcceptNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsAcceptNetworkRuleAction = DvsNetworkRuleAction &  {
   
 }
-export interface DvsNetworkRuleAction extends DynamicData {
+export type DvsNetworkRuleAction = DynamicData &  {
   
 }
-export interface DvsCopyNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsCopyNetworkRuleAction = DvsNetworkRuleAction &  {
   
 }
-export interface DvsDropNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsDropNetworkRuleAction = DvsNetworkRuleAction &  {
   
 }
-export interface DvsGreEncapNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsGreEncapNetworkRuleAction = DvsNetworkRuleAction &  {
   encapsulationIp: SingleIp;
 }
-export interface DvsIpPort extends NegatableExpression {
+export type DvsIpPort = NegatableExpression &  {
   
 }
-export interface DvsIpPortRange extends DvsIpPort {
+export type DvsIpPortRange = DvsIpPort &  {
   startPortNumber: number;
   endPortNumber: number;
 }
-export interface DvsIpNetworkRuleQualifier extends DvsNetworkRuleQualifier {
+export type DvsIpNetworkRuleQualifier = DvsNetworkRuleQualifier &  {
   sourceAddress?: IpAddress;
   destinationAddress?: IpAddress;
   protocol?: IntExpression;
@@ -2012,51 +2012,51 @@ export interface DvsIpNetworkRuleQualifier extends DvsNetworkRuleQualifier {
   destinationIpPort?: DvsIpPort;
   tcpFlags?: IntExpression;
 }
-export interface DvsLogNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsLogNetworkRuleAction = DvsNetworkRuleAction &  {
   
 }
-export interface DvsMacNetworkRuleQualifier extends DvsNetworkRuleQualifier {
+export type DvsMacNetworkRuleQualifier = DvsNetworkRuleQualifier &  {
   sourceAddress?: MacAddress;
   destinationAddress?: MacAddress;
   protocol?: IntExpression;
   vlanId?: IntExpression;
 }
-export interface DvsMacRewriteNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsMacRewriteNetworkRuleAction = DvsNetworkRuleAction &  {
   rewriteMac: string;
 }
-export interface DvsPuntNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsPuntNetworkRuleAction = DvsNetworkRuleAction &  {
   
 }
-export interface DvsNetworkRuleQualifier extends DynamicData {
+export type DvsNetworkRuleQualifier = DynamicData &  {
   key?: string;
 }
-export interface DvsRateLimitNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsRateLimitNetworkRuleAction = DvsNetworkRuleAction &  {
   packetsPerSecond: number;
 }
-export interface DvsSingleIpPort extends DvsIpPort {
+export type DvsSingleIpPort = DvsIpPort &  {
   portNumber: number;
 }
-export interface DvsSystemTrafficNetworkRuleQualifier extends DvsNetworkRuleQualifier {
+export type DvsSystemTrafficNetworkRuleQualifier = DvsNetworkRuleQualifier &  {
   typeOfSystemTraffic?: StringExpression;
 }
-export interface DvsUpdateTagNetworkRuleAction extends DvsNetworkRuleAction {
+export type DvsUpdateTagNetworkRuleAction = DvsNetworkRuleAction &  {
   qosTag?: number;
   dscpTag?: number;
 }
-export interface DvsTrafficRuleset extends DynamicData {
+export type DvsTrafficRuleset = DynamicData &  {
   key?: string;
   enabled?: boolean;
   precedence?: number;
   rules?: DvsTrafficRule[];
 }
-export interface DVSVmVnicNetworkResourcePool extends DynamicData {
+export type DVSVmVnicNetworkResourcePool = DynamicData &  {
   key: string;
   name?: string;
   description?: string;
   configVersion: string;
   allocationInfo?: DvsVmVnicResourceAllocation;
 }
-export interface DvsVmVnicResourcePoolConfigSpec extends DynamicData {
+export type DvsVmVnicResourcePoolConfigSpec = DynamicData &  {
   operation: string;
   key?: string;
   configVersion?: string;
@@ -2064,10 +2064,10 @@ export interface DvsVmVnicResourcePoolConfigSpec extends DynamicData {
   name?: string;
   description?: string;
 }
-export interface DvsVmVnicResourceAllocation extends DynamicData {
+export type DvsVmVnicResourceAllocation = DynamicData &  {
   reservationQuota?: number;
 }
-export interface DvsVmVnicNetworkResourcePoolRuntimeInfo extends DynamicData {
+export type DvsVmVnicNetworkResourcePoolRuntimeInfo = DynamicData &  {
   key: string;
   name?: string;
   capacity?: number;
@@ -2076,58 +2076,58 @@ export interface DvsVmVnicNetworkResourcePoolRuntimeInfo extends DynamicData {
   status: string;
   allocatedResource?: DvsVnicAllocatedResource[];
 }
-export interface DvsVnicAllocatedResource extends DynamicData {
+export type DvsVnicAllocatedResource = DynamicData &  {
   vm: VirtualMachine;
   vnicKey: string;
   reservation?: number;
 }
-export interface CryptoKeyId extends DynamicData {
+export type CryptoKeyId = DynamicData &  {
   keyId: string;
   providerId?: KeyProviderId;
 }
-export interface CryptoKeyPlain extends DynamicData {
+export type CryptoKeyPlain = DynamicData &  {
   keyId: CryptoKeyId;
   algorithm: string;
   keyData: string;
 }
-export interface CryptoKeyResult extends DynamicData {
+export type CryptoKeyResult = DynamicData &  {
   keyId: CryptoKeyId;
   success: boolean;
   reason?: string;
   fault?: MethodFault;
 }
-export interface CryptoSpec extends DynamicData {
+export type CryptoSpec = DynamicData &  {
   
 }
-export interface CryptoSpecDecrypt extends CryptoSpec {
+export type CryptoSpecDecrypt = CryptoSpec &  {
   
 }
-export interface CryptoSpecDeepRecrypt extends CryptoSpec {
+export type CryptoSpecDeepRecrypt = CryptoSpec &  {
   newKeyId: CryptoKeyId;
 }
-export interface CryptoSpecEncrypt extends CryptoSpec {
+export type CryptoSpecEncrypt = CryptoSpec &  {
   cryptoKeyId: CryptoKeyId;
 }
-export interface CryptoSpecNoOp extends CryptoSpec {
+export type CryptoSpecNoOp = CryptoSpec &  {
   
 }
-export interface CryptoSpecRegister extends CryptoSpecNoOp {
+export type CryptoSpecRegister = CryptoSpecNoOp &  {
   cryptoKeyId: CryptoKeyId;
 }
-export interface CryptoSpecShallowRecrypt extends CryptoSpec {
+export type CryptoSpecShallowRecrypt = CryptoSpec &  {
   newKeyId: CryptoKeyId;
 }
-export interface KeyProviderId extends DynamicData {
+export type KeyProviderId = DynamicData &  {
   id: string;
 }
-export interface KmipClusterInfo extends DynamicData {
+export type KmipClusterInfo = DynamicData &  {
   clusterId: KeyProviderId;
   servers?: KmipServerInfo[];
   useAsDefault: boolean;
   managementType?: string;
   useAsEntityDefault?: ManagedEntity[];
 }
-export interface KmipServerInfo extends DynamicData {
+export type KmipServerInfo = DynamicData &  {
   name: string;
   address: string;
   port: number;
@@ -2139,21 +2139,21 @@ export interface KmipServerInfo extends DynamicData {
   timeout?: number;
   userName?: string;
 }
-export interface KmipServerSpec extends DynamicData {
+export type KmipServerSpec = DynamicData &  {
   clusterId: KeyProviderId;
   info: KmipServerInfo;
   password?: string;
 }
-export interface ChangesInfoEventArgument extends DynamicData {
+export type ChangesInfoEventArgument = DynamicData &  {
   modified?: string;
   added?: string;
   deleted?: string;
 }
-export interface DvsOutOfSyncHostArgument extends DynamicData {
+export type DvsOutOfSyncHostArgument = DynamicData &  {
   outOfSyncHost: HostEventArgument;
   configParamters: string[];
 }
-export interface Event extends DynamicData {
+export type Event = DynamicData &  {
   key: number;
   chainId: number;
   createdTime: Date;
@@ -2168,20 +2168,20 @@ export interface Event extends DynamicData {
   fullFormattedMessage?: string;
   changeTag?: string;
 }
-export interface EventArgument extends DynamicData {
+export type EventArgument = DynamicData &  {
   
 }
-export interface EventDescription extends DynamicData {
+export type EventDescription = DynamicData &  {
   category: ElementDescription[];
   eventInfo: EventDescriptionEventDetail[];
   enumeratedTypes?: EnumDescription[];
 }
-export interface EventArgDesc extends DynamicData {
+export type EventArgDesc = DynamicData &  {
   name: string;
   type: string;
   description?: ElementDescription;
 }
-export interface EventDescriptionEventDetail extends DynamicData {
+export type EventDescriptionEventDetail = DynamicData &  {
   key: string;
   description?: string;
   category: string;
@@ -2192,7 +2192,7 @@ export interface EventDescriptionEventDetail extends DynamicData {
   fullFormat: string;
   longDescription?: string;
 }
-export interface EventEx extends Event {
+export type EventEx = Event &  {
   eventTypeId: string;
   severity?: string;
   message?: string;
@@ -2202,7 +2202,7 @@ export interface EventEx extends Event {
   objectName?: string;
   fault?: MethodFault;
 }
-export interface EventFilterSpec extends DynamicData {
+export type EventFilterSpec = DynamicData &  {
   entity?: EventFilterSpecByEntity;
   time?: EventFilterSpecByTime;
   userName?: EventFilterSpecByUsername;
@@ -2216,811 +2216,811 @@ export interface EventFilterSpec extends DynamicData {
   eventTypeId?: string[];
   maxCount?: number;
 }
-export interface EventFilterSpecByEntity extends DynamicData {
+export type EventFilterSpecByEntity = DynamicData &  {
   entity: ManagedEntity;
   recursion: EventFilterSpecRecursionOption;
 }
-export interface EventFilterSpecByTime extends DynamicData {
+export type EventFilterSpecByTime = DynamicData &  {
   beginTime?: Date;
   endTime?: Date;
 }
-export interface EventFilterSpecByUsername extends DynamicData {
+export type EventFilterSpecByUsername = DynamicData &  {
   systemUser: boolean;
   userList?: string[];
 }
-export interface GeneralEvent extends Event {
+export type GeneralEvent = Event &  {
   message: string;
 }
-export interface GeneralHostErrorEvent extends GeneralEvent {
+export type GeneralHostErrorEvent = GeneralEvent &  {
   
 }
-export interface GeneralHostInfoEvent extends GeneralEvent {
+export type GeneralHostInfoEvent = GeneralEvent &  {
   
 }
-export interface GeneralHostWarningEvent extends GeneralEvent {
+export type GeneralHostWarningEvent = GeneralEvent &  {
   
 }
-export interface GeneralUserEvent extends GeneralEvent {
+export type GeneralUserEvent = GeneralEvent &  {
   entity?: ManagedEntityEventArgument;
 }
-export interface GeneralVmErrorEvent extends GeneralEvent {
+export type GeneralVmErrorEvent = GeneralEvent &  {
   
 }
-export interface GeneralVmInfoEvent extends GeneralEvent {
+export type GeneralVmInfoEvent = GeneralEvent &  {
   
 }
-export interface GeneralVmWarningEvent extends GeneralEvent {
+export type GeneralVmWarningEvent = GeneralEvent &  {
   
 }
-export interface HealthStatusChangedEvent extends Event {
+export type HealthStatusChangedEvent = Event &  {
   componentId: string;
   oldStatus: string;
   newStatus: string;
   componentName: string;
   serviceId?: string;
 }
-export interface HostEvent extends Event {
+export type HostEvent = Event &  {
   
 }
-export interface HostGetShortNameFailedEvent extends HostEvent {
+export type HostGetShortNameFailedEvent = HostEvent &  {
   
 }
-export interface HostInAuditModeEvent extends HostEvent {
+export type HostInAuditModeEvent = HostEvent &  {
   
 }
-export interface HostInventoryUnreadableEvent extends Event {
+export type HostInventoryUnreadableEvent = Event &  {
   
 }
-export interface HostIpChangedEvent extends HostEvent {
+export type HostIpChangedEvent = HostEvent &  {
   oldIP: string;
   newIP: string;
 }
-export interface HostIpInconsistentEvent extends HostEvent {
+export type HostIpInconsistentEvent = HostEvent &  {
   ipAddress: string;
   ipAddress2: string;
 }
-export interface HostIpToShortNameFailedEvent extends HostEvent {
+export type HostIpToShortNameFailedEvent = HostEvent &  {
   
 }
-export interface HostNonCompliantEvent extends HostEvent {
+export type HostNonCompliantEvent = HostEvent &  {
   
 }
-export interface HostProfileAppliedEvent extends HostEvent {
+export type HostProfileAppliedEvent = HostEvent &  {
   profile: ProfileEventArgument;
 }
-export interface HostReconnectionFailedEvent extends HostEvent {
+export type HostReconnectionFailedEvent = HostEvent &  {
   
 }
-export interface HostRemovedEvent extends HostEvent {
+export type HostRemovedEvent = HostEvent &  {
   
 }
-export interface HostShortNameToIpFailedEvent extends HostEvent {
+export type HostShortNameToIpFailedEvent = HostEvent &  {
   shortName: string;
 }
-export interface HostShutdownEvent extends HostEvent {
+export type HostShutdownEvent = HostEvent &  {
   reason: string;
 }
-export interface HostSpecificationChangedEvent extends HostEvent {
+export type HostSpecificationChangedEvent = HostEvent &  {
   
 }
-export interface HostSpecificationRequireEvent extends HostEvent {
+export type HostSpecificationRequireEvent = HostEvent &  {
   
 }
-export interface HostSpecificationUpdateEvent extends HostEvent {
+export type HostSpecificationUpdateEvent = HostEvent &  {
   hostSpec: HostSpecification;
 }
-export interface HostSubSpecificationDeleteEvent extends HostEvent {
+export type HostSubSpecificationDeleteEvent = HostEvent &  {
   subSpecName: string;
 }
-export interface HostSubSpecificationUpdateEvent extends HostEvent {
+export type HostSubSpecificationUpdateEvent = HostEvent &  {
   hostSubSpec: HostSubSpecification;
 }
-export interface HostSyncFailedEvent extends HostEvent {
+export type HostSyncFailedEvent = HostEvent &  {
   reason: MethodFault;
 }
-export interface HostUpgradeFailedEvent extends HostEvent {
+export type HostUpgradeFailedEvent = HostEvent &  {
   
 }
-export interface HostUserWorldSwapNotEnabledEvent extends HostEvent {
+export type HostUserWorldSwapNotEnabledEvent = HostEvent &  {
   
 }
-export interface HostVnicConnectedToCustomizedDVPortEvent extends HostEvent {
+export type HostVnicConnectedToCustomizedDVPortEvent = HostEvent &  {
   vnic: VnicPortArgument;
   prevPortKey?: string;
 }
-export interface HostWwnChangedEvent extends HostEvent {
+export type HostWwnChangedEvent = HostEvent &  {
   oldNodeWwns?: number[];
   oldPortWwns?: number[];
   newNodeWwns?: number[];
   newPortWwns?: number[];
 }
-export interface HostWwnConflictEvent extends HostEvent {
+export type HostWwnConflictEvent = HostEvent &  {
   conflictedVms?: VmEventArgument[];
   conflictedHosts?: HostEventArgument[];
   wwn: number;
 }
-export interface LicenseEvent extends Event {
+export type LicenseEvent = Event &  {
   
 }
-export interface LicenseExpiredEvent extends Event {
+export type LicenseExpiredEvent = Event &  {
   feature: LicenseFeatureInfo;
 }
-export interface LicenseNonComplianceEvent extends LicenseEvent {
+export type LicenseNonComplianceEvent = LicenseEvent &  {
   url: string;
 }
-export interface LicenseRestrictedEvent extends LicenseEvent {
+export type LicenseRestrictedEvent = LicenseEvent &  {
   
 }
-export interface LicenseServerAvailableEvent extends LicenseEvent {
+export type LicenseServerAvailableEvent = LicenseEvent &  {
   licenseServer: string;
 }
-export interface LicenseServerUnavailableEvent extends LicenseEvent {
+export type LicenseServerUnavailableEvent = LicenseEvent &  {
   licenseServer: string;
 }
-export interface LocalDatastoreCreatedEvent extends HostEvent {
+export type LocalDatastoreCreatedEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
   datastoreUrl?: string;
 }
-export interface LocalTSMEnabledEvent extends HostEvent {
+export type LocalTSMEnabledEvent = HostEvent &  {
   
 }
-export interface LockerMisconfiguredEvent extends Event {
+export type LockerMisconfiguredEvent = Event &  {
   datastore: DatastoreEventArgument;
 }
-export interface LockerReconfiguredEvent extends Event {
+export type LockerReconfiguredEvent = Event &  {
   oldDatastore?: DatastoreEventArgument;
   newDatastore?: DatastoreEventArgument;
 }
-export interface NASDatastoreCreatedEvent extends HostEvent {
+export type NASDatastoreCreatedEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
   datastoreUrl?: string;
 }
-export interface NetworkRollbackEvent extends Event {
+export type NetworkRollbackEvent = Event &  {
   methodName: string;
   transactionId: string;
 }
-export interface NoDatastoresConfiguredEvent extends HostEvent {
+export type NoDatastoresConfiguredEvent = HostEvent &  {
   
 }
-export interface NoLicenseEvent extends LicenseEvent {
+export type NoLicenseEvent = LicenseEvent &  {
   feature: LicenseFeatureInfo;
 }
-export interface ProfileEvent extends Event {
+export type ProfileEvent = Event &  {
   profile: ProfileEventArgument;
 }
-export interface ProfileEventArgument extends EventArgument {
+export type ProfileEventArgument = EventArgument &  {
   profile: Profile;
   name: string;
 }
-export interface ProfileReferenceHostChangedEvent extends ProfileEvent {
+export type ProfileReferenceHostChangedEvent = ProfileEvent &  {
   referenceHost?: HostSystem;
   referenceHostName?: string;
   prevReferenceHostName?: string;
 }
-export interface ProfileRemovedEvent extends ProfileEvent {
+export type ProfileRemovedEvent = ProfileEvent &  {
   
 }
-export interface RemoteTSMEnabledEvent extends HostEvent {
+export type RemoteTSMEnabledEvent = HostEvent &  {
   
 }
-export interface ResourcePoolEvent extends Event {
+export type ResourcePoolEvent = Event &  {
   resourcePool: ResourcePoolEventArgument;
 }
-export interface ResourcePoolMovedEvent extends ResourcePoolEvent {
+export type ResourcePoolMovedEvent = ResourcePoolEvent &  {
   oldParent: ResourcePoolEventArgument;
   newParent: ResourcePoolEventArgument;
 }
-export interface ResourcePoolReconfiguredEvent extends ResourcePoolEvent {
+export type ResourcePoolReconfiguredEvent = ResourcePoolEvent &  {
   configChanges?: ChangesInfoEventArgument;
 }
-export interface ResourceViolatedEvent extends ResourcePoolEvent {
+export type ResourceViolatedEvent = ResourcePoolEvent &  {
   
 }
-export interface RoleEventArgument extends EventArgument {
+export type RoleEventArgument = EventArgument &  {
   roleId: number;
   name: string;
 }
-export interface ScheduledTaskEvent extends Event {
+export type ScheduledTaskEvent = Event &  {
   scheduledTask: ScheduledTaskEventArgument;
   entity: ManagedEntityEventArgument;
 }
-export interface ScheduledTaskFailedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskFailedEvent = ScheduledTaskEvent &  {
   reason: MethodFault;
 }
-export interface ScheduledTaskReconfiguredEvent extends ScheduledTaskEvent {
+export type ScheduledTaskReconfiguredEvent = ScheduledTaskEvent &  {
   configChanges?: ChangesInfoEventArgument;
 }
-export interface ScheduledTaskRemovedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskRemovedEvent = ScheduledTaskEvent &  {
   
 }
-export interface ScheduledTaskStartedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskStartedEvent = ScheduledTaskEvent &  {
   
 }
-export interface ServerLicenseExpiredEvent extends LicenseEvent {
+export type ServerLicenseExpiredEvent = LicenseEvent &  {
   product: string;
 }
-export interface SessionEvent extends Event {
+export type SessionEvent = Event &  {
   
 }
-export interface SessionTerminatedEvent extends SessionEvent {
+export type SessionTerminatedEvent = SessionEvent &  {
   sessionId: string;
   terminatedUsername: string;
 }
-export interface TaskEvent extends Event {
+export type TaskEvent = Event &  {
   info: TaskInfo;
 }
-export interface TaskTimeoutEvent extends TaskEvent {
+export type TaskTimeoutEvent = TaskEvent &  {
   
 }
-export interface TemplateUpgradeEvent extends Event {
+export type TemplateUpgradeEvent = Event &  {
   legacyTemplate: string;
 }
-export interface TemplateUpgradeFailedEvent extends TemplateUpgradeEvent {
+export type TemplateUpgradeFailedEvent = TemplateUpgradeEvent &  {
   reason: MethodFault;
 }
-export interface TemplateUpgradedEvent extends TemplateUpgradeEvent {
+export type TemplateUpgradedEvent = TemplateUpgradeEvent &  {
   
 }
-export interface TimedOutHostOperationEvent extends HostEvent {
+export type TimedOutHostOperationEvent = HostEvent &  {
   
 }
-export interface UnlicensedVirtualMachinesEvent extends LicenseEvent {
+export type UnlicensedVirtualMachinesEvent = LicenseEvent &  {
   unlicensed: number;
   available: number;
 }
-export interface UnlicensedVirtualMachinesFoundEvent extends LicenseEvent {
+export type UnlicensedVirtualMachinesFoundEvent = LicenseEvent &  {
   available: number;
 }
-export interface UpdatedAgentBeingRestartedEvent extends HostEvent {
+export type UpdatedAgentBeingRestartedEvent = HostEvent &  {
   
 }
-export interface UpgradeEvent extends Event {
+export type UpgradeEvent = Event &  {
   message: string;
 }
-export interface UserAssignedToGroup extends HostEvent {
+export type UserAssignedToGroup = HostEvent &  {
   userLogin: string;
   group: string;
 }
-export interface UserLoginSessionEvent extends SessionEvent {
+export type UserLoginSessionEvent = SessionEvent &  {
   ipAddress: string;
   userAgent?: string;
   locale: string;
   sessionId: string;
 }
-export interface UserLogoutSessionEvent extends SessionEvent {
+export type UserLogoutSessionEvent = SessionEvent &  {
   ipAddress?: string;
   userAgent?: string;
   callCount?: number;
   sessionId?: string;
   loginTime?: Date;
 }
-export interface UserPasswordChanged extends HostEvent {
+export type UserPasswordChanged = HostEvent &  {
   userLogin: string;
 }
-export interface UserUnassignedFromGroup extends HostEvent {
+export type UserUnassignedFromGroup = HostEvent &  {
   userLogin: string;
   group: string;
 }
-export interface UserUpgradeEvent extends UpgradeEvent {
+export type UserUpgradeEvent = UpgradeEvent &  {
   
 }
-export interface VMFSDatastoreCreatedEvent extends HostEvent {
+export type VMFSDatastoreCreatedEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
   datastoreUrl?: string;
 }
-export interface VMFSDatastoreExpandedEvent extends HostEvent {
+export type VMFSDatastoreExpandedEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
 }
-export interface VMFSDatastoreExtendedEvent extends HostEvent {
+export type VMFSDatastoreExtendedEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
 }
-export interface VMotionLicenseExpiredEvent extends LicenseEvent {
+export type VMotionLicenseExpiredEvent = LicenseEvent &  {
   
 }
-export interface VcAgentUninstallFailedEvent extends HostEvent {
+export type VcAgentUninstallFailedEvent = HostEvent &  {
   reason?: string;
 }
-export interface VcAgentUninstalledEvent extends HostEvent {
+export type VcAgentUninstalledEvent = HostEvent &  {
   
 }
-export interface VcAgentUpgradeFailedEvent extends HostEvent {
+export type VcAgentUpgradeFailedEvent = HostEvent &  {
   reason?: string;
 }
-export interface VcAgentUpgradedEvent extends HostEvent {
+export type VcAgentUpgradedEvent = HostEvent &  {
   
 }
-export interface VimAccountPasswordChangedEvent extends HostEvent {
+export type VimAccountPasswordChangedEvent = HostEvent &  {
   
 }
-export interface VmEvent extends Event {
+export type VmEvent = Event &  {
   template: boolean;
 }
-export interface VmFailedMigrateEvent extends VmEvent {
+export type VmFailedMigrateEvent = VmEvent &  {
   destHost: HostEventArgument;
   reason: MethodFault;
   destDatacenter?: DatacenterEventArgument;
   destDatastore?: DatastoreEventArgument;
 }
-export interface VmFailedRelayoutEvent extends VmEvent {
+export type VmFailedRelayoutEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedRelayoutOnVmfs2DatastoreEvent extends VmEvent {
+export type VmFailedRelayoutOnVmfs2DatastoreEvent = VmEvent &  {
   
 }
-export interface VmFailedStartingSecondaryEvent extends VmEvent {
+export type VmFailedStartingSecondaryEvent = VmEvent &  {
   reason?: string;
 }
-export interface VmFailedToPowerOffEvent extends VmEvent {
+export type VmFailedToPowerOffEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToPowerOnEvent extends VmEvent {
+export type VmFailedToPowerOnEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToRebootGuestEvent extends VmEvent {
+export type VmFailedToRebootGuestEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToResetEvent extends VmEvent {
+export type VmFailedToResetEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToShutdownGuestEvent extends VmEvent {
+export type VmFailedToShutdownGuestEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToStandbyGuestEvent extends VmEvent {
+export type VmFailedToStandbyGuestEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedToSuspendEvent extends VmEvent {
+export type VmFailedToSuspendEvent = VmEvent &  {
   reason: MethodFault;
 }
-export interface VmFailedUpdatingSecondaryConfig extends VmEvent {
+export type VmFailedUpdatingSecondaryConfig = VmEvent &  {
   
 }
-export interface VmFailoverFailed extends VmEvent {
+export type VmFailoverFailed = VmEvent &  {
   reason?: MethodFault;
 }
-export interface VmFaultToleranceTurnedOffEvent extends VmEvent {
+export type VmFaultToleranceTurnedOffEvent = VmEvent &  {
   
 }
-export interface VmFaultToleranceVmTerminatedEvent extends VmEvent {
+export type VmFaultToleranceVmTerminatedEvent = VmEvent &  {
   reason?: string;
 }
-export interface VmGuestOSCrashedEvent extends VmEvent {
+export type VmGuestOSCrashedEvent = VmEvent &  {
   
 }
-export interface VmGuestRebootEvent extends VmEvent {
+export type VmGuestRebootEvent = VmEvent &  {
   
 }
-export interface VmGuestShutdownEvent extends VmEvent {
+export type VmGuestShutdownEvent = VmEvent &  {
   
 }
-export interface VmGuestStandbyEvent extends VmEvent {
+export type VmGuestStandbyEvent = VmEvent &  {
   
 }
-export interface VmInstanceUuidAssignedEvent extends VmEvent {
+export type VmInstanceUuidAssignedEvent = VmEvent &  {
   instanceUuid: string;
 }
-export interface VmInstanceUuidChangedEvent extends VmEvent {
+export type VmInstanceUuidChangedEvent = VmEvent &  {
   oldInstanceUuid: string;
   newInstanceUuid: string;
 }
-export interface VmInstanceUuidConflictEvent extends VmEvent {
+export type VmInstanceUuidConflictEvent = VmEvent &  {
   conflictedVm: VmEventArgument;
   instanceUuid: string;
 }
-export interface VmMacAssignedEvent extends VmEvent {
+export type VmMacAssignedEvent = VmEvent &  {
   adapter: string;
   mac: string;
 }
-export interface VmMacChangedEvent extends VmEvent {
+export type VmMacChangedEvent = VmEvent &  {
   adapter: string;
   oldMac: string;
   newMac: string;
 }
-export interface VmMacConflictEvent extends VmEvent {
+export type VmMacConflictEvent = VmEvent &  {
   conflictedVm: VmEventArgument;
   mac: string;
 }
-export interface VmMaxFTRestartCountReached extends VmEvent {
+export type VmMaxFTRestartCountReached = VmEvent &  {
   
 }
-export interface VmMaxRestartCountReached extends VmEvent {
+export type VmMaxRestartCountReached = VmEvent &  {
   
 }
-export interface VmMessageErrorEvent extends VmEvent {
+export type VmMessageErrorEvent = VmEvent &  {
   message: string;
   messageInfo?: VirtualMachineMessage[];
 }
-export interface VmMessageEvent extends VmEvent {
+export type VmMessageEvent = VmEvent &  {
   message: string;
   messageInfo?: VirtualMachineMessage[];
 }
-export interface VmMessageWarningEvent extends VmEvent {
+export type VmMessageWarningEvent = VmEvent &  {
   message: string;
   messageInfo?: VirtualMachineMessage[];
 }
-export interface VmMigratedEvent extends VmEvent {
+export type VmMigratedEvent = VmEvent &  {
   sourceHost: HostEventArgument;
   sourceDatacenter?: DatacenterEventArgument;
   sourceDatastore?: DatastoreEventArgument;
 }
-export interface VmNoCompatibleHostForSecondaryEvent extends VmEvent {
+export type VmNoCompatibleHostForSecondaryEvent = VmEvent &  {
   
 }
-export interface VmNoNetworkAccessEvent extends VmEvent {
+export type VmNoNetworkAccessEvent = VmEvent &  {
   destHost: HostEventArgument;
 }
-export interface VmOrphanedEvent extends VmEvent {
+export type VmOrphanedEvent = VmEvent &  {
   
 }
-export interface VmPoweredOffEvent extends VmEvent {
+export type VmPoweredOffEvent = VmEvent &  {
   
 }
-export interface VmPoweredOnEvent extends VmEvent {
+export type VmPoweredOnEvent = VmEvent &  {
   
 }
-export interface VmPoweringOnWithCustomizedDVPortEvent extends VmEvent {
+export type VmPoweringOnWithCustomizedDVPortEvent = VmEvent &  {
   vnic: VnicPortArgument[];
 }
-export interface VmPrimaryFailoverEvent extends VmEvent {
+export type VmPrimaryFailoverEvent = VmEvent &  {
   reason?: string;
 }
-export interface VmReconfiguredEvent extends VmEvent {
+export type VmReconfiguredEvent = VmEvent &  {
   configSpec: VirtualMachineConfigSpec;
   configChanges?: ChangesInfoEventArgument;
 }
-export interface VmRegisteredEvent extends VmEvent {
+export type VmRegisteredEvent = VmEvent &  {
   
 }
-export interface VmRelayoutSuccessfulEvent extends VmEvent {
+export type VmRelayoutSuccessfulEvent = VmEvent &  {
   
 }
-export interface VmRelayoutUpToDateEvent extends VmEvent {
+export type VmRelayoutUpToDateEvent = VmEvent &  {
   
 }
-export interface VmReloadFromPathEvent extends VmEvent {
+export type VmReloadFromPathEvent = VmEvent &  {
   configPath: string;
 }
-export interface VmReloadFromPathFailedEvent extends VmEvent {
+export type VmReloadFromPathFailedEvent = VmEvent &  {
   configPath: string;
 }
-export interface VmRelocateSpecEvent extends VmEvent {
+export type VmRelocateSpecEvent = VmEvent &  {
   
 }
-export interface VmRelocatedEvent extends VmRelocateSpecEvent {
+export type VmRelocatedEvent = VmRelocateSpecEvent &  {
   sourceHost: HostEventArgument;
   sourceDatacenter?: DatacenterEventArgument;
   sourceDatastore?: DatastoreEventArgument;
 }
-export interface VmRemoteConsoleConnectedEvent extends VmEvent {
+export type VmRemoteConsoleConnectedEvent = VmEvent &  {
   
 }
-export interface VmRemoteConsoleDisconnectedEvent extends VmEvent {
+export type VmRemoteConsoleDisconnectedEvent = VmEvent &  {
   
 }
-export interface VmRemovedEvent extends VmEvent {
+export type VmRemovedEvent = VmEvent &  {
   
 }
-export interface VmRenamedEvent extends VmEvent {
+export type VmRenamedEvent = VmEvent &  {
   oldName: string;
   newName: string;
 }
-export interface VmRequirementsExceedCurrentEVCModeEvent extends VmEvent {
+export type VmRequirementsExceedCurrentEVCModeEvent = VmEvent &  {
   
 }
-export interface VmResettingEvent extends VmEvent {
+export type VmResettingEvent = VmEvent &  {
   
 }
-export interface VmResourcePoolMovedEvent extends VmEvent {
+export type VmResourcePoolMovedEvent = VmEvent &  {
   oldParent: ResourcePoolEventArgument;
   newParent: ResourcePoolEventArgument;
 }
-export interface VmResourceReallocatedEvent extends VmEvent {
+export type VmResourceReallocatedEvent = VmEvent &  {
   configChanges?: ChangesInfoEventArgument;
 }
-export interface VmRestartedOnAlternateHostEvent extends VmPoweredOnEvent {
+export type VmRestartedOnAlternateHostEvent = VmPoweredOnEvent &  {
   sourceHost: HostEventArgument;
 }
-export interface VmResumingEvent extends VmEvent {
+export type VmResumingEvent = VmEvent &  {
   
 }
-export interface VmSecondaryAddedEvent extends VmEvent {
+export type VmSecondaryAddedEvent = VmEvent &  {
   
 }
-export interface VmSecondaryDisabledBySystemEvent extends VmEvent {
+export type VmSecondaryDisabledBySystemEvent = VmEvent &  {
   reason?: MethodFault;
 }
-export interface VmSecondaryDisabledEvent extends VmEvent {
+export type VmSecondaryDisabledEvent = VmEvent &  {
   
 }
-export interface VmSecondaryEnabledEvent extends VmEvent {
+export type VmSecondaryEnabledEvent = VmEvent &  {
   
 }
-export interface VmSecondaryStartedEvent extends VmEvent {
+export type VmSecondaryStartedEvent = VmEvent &  {
   
 }
-export interface VmShutdownOnIsolationEvent extends VmPoweredOffEvent {
+export type VmShutdownOnIsolationEvent = VmPoweredOffEvent &  {
   isolatedHost: HostEventArgument;
   shutdownResult?: string;
 }
-export interface VmStartRecordingEvent extends VmEvent {
+export type VmStartRecordingEvent = VmEvent &  {
   
 }
-export interface VmStartReplayingEvent extends VmEvent {
+export type VmStartReplayingEvent = VmEvent &  {
   
 }
-export interface VmStartingEvent extends VmEvent {
+export type VmStartingEvent = VmEvent &  {
   
 }
-export interface VmStartingSecondaryEvent extends VmEvent {
+export type VmStartingSecondaryEvent = VmEvent &  {
   
 }
-export interface VmStaticMacConflictEvent extends VmEvent {
+export type VmStaticMacConflictEvent = VmEvent &  {
   conflictedVm: VmEventArgument;
   mac: string;
 }
-export interface VmStoppingEvent extends VmEvent {
+export type VmStoppingEvent = VmEvent &  {
   
 }
-export interface VmSuspendedEvent extends VmEvent {
+export type VmSuspendedEvent = VmEvent &  {
   
 }
-export interface VmSuspendingEvent extends VmEvent {
+export type VmSuspendingEvent = VmEvent &  {
   
 }
-export interface VmTimedoutStartingSecondaryEvent extends VmEvent {
+export type VmTimedoutStartingSecondaryEvent = VmEvent &  {
   timeout?: number;
 }
-export interface VmUnsupportedStartingEvent extends VmStartingEvent {
+export type VmUnsupportedStartingEvent = VmStartingEvent &  {
   guestId: string;
 }
-export interface VmUpgradeCompleteEvent extends VmEvent {
+export type VmUpgradeCompleteEvent = VmEvent &  {
   version: string;
 }
-export interface VmUpgradeFailedEvent extends VmEvent {
+export type VmUpgradeFailedEvent = VmEvent &  {
   
 }
-export interface VmUpgradingEvent extends VmEvent {
+export type VmUpgradingEvent = VmEvent &  {
   version: string;
 }
-export interface VmUuidAssignedEvent extends VmEvent {
+export type VmUuidAssignedEvent = VmEvent &  {
   uuid: string;
 }
-export interface VmUuidChangedEvent extends VmEvent {
+export type VmUuidChangedEvent = VmEvent &  {
   oldUuid: string;
   newUuid: string;
 }
-export interface VmUuidConflictEvent extends VmEvent {
+export type VmUuidConflictEvent = VmEvent &  {
   conflictedVm: VmEventArgument;
   uuid: string;
 }
-export interface VmWwnAssignedEvent extends VmEvent {
+export type VmWwnAssignedEvent = VmEvent &  {
   nodeWwns: number[];
   portWwns: number[];
 }
-export interface VmWwnChangedEvent extends VmEvent {
+export type VmWwnChangedEvent = VmEvent &  {
   oldNodeWwns?: number[];
   oldPortWwns?: number[];
   newNodeWwns?: number[];
   newPortWwns?: number[];
 }
-export interface VmWwnConflictEvent extends VmEvent {
+export type VmWwnConflictEvent = VmEvent &  {
   conflictedVms?: VmEventArgument[];
   conflictedHosts?: HostEventArgument[];
   wwn: number;
 }
-export interface VnicPortArgument extends DynamicData {
+export type VnicPortArgument = DynamicData &  {
   vnic: string;
   port: DistributedVirtualSwitchPortConnection;
 }
-export interface WarningUpgradeEvent extends UpgradeEvent {
+export type WarningUpgradeEvent = UpgradeEvent &  {
   
 }
-export interface IScsiBootFailureEvent extends HostEvent {
+export type IScsiBootFailureEvent = HostEvent &  {
   
 }
-export interface ExtExtendedProductInfo extends DynamicData {
+export type ExtExtendedProductInfo = DynamicData &  {
   companyUrl?: string;
   productUrl?: string;
   managementUrl?: string;
   self?: ManagedEntity;
 }
-export interface ManagedByInfo extends DynamicData {
+export type ManagedByInfo = DynamicData &  {
   extensionKey: string;
   type: string;
 }
-export interface ExtManagedEntityInfo extends DynamicData {
+export type ExtManagedEntityInfo = DynamicData &  {
   type: string;
   smallIconUrl?: string;
   iconUrl?: string;
   description?: string;
 }
-export interface ExtSolutionManagerInfo extends DynamicData {
+export type ExtSolutionManagerInfo = DynamicData &  {
   tab?: ExtSolutionManagerInfoTabInfo[];
   smallIconUrl?: string;
 }
-export interface ExtSolutionManagerInfoTabInfo extends DynamicData {
+export type ExtSolutionManagerInfoTabInfo = DynamicData &  {
   label: string;
   url: string;
 }
-export interface CannotDisableDrsOnClustersWithVApps extends RuntimeFault {
+export type CannotDisableDrsOnClustersWithVApps = RuntimeFault &  {
   
 }
-export interface ConflictingDatastoreFound extends RuntimeFault {
+export type ConflictingDatastoreFound = RuntimeFault &  {
   name: string;
   url: string;
 }
-export interface DatabaseError extends RuntimeFault {
+export type DatabaseError = RuntimeFault &  {
   
 }
-export interface DisallowedChangeByService extends RuntimeFault {
+export type DisallowedChangeByService = RuntimeFault &  {
   serviceName: string;
   disallowedChange?: string;
 }
-export interface DisallowedOperationOnFailoverHost extends RuntimeFault {
+export type DisallowedOperationOnFailoverHost = RuntimeFault &  {
   host: HostSystem;
   hostname: string;
 }
-export interface ExpiredFeatureLicense extends NotEnoughLicenses {
+export type ExpiredFeatureLicense = NotEnoughLicenses &  {
   feature: string;
   count: number;
   expirationDate: Date;
 }
-export interface FailToLockFaultToleranceVMs extends RuntimeFault {
+export type FailToLockFaultToleranceVMs = RuntimeFault &  {
   vmName: string;
   vm: VirtualMachine;
   alreadyLockedVm: VirtualMachine;
 }
-export interface HostAccessRestrictedToManagementServer extends NotSupported {
+export type HostAccessRestrictedToManagementServer = NotSupported &  {
   managementServer: string;
 }
-export interface HostInventoryFull extends NotEnoughLicenses {
+export type HostInventoryFull = NotEnoughLicenses &  {
   capacity: number;
 }
-export interface InUseFeatureManipulationDisallowed extends NotEnoughLicenses {
+export type InUseFeatureManipulationDisallowed = NotEnoughLicenses &  {
   
 }
-export interface IncompatibleSetting extends InvalidArgument {
+export type IncompatibleSetting = InvalidArgument &  {
   conflictingProperty: string;
 }
-export interface IncorrectHostInformation extends NotEnoughLicenses {
+export type IncorrectHostInformation = NotEnoughLicenses &  {
   
 }
-export interface InvalidDasConfigArgument extends InvalidArgument {
+export type InvalidDasConfigArgument = InvalidArgument &  {
   entry?: string;
   clusterName?: string;
 }
-export interface InvalidDasRestartPriorityForFtVm extends InvalidArgument {
+export type InvalidDasRestartPriorityForFtVm = InvalidArgument &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface InvalidDrsBehaviorForFtVm extends InvalidArgument {
+export type InvalidDrsBehaviorForFtVm = InvalidArgument &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface InvalidEditionLicense extends NotEnoughLicenses {
+export type InvalidEditionLicense = NotEnoughLicenses &  {
   feature: string;
 }
-export interface InvalidIndexArgument extends InvalidArgument {
+export type InvalidIndexArgument = InvalidArgument &  {
   key: string;
 }
-export interface InvalidProfileReferenceHost extends RuntimeFault {
+export type InvalidProfileReferenceHost = RuntimeFault &  {
   reason?: string;
   host?: HostSystem;
   profile?: Profile;
   profileName?: string;
 }
-export interface InventoryHasStandardAloneHosts extends NotEnoughLicenses {
+export type InventoryHasStandardAloneHosts = NotEnoughLicenses &  {
   hosts: string[];
 }
-export interface LicenseAssignmentFailed extends RuntimeFault {
+export type LicenseAssignmentFailed = RuntimeFault &  {
   reason?: string;
 }
-export interface LicenseDowngradeDisallowed extends NotEnoughLicenses {
+export type LicenseDowngradeDisallowed = NotEnoughLicenses &  {
   edition: string;
   entityId: string;
   features: KeyAnyValue[];
 }
-export interface LicenseExpired extends NotEnoughLicenses {
+export type LicenseExpired = NotEnoughLicenses &  {
   licenseKey: string;
 }
-export interface LicenseKeyEntityMismatch extends NotEnoughLicenses {
+export type LicenseKeyEntityMismatch = NotEnoughLicenses &  {
   
 }
-export interface LicenseRestricted extends NotEnoughLicenses {
+export type LicenseRestricted = NotEnoughLicenses &  {
   
 }
-export interface LicenseSourceUnavailable extends NotEnoughLicenses {
+export type LicenseSourceUnavailable = NotEnoughLicenses &  {
   licenseSource: LicenseSource;
 }
-export interface MethodAlreadyDisabledFault extends RuntimeFault {
+export type MethodAlreadyDisabledFault = RuntimeFault &  {
   sourceId: string;
 }
-export interface MethodDisabled extends RuntimeFault {
+export type MethodDisabled = RuntimeFault &  {
   source?: string;
 }
-export interface NoLicenseServerConfigured extends NotEnoughLicenses {
+export type NoLicenseServerConfigured = NotEnoughLicenses &  {
   
 }
-export interface NoPermission extends SecurityError {
+export type NoPermission = SecurityError &  {
   object: ManagedObject;
   privilegeId: string;
 }
-export interface NotAuthenticated extends NoPermission {
+export type NotAuthenticated = NoPermission &  {
   
 }
-export interface OperationDisallowedOnHost extends RuntimeFault {
+export type OperationDisallowedOnHost = RuntimeFault &  {
   
 }
-export interface RestrictedByAdministrator extends RuntimeFault {
+export type RestrictedByAdministrator = RuntimeFault &  {
   details: string;
 }
-export interface RestrictedVersion extends SecurityError {
+export type RestrictedVersion = SecurityError &  {
   
 }
-export interface SolutionUserRequired extends SecurityError {
+export type SolutionUserRequired = SecurityError &  {
   
 }
-export interface ThirdPartyLicenseAssignmentFailed extends RuntimeFault {
+export type ThirdPartyLicenseAssignmentFailed = RuntimeFault &  {
   host: HostSystem;
   module: string;
   reason?: string;
 }
-export interface VAppOperationInProgress extends RuntimeFault {
+export type VAppOperationInProgress = RuntimeFault &  {
   
 }
-export interface VimFault extends MethodFault {
+export type VimFault = MethodFault &  {
   
 }
-export interface VmConfigFault extends VimFault {
+export type VmConfigFault = VimFault &  {
   
 }
-export interface VmConfigIncompatibleForFaultTolerance extends VmConfigFault {
+export type VmConfigIncompatibleForFaultTolerance = VmConfigFault &  {
   fault?: MethodFault;
 }
-export interface VmConfigIncompatibleForRecordReplay extends VmConfigFault {
+export type VmConfigIncompatibleForRecordReplay = VmConfigFault &  {
   fault?: MethodFault;
 }
-export interface VmFaultToleranceIssue extends VimFault {
+export type VmFaultToleranceIssue = VimFault &  {
   
 }
-export interface VmFaultToleranceOpIssuesList extends VmFaultToleranceIssue {
+export type VmFaultToleranceOpIssuesList = VmFaultToleranceIssue &  {
   errors?: MethodFault[];
   warnings?: MethodFault[];
 }
-export interface VmHostAffinityRuleViolation extends VmConfigFault {
+export type VmHostAffinityRuleViolation = VmConfigFault &  {
   vmName: string;
   hostName: string;
 }
-export interface VmLimitLicense extends NotEnoughLicenses {
+export type VmLimitLicense = NotEnoughLicenses &  {
   limit: number;
 }
-export interface VmMetadataManagerFault extends VimFault {
+export type VmMetadataManagerFault = VimFault &  {
   
 }
-export interface VmMonitorIncompatibleForFaultTolerance extends VimFault {
+export type VmMonitorIncompatibleForFaultTolerance = VimFault &  {
   
 }
-export interface VmToolsUpgradeFault extends VimFault {
+export type VmToolsUpgradeFault = VimFault &  {
   
 }
-export interface VmValidateMaxDevice extends VimFault {
+export type VmValidateMaxDevice = VimFault &  {
   device: string;
   max: number;
   count: number;
 }
-export interface VramLimitLicense extends NotEnoughLicenses {
+export type VramLimitLicense = NotEnoughLicenses &  {
   limit: number;
 }
-export interface VsanFault extends VimFault {
+export type VsanFault = VimFault &  {
   
 }
-export interface WipeDiskFault extends VimFault {
+export type WipeDiskFault = VimFault &  {
   
 }
-export interface HostActiveDirectory extends DynamicData {
+export type HostActiveDirectory = DynamicData &  {
   changeOperation: string;
   spec?: HostActiveDirectorySpec;
 }
-export interface HostActiveDirectorySpec extends DynamicData {
+export type HostActiveDirectorySpec = DynamicData &  {
   domainName?: string;
   userName?: string;
   password?: string;
@@ -3029,25 +3029,25 @@ export interface HostActiveDirectorySpec extends DynamicData {
   smartCardAuthenticationEnabled?: boolean;
   smartCardTrustAnchors?: string[];
 }
-export interface HostAssignableHardwareBinding extends DynamicData {
+export type HostAssignableHardwareBinding = DynamicData &  {
   instanceId: string;
   vm: VirtualMachine;
 }
-export interface HostAssignableHardwareConfig extends DynamicData {
+export type HostAssignableHardwareConfig = DynamicData &  {
   attributeOverride?: HostAssignableHardwareConfigAttributeOverride[];
 }
-export interface HostAssignableHardwareConfigAttributeOverride extends DynamicData {
+export type HostAssignableHardwareConfigAttributeOverride = DynamicData &  {
   instanceId: string;
   name: string;
   value?: any;
 }
-export interface HostAuthenticationManagerInfo extends DynamicData {
+export type HostAuthenticationManagerInfo = DynamicData &  {
   authConfig: HostAuthenticationStoreInfo[];
 }
-export interface HostAuthenticationStoreInfo extends DynamicData {
+export type HostAuthenticationStoreInfo = DynamicData &  {
   enabled: boolean;
 }
-export interface AutoStartPowerInfo extends DynamicData {
+export type AutoStartPowerInfo = DynamicData &  {
   key: VirtualMachine;
   startOrder: number;
   startDelay: number;
@@ -3056,18 +3056,18 @@ export interface AutoStartPowerInfo extends DynamicData {
   stopDelay: number;
   stopAction: string;
 }
-export interface HostAutoStartManagerConfig extends DynamicData {
+export type HostAutoStartManagerConfig = DynamicData &  {
   defaults?: AutoStartDefaults;
   powerInfo?: AutoStartPowerInfo[];
 }
-export interface AutoStartDefaults extends DynamicData {
+export type AutoStartDefaults = DynamicData &  {
   enabled?: boolean;
   startDelay?: number;
   stopDelay?: number;
   waitForHeartbeat?: boolean;
   stopAction?: string;
 }
-export interface HostBIOSInfo extends DynamicData {
+export type HostBIOSInfo = DynamicData &  {
   biosVersion?: string;
   releaseDate?: Date;
   vendor?: string;
@@ -3076,19 +3076,19 @@ export interface HostBIOSInfo extends DynamicData {
   firmwareMajorRelease?: number;
   firmwareMinorRelease?: number;
 }
-export interface HostBootDevice extends DynamicData {
+export type HostBootDevice = DynamicData &  {
   key: string;
   description: string;
 }
-export interface HostCacheConfigurationInfo extends DynamicData {
+export type HostCacheConfigurationInfo = DynamicData &  {
   key: Datastore;
   swapSize: number;
 }
-export interface HostCacheConfigurationSpec extends DynamicData {
+export type HostCacheConfigurationSpec = DynamicData &  {
   datastore: Datastore;
   swapSize: number;
 }
-export interface HostCapability extends DynamicData {
+export type HostCapability = DynamicData &  {
   recursiveResourcePoolsSupported: boolean;
   cpuMemoryResourceConfigurationSupported: boolean;
   rebootSupported: boolean;
@@ -3211,17 +3211,17 @@ export interface HostCapability extends DynamicData {
   remoteDeviceVMotionSupported?: boolean;
   maxSupportedVmMemory?: number;
 }
-export interface HostCertificateManagerCertificateInfo extends DynamicData {
+export type HostCertificateManagerCertificateInfo = DynamicData &  {
   issuer?: string;
   notBefore?: Date;
   notAfter?: Date;
   subject?: string;
   status: string;
 }
-export interface HostConfigChange extends DynamicData {
+export type HostConfigChange = DynamicData &  {
   
 }
-export interface HostConfigManager extends DynamicData {
+export type HostConfigManager = DynamicData &  {
   cpuScheduler?: HostCpuSchedulerSystem;
   datastoreSystem?: HostDatastoreSystem;
   memoryManager?: HostMemorySystem;
@@ -3262,7 +3262,7 @@ export interface HostConfigManager extends DynamicData {
   nvdimmSystem?: HostNvdimmSystem;
   assignableHardwareManager?: HostAssignableHardwareManager;
 }
-export interface HostCpuIdInfo extends DynamicData {
+export type HostCpuIdInfo = DynamicData &  {
   level: number;
   vendor?: string;
   eax?: string;
@@ -3270,13 +3270,13 @@ export interface HostCpuIdInfo extends DynamicData {
   ecx?: string;
   edx?: string;
 }
-export interface HostCpuInfo extends DynamicData {
+export type HostCpuInfo = DynamicData &  {
   numCpuPackages: number;
   numCpuCores: number;
   numCpuThreads: number;
   hz: number;
 }
-export interface HostCpuPackage extends DynamicData {
+export type HostCpuPackage = DynamicData &  {
   index: number;
   vendor: string;
   hz: number;
@@ -3285,87 +3285,87 @@ export interface HostCpuPackage extends DynamicData {
   threadId: number[];
   cpuFeature?: HostCpuIdInfo[];
 }
-export interface HostCpuPowerManagementInfo extends DynamicData {
+export type HostCpuPowerManagementInfo = DynamicData &  {
   currentPolicy?: string;
   hardwareSupport?: string;
 }
-export interface HostHyperThreadScheduleInfo extends DynamicData {
+export type HostHyperThreadScheduleInfo = DynamicData &  {
   available: boolean;
   active: boolean;
   config: boolean;
 }
-export interface FileInfo extends DynamicData {
+export type FileInfo = DynamicData &  {
   path: string;
   friendlyName?: string;
   fileSize?: number;
   modification?: Date;
   owner?: string;
 }
-export interface FileQueryFlags extends DynamicData {
+export type FileQueryFlags = DynamicData &  {
   fileType: boolean;
   fileSize: boolean;
   modification: boolean;
   fileOwner: boolean;
 }
-export interface FloppyImageFileInfo extends FileInfo {
+export type FloppyImageFileInfo = FileInfo &  {
   
 }
-export interface FloppyImageFileQuery extends FileQuery {
+export type FloppyImageFileQuery = FileQuery &  {
   
 }
-export interface FolderFileInfo extends FileInfo {
+export type FolderFileInfo = FileInfo &  {
   
 }
-export interface FolderFileQuery extends FileQuery {
+export type FolderFileQuery = FileQuery &  {
   
 }
-export interface IsoImageFileInfo extends FileInfo {
+export type IsoImageFileInfo = FileInfo &  {
   
 }
-export interface IsoImageFileQuery extends FileQuery {
+export type IsoImageFileQuery = FileQuery &  {
   
 }
-export interface FileQuery extends DynamicData {
+export type FileQuery = DynamicData &  {
   
 }
-export interface HostDatastoreBrowserSearchResults extends DynamicData {
+export type HostDatastoreBrowserSearchResults = DynamicData &  {
   datastore?: Datastore;
   folderPath?: string;
   file?: FileInfo[];
 }
-export interface HostDatastoreBrowserSearchSpec extends DynamicData {
+export type HostDatastoreBrowserSearchSpec = DynamicData &  {
   query?: FileQuery[];
   details?: FileQueryFlags;
   searchCaseInsensitive?: boolean;
   matchPattern?: string[];
   sortFoldersFirst?: boolean;
 }
-export interface TemplateConfigFileInfo extends VmConfigFileInfo {
+export type TemplateConfigFileInfo = VmConfigFileInfo &  {
   
 }
-export interface TemplateConfigFileQuery extends VmConfigFileQuery {
+export type TemplateConfigFileQuery = VmConfigFileQuery &  {
   
 }
-export interface VmConfigFileInfo extends FileInfo {
+export type VmConfigFileInfo = FileInfo &  {
   configVersion?: number;
   encryption?: VmConfigFileEncryptionInfo;
 }
-export interface VmConfigFileEncryptionInfo extends DynamicData {
+export type VmConfigFileEncryptionInfo = DynamicData &  {
   keyId?: CryptoKeyId;
 }
-export interface VmConfigFileQuery extends FileQuery {
+export type VmConfigFileQuery = FileQuery &  {
   filter?: VmConfigFileQueryFilter;
   details?: VmConfigFileQueryFlags;
 }
-export interface VmConfigFileQueryFlags extends DynamicData {
+export type VmConfigFileQueryFlags = DynamicData &  {
   configVersion: boolean;
   encryption?: boolean;
 }
-export interface VmConfigFileQueryFilter extends DynamicData {
+export type VmConfigFileQueryFilter = DynamicData &  {
   matchConfigVersion?: number[];
   encrypted?: boolean;
 }
-export interface VmDiskFileInfo extends FileInfo {
+export type VmDiskFileInfo = FileInfo &  {
   diskType?: string;
   capacityKb?: number;
   hardwareVersion?: number;
@@ -3374,14 +3374,14 @@ export interface VmDiskFileInfo extends FileInfo {
   thin?: boolean;
   encryption?: VmDiskFileEncryptionInfo;
 }
-export interface VmDiskFileEncryptionInfo extends DynamicData {
+export type VmDiskFileEncryptionInfo = DynamicData &  {
   keyId?: CryptoKeyId;
 }
-export interface VmDiskFileQuery extends FileQuery {
+export type VmDiskFileQuery = FileQuery &  {
   filter?: VmDiskFileQueryFilter;
   details?: VmDiskFileQueryFlags;
 }
-export interface VmDiskFileQueryFlags extends DynamicData {
+export type VmDiskFileQueryFlags = DynamicData &  {
   diskType: boolean;
   capacityKb: boolean;
   hardwareVersion: boolean;
@@ -3390,58 +3390,58 @@ export interface VmDiskFileQueryFlags extends DynamicData {
   thin?: boolean;
   encryption?: boolean;
 }
-export interface VmDiskFileQueryFilter extends DynamicData {
+export type VmDiskFileQueryFilter = DynamicData &  {
   diskType?: string[];
   matchHardwareVersion?: number[];
   controllerType?: string[];
   thin?: boolean;
   encrypted?: boolean;
 }
-export interface VmLogFileInfo extends FileInfo {
+export type VmLogFileInfo = FileInfo &  {
   
 }
-export interface VmLogFileQuery extends FileQuery {
+export type VmLogFileQuery = FileQuery &  {
   
 }
-export interface VmNvramFileInfo extends FileInfo {
+export type VmNvramFileInfo = FileInfo &  {
   
 }
-export interface VmNvramFileQuery extends FileQuery {
+export type VmNvramFileQuery = FileQuery &  {
   
 }
-export interface VmSnapshotFileInfo extends FileInfo {
+export type VmSnapshotFileInfo = FileInfo &  {
   
 }
-export interface VmSnapshotFileQuery extends FileQuery {
+export type VmSnapshotFileQuery = FileQuery &  {
   
 }
-export interface HostDateTimeConfig extends DynamicData {
+export type HostDateTimeConfig = DynamicData &  {
   timeZone?: string;
   ntpConfig?: HostNtpConfig;
 }
-export interface HostDateTimeSystemTimeZone extends DynamicData {
+export type HostDateTimeSystemTimeZone = DynamicData &  {
   key: string;
   name: string;
   description: string;
   gmtOffset: number;
 }
-export interface HostDeploymentInfo extends DynamicData {
+export type HostDeploymentInfo = DynamicData &  {
   bootedFromStatelessCache?: boolean;
 }
-export interface HostDevice extends DynamicData {
+export type HostDevice = DynamicData &  {
   deviceName: string;
   deviceType: string;
 }
-export interface HostDhcpService extends DynamicData {
+export type HostDhcpService = DynamicData &  {
   key: string;
   spec: HostDhcpServiceSpec;
 }
-export interface HostDhcpServiceConfig extends DynamicData {
+export type HostDhcpServiceConfig = DynamicData &  {
   changeOperation?: string;
   key: string;
   spec: HostDhcpServiceSpec;
 }
-export interface HostDhcpServiceSpec extends DynamicData {
+export type HostDhcpServiceSpec = DynamicData &  {
   virtualSwitch: string;
   defaultLeaseDuration: number;
   leaseBeginIp: string;
@@ -3451,47 +3451,47 @@ export interface HostDhcpServiceSpec extends DynamicData {
   ipSubnetAddr: string;
   ipSubnetMask: string;
 }
-export interface HostDigestInfo extends DynamicData {
+export type HostDigestInfo = DynamicData &  {
   digestMethod: string;
   digestValue: number[];
   objectName?: string;
 }
-export interface HostDirectoryStoreInfo extends HostAuthenticationStoreInfo {
+export type HostDirectoryStoreInfo = HostAuthenticationStoreInfo &  {
   
 }
-export interface HostDiskConfigurationResult extends DynamicData {
+export type HostDiskConfigurationResult = DynamicData &  {
   devicePath?: string;
   success?: boolean;
   fault?: MethodFault;
 }
-export interface HostDiskDimensions extends DynamicData {
+export type HostDiskDimensions = DynamicData &  {
   
 }
-export interface HostDiskDimensionsChs extends DynamicData {
+export type HostDiskDimensionsChs = DynamicData &  {
   cylinder: number;
   head: number;
   sector: number;
 }
-export interface HostDiskDimensionsLba extends DynamicData {
+export type HostDiskDimensionsLba = DynamicData &  {
   blockSize: number;
   block: number;
 }
-export interface HostDiskPartitionInfo extends DynamicData {
+export type HostDiskPartitionInfo = DynamicData &  {
   deviceName: string;
   spec: HostDiskPartitionSpec;
   layout: HostDiskPartitionLayout;
 }
-export interface HostDiskPartitionBlockRange extends DynamicData {
+export type HostDiskPartitionBlockRange = DynamicData &  {
   partition?: number;
   type: string;
   start: HostDiskDimensionsLba;
   end: HostDiskDimensionsLba;
 }
-export interface HostDiskPartitionLayout extends DynamicData {
+export type HostDiskPartitionLayout = DynamicData &  {
   total?: HostDiskDimensionsLba;
   partition: HostDiskPartitionBlockRange[];
 }
-export interface HostDiskPartitionAttributes extends DynamicData {
+export type HostDiskPartitionAttributes = DynamicData &  {
   partition: number;
   startSector: number;
   endSector: number;
@@ -3501,13 +3501,13 @@ export interface HostDiskPartitionAttributes extends DynamicData {
   attributes: number;
   partitionAlignment?: number;
 }
-export interface HostDiskPartitionSpec extends DynamicData {
+export type HostDiskPartitionSpec = DynamicData &  {
   partitionFormat?: string;
   chs?: HostDiskDimensionsChs;
   totalSectors?: number;
   partition?: HostDiskPartitionAttributes[];
 }
-export interface HostDnsConfig extends DynamicData {
+export type HostDnsConfig = DynamicData &  {
   dhcp: boolean;
   virtualNicDevice?: string;
   ipv6VirtualNicDevice?: string;
@@ -3516,63 +3516,63 @@ export interface HostDnsConfig extends DynamicData {
   address?: string[];
   searchDomain?: string[];
 }
-export interface HostDnsConfigSpec extends HostDnsConfig {
+export type HostDnsConfigSpec = HostDnsConfig &  {
   virtualNicConnection?: HostVirtualNicConnection;
   virtualNicConnectionV6?: HostVirtualNicConnection;
 }
-export interface HostEnterMaintenanceResult extends DynamicData {
+export type HostEnterMaintenanceResult = DynamicData &  {
   vmFaults?: FaultsByVM[];
   hostFaults?: FaultsByHost[];
 }
-export interface HostEsxAgentHostManagerConfigInfo extends DynamicData {
+export type HostEsxAgentHostManagerConfigInfo = DynamicData &  {
   agentVmDatastore?: Datastore;
   agentVmNetwork?: Network;
 }
-export interface HostFaultToleranceManagerComponentHealthInfo extends DynamicData {
+export type HostFaultToleranceManagerComponentHealthInfo = DynamicData &  {
   isStorageHealthy: boolean;
   isNetworkHealthy: boolean;
 }
-export interface FcoeConfig extends DynamicData {
+export type FcoeConfig = DynamicData &  {
   priorityClass: number;
   sourceMac: string;
   vlanRange: FcoeConfigVlanRange[];
   capabilities: FcoeConfigFcoeCapabilities;
   fcoeActive: boolean;
 }
-export interface FcoeConfigFcoeCapabilities extends DynamicData {
+export type FcoeConfigFcoeCapabilities = DynamicData &  {
   priorityClass: boolean;
   sourceMacAddress: boolean;
   vlanRange: boolean;
 }
-export interface FcoeConfigFcoeSpecification extends DynamicData {
+export type FcoeConfigFcoeSpecification = DynamicData &  {
   underlyingPnic: string;
   priorityClass?: number;
   sourceMac?: string;
   vlanRange?: FcoeConfigVlanRange[];
 }
-export interface FcoeConfigVlanRange extends DynamicData {
+export type FcoeConfigVlanRange = DynamicData &  {
   vlanLow: number;
   vlanHigh: number;
 }
-export interface HostFeatureCapability extends DynamicData {
+export type HostFeatureCapability = DynamicData &  {
   key: string;
   featureName: string;
   value: string;
 }
-export interface HostFeatureMask extends DynamicData {
+export type HostFeatureMask = DynamicData &  {
   key: string;
   featureName: string;
   value: string;
 }
-export interface HostFeatureVersionInfo extends DynamicData {
+export type HostFeatureVersionInfo = DynamicData &  {
   key: string;
   value: string;
 }
-export interface HostFileAccess extends DynamicData {
+export type HostFileAccess = DynamicData &  {
   who: string;
   what: string;
 }
-export interface ModeInfo extends DynamicData {
+export type ModeInfo = DynamicData &  {
   browse?: string;
   read: string;
   modify: string;
@@ -3580,51 +3580,51 @@ export interface ModeInfo extends DynamicData {
   admin?: string;
   full: string;
 }
-export interface HostFileSystemMountInfo extends DynamicData {
+export type HostFileSystemMountInfo = DynamicData &  {
   mountInfo: HostMountInfo;
   volume: HostFileSystemVolume;
   vStorageSupport?: string;
 }
-export interface HostFileSystemVolume extends DynamicData {
+export type HostFileSystemVolume = DynamicData &  {
   type: string;
   name: string;
   capacity: number;
 }
-export interface HostFileSystemVolumeInfo extends DynamicData {
+export type HostFileSystemVolumeInfo = DynamicData &  {
   volumeTypeList?: string[];
   mountInfo?: HostFileSystemMountInfo[];
 }
-export interface HostFirewallInfo extends DynamicData {
+export type HostFirewallInfo = DynamicData &  {
   defaultPolicy: HostFirewallDefaultPolicy;
   ruleset?: HostFirewallRuleset[];
 }
-export interface HostFirewallDefaultPolicy extends DynamicData {
+export type HostFirewallDefaultPolicy = DynamicData &  {
   incomingBlocked?: boolean;
   outgoingBlocked?: boolean;
 }
-export interface HostFlagInfo extends DynamicData {
+export type HostFlagInfo = DynamicData &  {
   backgroundSnapshotsEnabled?: boolean;
 }
-export interface HostForceMountedInfo extends DynamicData {
+export type HostForceMountedInfo = DynamicData &  {
   persist: boolean;
   mounted: boolean;
 }
-export interface HostGatewaySpec extends DynamicData {
+export type HostGatewaySpec = DynamicData &  {
   gatewayType: string;
   gatewayId?: string;
   trustVerificationToken?: string;
   hostAuthParams?: KeyValue[];
 }
-export interface HostGraphicsConfig extends DynamicData {
+export type HostGraphicsConfig = DynamicData &  {
   hostDefaultGraphicsType: string;
   sharedPassthruAssignmentPolicy: string;
   deviceType?: HostGraphicsConfigDeviceType[];
 }
-export interface HostGraphicsConfigDeviceType extends DynamicData {
+export type HostGraphicsConfigDeviceType = DynamicData &  {
   deviceId: string;
   graphicsType: string;
 }
-export interface HostGraphicsInfo extends DynamicData {
+export type HostGraphicsInfo = DynamicData &  {
   deviceName: string;
   vendorName: string;
   pciId: string;
@@ -3632,7 +3632,7 @@ export interface HostGraphicsInfo extends DynamicData {
   memorySizeInKB: number;
   vm?: VirtualMachine[];
 }
-export interface HostHardwareInfo extends DynamicData {
+export type HostHardwareInfo = DynamicData &  {
   systemInfo: HostSystemInfo;
   cpuPowerManagementInfo?: HostCpuPowerManagementInfo;
   cpuInfo: HostCpuInfo;
@@ -3648,32 +3648,32 @@ export interface HostHardwareInfo extends DynamicData {
   sgxInfo?: HostSgxInfo;
   sevInfo?: HostSevInfo;
 }
-export interface HostHardwareStatusInfo extends DynamicData {
+export type HostHardwareStatusInfo = DynamicData &  {
   memoryStatusInfo?: HostHardwareElementInfo[];
   cpuStatusInfo?: HostHardwareElementInfo[];
   storageStatusInfo?: HostStorageElementInfo[];
 }
-export interface HostHardwareElementInfo extends DynamicData {
+export type HostHardwareElementInfo = DynamicData &  {
   name: string;
   status: ElementDescription;
 }
-export interface HostStorageElementInfo extends HostHardwareElementInfo {
+export type HostStorageElementInfo = HostHardwareElementInfo &  {
   operationalInfo?: HostStorageOperationalInfo[];
 }
-export interface HostStorageOperationalInfo extends DynamicData {
+export type HostStorageOperationalInfo = DynamicData &  {
   property: string;
   value: string;
 }
-export interface HealthSystemRuntime extends DynamicData {
+export type HealthSystemRuntime = DynamicData &  {
   systemHealthInfo?: HostSystemHealthInfo;
   hardwareStatusInfo?: HostHardwareStatusInfo;
 }
-export interface HostAccessControlEntry extends DynamicData {
+export type HostAccessControlEntry = DynamicData &  {
   principal: string;
   group: boolean;
   accessMode: HostAccessMode;
 }
-export interface HostHostBusAdapter extends DynamicData {
+export type HostHostBusAdapter = DynamicData &  {
   key?: string;
   device: string;
   bus: number;
@@ -3683,7 +3683,7 @@ export interface HostHostBusAdapter extends DynamicData {
   pci?: string;
   storageProtocol?: string;
 }
-export interface HostProxySwitch extends DynamicData {
+export type HostProxySwitch = DynamicData &  {
   dvsUuid: string;
   dvsName: string;
   key: string;
@@ -3704,30 +3704,30 @@ export interface HostProxySwitch extends DynamicData {
   nsxtStatus?: string;
   nsxtStatusDetail?: string;
 }
-export interface HostProxySwitchConfig extends DynamicData {
+export type HostProxySwitchConfig = DynamicData &  {
   changeOperation?: string;
   uuid: string;
   spec?: HostProxySwitchSpec;
 }
-export interface HostProxySwitchHostLagConfig extends DynamicData {
+export type HostProxySwitchHostLagConfig = DynamicData &  {
   lagKey: string;
   lagName?: string;
   uplinkPort?: KeyValue[];
 }
-export interface HostProxySwitchSpec extends DynamicData {
+export type HostProxySwitchSpec = DynamicData &  {
   backing?: DistributedVirtualSwitchHostMemberBacking;
 }
-export interface HostImageProfileSummary extends DynamicData {
+export type HostImageProfileSummary = DynamicData &  {
   name: string;
   vendor: string;
 }
-export interface HostIpConfig extends DynamicData {
+export type HostIpConfig = DynamicData &  {
   dhcp: boolean;
   ipAddress?: string;
   subnetMask?: string;
   ipV6Config?: HostIpConfigIpV6AddressConfiguration;
 }
-export interface HostIpConfigIpV6Address extends DynamicData {
+export type HostIpConfigIpV6Address = DynamicData &  {
   ipAddress: string;
   prefixLength: number;
   origin?: string;
@@ -3735,56 +3735,56 @@ export interface HostIpConfigIpV6Address extends DynamicData {
   lifetime?: Date;
   operation?: string;
 }
-export interface HostIpConfigIpV6AddressConfiguration extends DynamicData {
+export type HostIpConfigIpV6AddressConfiguration = DynamicData &  {
   ipV6Address?: HostIpConfigIpV6Address[];
   autoConfigurationEnabled?: boolean;
   dhcpV6Enabled?: boolean;
 }
-export interface HostIpRouteConfig extends DynamicData {
+export type HostIpRouteConfig = DynamicData &  {
   defaultGateway?: string;
   gatewayDevice?: string;
   ipV6DefaultGateway?: string;
   ipV6GatewayDevice?: string;
 }
-export interface HostIpRouteConfigSpec extends HostIpRouteConfig {
+export type HostIpRouteConfigSpec = HostIpRouteConfig &  {
   gatewayDeviceConnection?: HostVirtualNicConnection;
   ipV6GatewayDeviceConnection?: HostVirtualNicConnection;
 }
-export interface HostIpRouteEntry extends DynamicData {
+export type HostIpRouteEntry = DynamicData &  {
   network: string;
   prefixLength: number;
   gateway: string;
   deviceName?: string;
 }
-export interface HostIpRouteOp extends DynamicData {
+export type HostIpRouteOp = DynamicData &  {
   changeOperation: string;
   route: HostIpRouteEntry;
 }
-export interface HostIpRouteTableConfig extends DynamicData {
+export type HostIpRouteTableConfig = DynamicData &  {
   ipRoute?: HostIpRouteOp[];
   ipv6Route?: HostIpRouteOp[];
 }
-export interface HostIpRouteTableInfo extends DynamicData {
+export type HostIpRouteTableInfo = DynamicData &  {
   ipRoute?: HostIpRouteEntry[];
   ipv6Route?: HostIpRouteEntry[];
 }
-export interface HostIpmiInfo extends DynamicData {
+export type HostIpmiInfo = DynamicData &  {
   bmcIpAddress?: string;
   bmcMacAddress?: string;
   login?: string;
   password?: string;
 }
-export interface IscsiDependencyEntity extends DynamicData {
+export type IscsiDependencyEntity = DynamicData &  {
   pnicDevice: string;
   vnicDevice: string;
   vmhbaName: string;
 }
-export interface IscsiMigrationDependency extends DynamicData {
+export type IscsiMigrationDependency = DynamicData &  {
   migrationAllowed: boolean;
   disallowReason?: IscsiStatus;
   dependency?: IscsiDependencyEntity[];
 }
-export interface IscsiPortInfo extends DynamicData {
+export type IscsiPortInfo = DynamicData &  {
   vnicDevice?: string;
   vnic?: HostVirtualNic;
   pnicDevice?: string;
@@ -3801,10 +3801,10 @@ export interface IscsiPortInfo extends DynamicData {
   complianceStatus?: IscsiStatus;
   pathStatus?: string;
 }
-export interface IscsiStatus extends DynamicData {
+export type IscsiStatus = DynamicData &  {
   reason?: MethodFault[];
 }
-export interface KernelModuleInfo extends DynamicData {
+export type KernelModuleInfo = DynamicData &  {
   id: number;
   name: string;
   version: string;
@@ -3819,126 +3819,126 @@ export interface KernelModuleInfo extends DynamicData {
   dataSection: KernelModuleSectionInfo;
   bssSection: KernelModuleSectionInfo;
 }
-export interface KernelModuleSectionInfo extends DynamicData {
+export type KernelModuleSectionInfo = DynamicData &  {
   address: number;
   length?: number;
 }
-export interface HostLicenseSpec extends DynamicData {
+export type HostLicenseSpec = DynamicData &  {
   source?: LicenseSource;
   editionKey?: string;
   disabledFeatureKey?: string[];
   enabledFeatureKey?: string[];
 }
-export interface LinkDiscoveryProtocolConfig extends DynamicData {
+export type LinkDiscoveryProtocolConfig = DynamicData &  {
   protocol: string;
   operation: string;
 }
-export interface HostAccountSpec extends DynamicData {
+export type HostAccountSpec = DynamicData &  {
   id: string;
   password?: string;
   description?: string;
 }
-export interface HostPosixAccountSpec extends HostAccountSpec {
+export type HostPosixAccountSpec = HostAccountSpec &  {
   posixId?: number;
   shellAccess?: boolean;
 }
-export interface HostLocalAuthenticationInfo extends HostAuthenticationStoreInfo {
+export type HostLocalAuthenticationInfo = HostAuthenticationStoreInfo &  {
   
 }
-export interface HostLocalFileSystemVolume extends HostFileSystemVolume {
+export type HostLocalFileSystemVolume = HostFileSystemVolume &  {
   device: string;
 }
-export interface HostLocalFileSystemVolumeSpec extends DynamicData {
+export type HostLocalFileSystemVolumeSpec = DynamicData &  {
   device: string;
   localPath: string;
 }
-export interface HostLowLevelProvisioningManagerDiskLayoutSpec extends DynamicData {
+export type HostLowLevelProvisioningManagerDiskLayoutSpec = DynamicData &  {
   controllerType: string;
   busNumber: number;
   unitNumber: number;
   srcFilename: string;
   dstFilename: string;
 }
-export interface HostLowLevelProvisioningManagerFileDeleteResult extends DynamicData {
+export type HostLowLevelProvisioningManagerFileDeleteResult = DynamicData &  {
   fileName: string;
   fault: MethodFault;
 }
-export interface HostLowLevelProvisioningManagerFileDeleteSpec extends DynamicData {
+export type HostLowLevelProvisioningManagerFileDeleteSpec = DynamicData &  {
   fileName: string;
   fileType: string;
 }
-export interface HostLowLevelProvisioningManagerFileReserveResult extends DynamicData {
+export type HostLowLevelProvisioningManagerFileReserveResult = DynamicData &  {
   baseName: string;
   parentDir: string;
   reservedName: string;
 }
-export interface HostLowLevelProvisioningManagerFileReserveSpec extends DynamicData {
+export type HostLowLevelProvisioningManagerFileReserveSpec = DynamicData &  {
   baseName: string;
   parentDir: string;
   fileType: string;
   storageProfile: string;
 }
-export interface HostLowLevelProvisioningManagerSnapshotLayoutSpec extends DynamicData {
+export type HostLowLevelProvisioningManagerSnapshotLayoutSpec = DynamicData &  {
   id: number;
   srcFilename: string;
   dstFilename: string;
   disk?: HostLowLevelProvisioningManagerDiskLayoutSpec[];
 }
-export interface HostLowLevelProvisioningManagerVmMigrationStatus extends DynamicData {
+export type HostLowLevelProvisioningManagerVmMigrationStatus = DynamicData &  {
   migrationId: number;
   type: string;
   source: boolean;
   consideredSuccessful: boolean;
 }
-export interface HostLowLevelProvisioningManagerVmRecoveryInfo extends DynamicData {
+export type HostLowLevelProvisioningManagerVmRecoveryInfo = DynamicData &  {
   version: string;
   biosUUID: string;
   instanceUUID: string;
   ftInfo?: FaultToleranceConfigInfo;
 }
-export interface HostMaintenanceSpec extends DynamicData {
+export type HostMaintenanceSpec = DynamicData &  {
   vsanMode?: VsanHostDecommissionMode;
   purpose?: string;
 }
-export interface ServiceConsoleReservationInfo extends DynamicData {
+export type ServiceConsoleReservationInfo = DynamicData &  {
   serviceConsoleReservedCfg: number;
   serviceConsoleReserved: number;
   unreserved: number;
 }
-export interface VirtualMachineMemoryReservationInfo extends DynamicData {
+export type VirtualMachineMemoryReservationInfo = DynamicData &  {
   virtualMachineMin: number;
   virtualMachineMax: number;
   virtualMachineReserved: number;
   allocationPolicy: string;
 }
-export interface VirtualMachineMemoryReservationSpec extends DynamicData {
+export type VirtualMachineMemoryReservationSpec = DynamicData &  {
   virtualMachineReserved?: number;
   allocationPolicy?: string;
 }
-export interface HostMemorySpec extends DynamicData {
+export type HostMemorySpec = DynamicData &  {
   serviceConsoleReservation?: number;
 }
-export interface HostMountInfo extends DynamicData {
+export type HostMountInfo = DynamicData &  {
   path?: string;
   accessMode: string;
   mounted?: boolean;
   accessible?: boolean;
   inaccessibleReason?: string;
 }
-export interface HostMultipathInfo extends DynamicData {
+export type HostMultipathInfo = DynamicData &  {
   lun?: HostMultipathInfoLogicalUnit[];
 }
-export interface HostMultipathInfoFixedLogicalUnitPolicy extends HostMultipathInfoLogicalUnitPolicy {
+export type HostMultipathInfoFixedLogicalUnitPolicy = HostMultipathInfoLogicalUnitPolicy &  {
   prefer: string;
 }
-export interface HostMultipathInfoHppLogicalUnitPolicy extends HostMultipathInfoLogicalUnitPolicy {
+export type HostMultipathInfoHppLogicalUnitPolicy = HostMultipathInfoLogicalUnitPolicy &  {
   bytes?: number;
   iops?: number;
   path?: string;
   latencyEvalTime?: number;
   samplingIosPerPath?: number;
 }
-export interface HostMultipathInfoLogicalUnit extends DynamicData {
+export type HostMultipathInfoLogicalUnit = DynamicData &  {
   key: string;
   id: string;
   lun: ScsiLun;
@@ -3946,13 +3946,13 @@ export interface HostMultipathInfoLogicalUnit extends DynamicData {
   policy: HostMultipathInfoLogicalUnitPolicy;
   storageArrayTypePolicy?: HostMultipathInfoLogicalUnitStorageArrayTypePolicy;
 }
-export interface HostMultipathInfoLogicalUnitPolicy extends DynamicData {
+export type HostMultipathInfoLogicalUnitPolicy = DynamicData &  {
   policy: string;
 }
-export interface HostMultipathInfoLogicalUnitStorageArrayTypePolicy extends DynamicData {
+export type HostMultipathInfoLogicalUnitStorageArrayTypePolicy = DynamicData &  {
   policy: string;
 }
-export interface HostMultipathInfoPath extends DynamicData {
+export type HostMultipathInfoPath = DynamicData &  {
   key: string;
   name: string;
   pathState: string;
@@ -3962,14 +3962,14 @@ export interface HostMultipathInfoPath extends DynamicData {
   lun: HostMultipathInfoLogicalUnit;
   transport?: HostTargetTransport;
 }
-export interface HostMultipathStateInfo extends DynamicData {
+export type HostMultipathStateInfo = DynamicData &  {
   path?: HostMultipathStateInfoPath[];
 }
-export interface HostMultipathStateInfoPath extends DynamicData {
+export type HostMultipathStateInfoPath = DynamicData &  {
   name: string;
   pathState: string;
 }
-export interface HostNasVolume extends HostFileSystemVolume {
+export type HostNasVolume = HostFileSystemVolume &  {
   remoteHost: string;
   remotePath: string;
   userName?: string;
@@ -3977,11 +3977,11 @@ export interface HostNasVolume extends HostFileSystemVolume {
   securityType?: string;
   protocolEndpoint?: boolean;
 }
-export interface HostNasVolumeConfig extends DynamicData {
+export type HostNasVolumeConfig = DynamicData &  {
   changeOperation?: string;
   spec?: HostNasVolumeSpec;
 }
-export interface HostNasVolumeSpec extends DynamicData {
+export type HostNasVolumeSpec = DynamicData &  {
   remoteHost: string;
   remotePath: string;
   localPath: string;
@@ -3992,19 +3992,19 @@ export interface HostNasVolumeSpec extends DynamicData {
   remoteHostNames?: string[];
   securityType?: string;
 }
-export interface HostNasVolumeUserInfo extends DynamicData {
+export type HostNasVolumeUserInfo = DynamicData &  {
   user: string;
 }
-export interface HostNatService extends DynamicData {
+export type HostNatService = DynamicData &  {
   key: string;
   spec: HostNatServiceSpec;
 }
-export interface HostNatServiceConfig extends DynamicData {
+export type HostNatServiceConfig = DynamicData &  {
   changeOperation?: string;
   key: string;
   spec: HostNatServiceSpec;
 }
-export interface HostNatServiceNameServiceSpec extends DynamicData {
+export type HostNatServiceNameServiceSpec = DynamicData &  {
   dnsAutoDetect: boolean;
   dnsPolicy: string;
   dnsRetries: number;
@@ -4014,14 +4014,14 @@ export interface HostNatServiceNameServiceSpec extends DynamicData {
   nbnsRetries: number;
   nbnsTimeout: number;
 }
-export interface HostNatServicePortForwardSpec extends DynamicData {
+export type HostNatServicePortForwardSpec = DynamicData &  {
   type: string;
   name: string;
   hostPort: number;
   guestPort: number;
   guestIpAddress: string;
 }
-export interface HostNatServiceSpec extends DynamicData {
+export type HostNatServiceSpec = DynamicData &  {
   virtualSwitch: string;
   activeFtp: boolean;
   allowAnyOui: boolean;
@@ -4031,7 +4031,7 @@ export interface HostNatServiceSpec extends DynamicData {
   portForward?: HostNatServicePortForwardSpec[];
   nameService?: HostNatServiceNameServiceSpec;
 }
-export interface HostNetCapabilities extends DynamicData {
+export type HostNetCapabilities = DynamicData &  {
   canSetPhysicalNicLinkSpeed: boolean;
   supportsNicTeaming: boolean;
   nicTeamingPolicy?: string[];
@@ -4047,12 +4047,12 @@ export interface HostNetCapabilities extends DynamicData {
   ipV6Supported: boolean;
   backupNfcNiocSupported?: boolean;
 }
-export interface HostNetOffloadCapabilities extends DynamicData {
+export type HostNetOffloadCapabilities = DynamicData &  {
   csumOffload?: boolean;
   tcpSegmentation?: boolean;
   zeroCopyXmit?: boolean;
 }
-export interface HostNetStackInstance extends DynamicData {
+export type HostNetStackInstance = DynamicData &  {
   key?: string;
   name?: string;
   dnsConfig?: HostDnsConfig;
@@ -4062,7 +4062,7 @@ export interface HostNetStackInstance extends DynamicData {
   ipV6Enabled?: boolean;
   routeTableConfig?: HostIpRouteTableConfig;
 }
-export interface HostNetworkInfo extends DynamicData {
+export type HostNetworkInfo = DynamicData &  {
   vswitch?: HostVirtualSwitch[];
   proxySwitch?: HostProxySwitch[];
   portgroup?: HostPortGroup[];
@@ -4083,13 +4083,13 @@ export interface HostNetworkInfo extends DynamicData {
   opaqueNetwork?: HostOpaqueNetworkInfo[];
   nsxTransportNodeId?: string;
 }
-export interface HostNetworkPolicy extends DynamicData {
+export type HostNetworkPolicy = DynamicData &  {
   security?: HostNetworkSecurityPolicy;
   nicTeaming?: HostNicTeamingPolicy;
   offloadPolicy?: HostNetOffloadCapabilities;
   shapingPolicy?: HostNetworkTrafficShapingPolicy;
 }
-export interface HostNicFailureCriteria extends DynamicData {
+export type HostNicFailureCriteria = DynamicData &  {
   checkSpeed?: string;
   speed?: number;
   checkDuplex?: boolean;
@@ -4098,11 +4098,11 @@ export interface HostNicFailureCriteria extends DynamicData {
   percentage?: number;
   checkBeacon?: boolean;
 }
-export interface HostNicOrderPolicy extends DynamicData {
+export type HostNicOrderPolicy = DynamicData &  {
   activeNic?: string[];
   standbyNic?: string[];
 }
-export interface HostNicTeamingPolicy extends DynamicData {
+export type HostNicTeamingPolicy = DynamicData &  {
   policy?: string;
   reversePolicy?: boolean;
   notifySwitches?: boolean;
@@ -4110,34 +4110,34 @@ export interface HostNicTeamingPolicy extends DynamicData {
   failureCriteria?: HostNicFailureCriteria;
   nicOrder?: HostNicOrderPolicy;
 }
-export interface HostNetworkSecurityPolicy extends DynamicData {
+export type HostNetworkSecurityPolicy = DynamicData &  {
   allowPromiscuous?: boolean;
   macChanges?: boolean;
   forgedTransmits?: boolean;
 }
-export interface HostNetworkTrafficShapingPolicy extends DynamicData {
+export type HostNetworkTrafficShapingPolicy = DynamicData &  {
   enabled?: boolean;
   averageBandwidth?: number;
   peakBandwidth?: number;
   burstSize?: number;
 }
-export interface HostNtpConfig extends DynamicData {
+export type HostNtpConfig = DynamicData &  {
   server?: string[];
   configFile?: string[];
 }
-export interface HostNumaInfo extends DynamicData {
+export type HostNumaInfo = DynamicData &  {
   type: string;
   numNodes: number;
   numaNode?: HostNumaNode[];
 }
-export interface HostNumaNode extends DynamicData {
+export type HostNumaNode = DynamicData &  {
   typeId: number;
   cpuID: number[];
   memoryRangeBegin: number;
   memoryRangeLength: number;
   pciId?: string[];
 }
-export interface HostNumericSensorInfo extends DynamicData {
+export type HostNumericSensorInfo = DynamicData &  {
   name: string;
   healthState?: ElementDescription;
   currentReading: number;
@@ -4148,7 +4148,7 @@ export interface HostNumericSensorInfo extends DynamicData {
   id?: string;
   timeStamp?: string;
 }
-export interface NvdimmDimmInfo extends DynamicData {
+export type NvdimmDimmInfo = DynamicData &  {
   dimmHandle: number;
   healthInfo: NvdimmHealthInfo;
   totalCapacity: number;
@@ -4160,10 +4160,10 @@ export interface NvdimmDimmInfo extends DynamicData {
   regionInfo?: NvdimmRegionInfo[];
   representationString: string;
 }
-export interface NvdimmGuid extends DynamicData {
+export type NvdimmGuid = DynamicData &  {
   uuid: string;
 }
-export interface NvdimmHealthInfo extends DynamicData {
+export type NvdimmHealthInfo = DynamicData &  {
   healthStatus: string;
   healthInformation: string;
   stateFlagInfo?: string[];
@@ -4176,7 +4176,7 @@ export interface NvdimmHealthInfo extends DynamicData {
   esTemperatureThreshold?: number;
   esLifespanPercentage?: number;
 }
-export interface NvdimmInterleaveSetInfo extends DynamicData {
+export type NvdimmInterleaveSetInfo = DynamicData &  {
   setId: number;
   rangeType: string;
   baseAddress: number;
@@ -4185,17 +4185,17 @@ export interface NvdimmInterleaveSetInfo extends DynamicData {
   deviceList?: number[];
   state: string;
 }
-export interface NvdimmNamespaceCreateSpec extends DynamicData {
+export type NvdimmNamespaceCreateSpec = DynamicData &  {
   friendlyName?: string;
   blockSize: number;
   blockCount: number;
   type: string;
   locationID: number;
 }
-export interface NvdimmNamespaceDeleteSpec extends DynamicData {
+export type NvdimmNamespaceDeleteSpec = DynamicData &  {
   uuid: string;
 }
-export interface NvdimmNamespaceDetails extends DynamicData {
+export type NvdimmNamespaceDetails = DynamicData &  {
   uuid: string;
   friendlyName: string;
   size: number;
@@ -4204,7 +4204,7 @@ export interface NvdimmNamespaceDetails extends DynamicData {
   interleavesetID: number;
   state: string;
 }
-export interface NvdimmNamespaceInfo extends DynamicData {
+export type NvdimmNamespaceInfo = DynamicData &  {
   uuid: string;
   friendlyName: string;
   blockSize: number;
@@ -4214,7 +4214,7 @@ export interface NvdimmNamespaceInfo extends DynamicData {
   locationID: number;
   state: string;
 }
-export interface NvdimmSystemInfo extends DynamicData {
+export type NvdimmSystemInfo = DynamicData &  {
   summary?: NvdimmSummary;
   dimms?: number[];
   dimmInfo?: NvdimmDimmInfo[];
@@ -4224,12 +4224,12 @@ export interface NvdimmSystemInfo extends DynamicData {
   nsInfo?: NvdimmNamespaceInfo[];
   nsDetails?: NvdimmNamespaceDetails[];
 }
-export interface NvdimmPMemNamespaceCreateSpec extends DynamicData {
+export type NvdimmPMemNamespaceCreateSpec = DynamicData &  {
   friendlyName?: string;
   size: number;
   interleavesetID: number;
 }
-export interface NvdimmRegionInfo extends DynamicData {
+export type NvdimmRegionInfo = DynamicData &  {
   regionId: number;
   setId: number;
   rangeType: string;
@@ -4237,7 +4237,7 @@ export interface NvdimmRegionInfo extends DynamicData {
   size: number;
   offset: number;
 }
-export interface NvdimmSummary extends DynamicData {
+export type NvdimmSummary = DynamicData &  {
   numDimms: number;
   healthStatus: string;
   totalCapacity: number;
@@ -4247,7 +4247,7 @@ export interface NvdimmSummary extends DynamicData {
   numInterleavesets: number;
   numNamespaces: number;
 }
-export interface HostNvmeController extends DynamicData {
+export type HostNvmeController = DynamicData &  {
   key: string;
   controllerNumber: number;
   subnqn: string;
@@ -4263,16 +4263,16 @@ export interface HostNvmeController extends DynamicData {
   serialNumber?: string;
   firmwareVersion?: string;
 }
-export interface HostNvmeDisconnectSpec extends DynamicData {
+export type HostNvmeDisconnectSpec = DynamicData &  {
   hbaName: string;
   subnqn?: string;
   controllerNumber?: number;
 }
-export interface HostNvmeDiscoveryLog extends DynamicData {
+export type HostNvmeDiscoveryLog = DynamicData &  {
   entry?: HostNvmeDiscoveryLogEntry[];
   complete: boolean;
 }
-export interface HostNvmeDiscoveryLogEntry extends DynamicData {
+export type HostNvmeDiscoveryLogEntry = DynamicData &  {
   subnqn: string;
   subsystemType: string;
   subsystemPortId: number;
@@ -4282,29 +4282,29 @@ export interface HostNvmeDiscoveryLogEntry extends DynamicData {
   transportRequirements: string;
   connected: boolean;
 }
-export interface HostNvmeNamespace extends DynamicData {
+export type HostNvmeNamespace = DynamicData &  {
   key: string;
   name: string;
   id: number;
   blockSize: number;
   capacityInBlocks: number;
 }
-export interface HostNvmeSpec extends DynamicData {
+export type HostNvmeSpec = DynamicData &  {
   hbaName: string;
   transportParameters: HostNvmeTransportParameters;
 }
-export interface HostNvmeTopology extends DynamicData {
+export type HostNvmeTopology = DynamicData &  {
   adapter?: HostNvmeTopologyInterface[];
 }
-export interface HostNvmeTopologyInterface extends DynamicData {
+export type HostNvmeTopologyInterface = DynamicData &  {
   key: string;
   adapter: HostHostBusAdapter;
   connectedController?: HostNvmeController[];
 }
-export interface HostNvmeTransportParameters extends DynamicData {
+export type HostNvmeTransportParameters = DynamicData &  {
   
 }
-export interface HostOpaqueSwitch extends DynamicData {
+export type HostOpaqueSwitch = DynamicData &  {
   key: string;
   name?: string;
   pnic?: PhysicalNic[];
@@ -4314,34 +4314,34 @@ export interface HostOpaqueSwitch extends DynamicData {
   extraConfig?: OptionValue[];
   featureCapability?: HostFeatureCapability[];
 }
-export interface HostOpaqueSwitchPhysicalNicZone extends DynamicData {
+export type HostOpaqueSwitchPhysicalNicZone = DynamicData &  {
   key: string;
   pnicDevice?: string[];
 }
-export interface HostPMemVolume extends HostFileSystemVolume {
+export type HostPMemVolume = HostFileSystemVolume &  {
   uuid: string;
   version: string;
 }
-export interface HostParallelScsiHba extends HostHostBusAdapter {
+export type HostParallelScsiHba = HostHostBusAdapter &  {
   
 }
-export interface HostPatchManagerLocator extends DynamicData {
+export type HostPatchManagerLocator = DynamicData &  {
   url: string;
   proxy?: string;
 }
-export interface HostPatchManagerPatchManagerOperationSpec extends DynamicData {
+export type HostPatchManagerPatchManagerOperationSpec = DynamicData &  {
   proxy?: string;
   port?: number;
   userName?: string;
   password?: string;
   cmdOption?: string;
 }
-export interface HostPatchManagerResult extends DynamicData {
+export type HostPatchManagerResult = DynamicData &  {
   version: string;
   status?: HostPatchManagerStatus[];
   xmlResult?: string;
 }
-export interface HostPatchManagerStatus extends DynamicData {
+export type HostPatchManagerStatus = DynamicData &  {
   id: string;
   applicable: boolean;
   reason?: string[];
@@ -4354,14 +4354,14 @@ export interface HostPatchManagerStatus extends DynamicData {
   vmOffRequired: boolean;
   supersededPatchIds?: string[];
 }
-export interface HostPatchManagerStatusPrerequisitePatch extends DynamicData {
+export type HostPatchManagerStatusPrerequisitePatch = DynamicData &  {
   id: string;
   installState?: string[];
 }
-export interface HostPathSelectionPolicyOption extends DynamicData {
+export type HostPathSelectionPolicyOption = DynamicData &  {
   policy: ElementDescription;
 }
-export interface HostPciDevice extends DynamicData {
+export type HostPciDevice = DynamicData &  {
   id: string;
   classId: number;
   bus: number;
@@ -4375,26 +4375,26 @@ export interface HostPciDevice extends DynamicData {
   parentBridge?: string;
   deviceName: string;
 }
-export interface HostPciPassthruConfig extends DynamicData {
+export type HostPciPassthruConfig = DynamicData &  {
   id: string;
   passthruEnabled: boolean;
   applyNow?: boolean;
 }
-export interface HostPciPassthruInfo extends DynamicData {
+export type HostPciPassthruInfo = DynamicData &  {
   id: string;
   dependentDevice: string;
   passthruEnabled: boolean;
   passthruCapable: boolean;
   passthruActive: boolean;
 }
-export interface HostPcieHba extends HostHostBusAdapter {
+export type HostPcieHba = HostHostBusAdapter &  {
   
 }
-export interface HostPersistentMemoryInfo extends DynamicData {
+export type HostPersistentMemoryInfo = DynamicData &  {
   capacityInMB?: number;
   volumeUUID?: string;
 }
-export interface PhysicalNic extends DynamicData {
+export type PhysicalNic = DynamicData &  {
   key?: string;
   device: string;
   pci: string;
@@ -4414,7 +4414,7 @@ export interface PhysicalNic extends DynamicData {
   ensInterruptSupported?: boolean;
   rdmaDevice?: HostRdmaDevice;
 }
-export interface PhysicalNicCdpDeviceCapability extends DynamicData {
+export type PhysicalNicCdpDeviceCapability = DynamicData &  {
   router: boolean;
   transparentBridge: boolean;
   sourceRouteBridge: boolean;
@@ -4423,7 +4423,7 @@ export interface PhysicalNicCdpDeviceCapability extends DynamicData {
   igmpEnabled: boolean;
   repeater: boolean;
 }
-export interface PhysicalNicCdpInfo extends DynamicData {
+export type PhysicalNicCdpInfo = DynamicData &  {
   cdpVersion?: number;
   timeout?: number;
   ttl?: number;
@@ -4444,60 +4444,60 @@ export interface PhysicalNicCdpInfo extends DynamicData {
   mgmtAddr?: string;
   location?: string;
 }
-export interface PhysicalNicConfig extends DynamicData {
+export type PhysicalNicConfig = DynamicData &  {
   device: string;
   spec: PhysicalNicSpec;
 }
-export interface PhysicalNicLinkInfo extends DynamicData {
+export type PhysicalNicLinkInfo = DynamicData &  {
   speedMb: number;
   duplex: boolean;
 }
-export interface LinkLayerDiscoveryProtocolInfo extends DynamicData {
+export type LinkLayerDiscoveryProtocolInfo = DynamicData &  {
   chassisId: string;
   portId: string;
   timeToLive: number;
   parameter?: KeyAnyValue[];
 }
-export interface PhysicalNicHintInfo extends DynamicData {
+export type PhysicalNicHintInfo = DynamicData &  {
   device: string;
   subnet?: PhysicalNicIpHint[];
   network?: PhysicalNicNameHint[];
   connectedSwitchPort?: PhysicalNicCdpInfo;
   lldpInfo?: LinkLayerDiscoveryProtocolInfo;
 }
-export interface PhysicalNicHint extends DynamicData {
+export type PhysicalNicHint = DynamicData &  {
   vlanId?: number;
 }
-export interface PhysicalNicIpHint extends PhysicalNicHint {
+export type PhysicalNicIpHint = PhysicalNicHint &  {
   ipSubnet: string;
 }
-export interface PhysicalNicNameHint extends PhysicalNicHint {
+export type PhysicalNicNameHint = PhysicalNicHint &  {
   network: string;
 }
-export interface PhysicalNicSpec extends DynamicData {
+export type PhysicalNicSpec = DynamicData &  {
   ip?: HostIpConfig;
   linkSpeed?: PhysicalNicLinkInfo;
   enableEnhancedNetworkingStack?: boolean;
   ensInterruptEnabled?: boolean;
 }
-export interface HostPlugStoreTopology extends DynamicData {
+export type HostPlugStoreTopology = DynamicData &  {
   adapter?: HostPlugStoreTopologyAdapter[];
   path?: HostPlugStoreTopologyPath[];
   target?: HostPlugStoreTopologyTarget[];
   device?: HostPlugStoreTopologyDevice[];
   plugin?: HostPlugStoreTopologyPlugin[];
 }
-export interface HostPlugStoreTopologyAdapter extends DynamicData {
+export type HostPlugStoreTopologyAdapter = DynamicData &  {
   key: string;
   adapter: HostHostBusAdapter;
   path?: HostPlugStoreTopologyPath[];
 }
-export interface HostPlugStoreTopologyDevice extends DynamicData {
+export type HostPlugStoreTopologyDevice = DynamicData &  {
   key: string;
   lun: ScsiLun;
   path?: HostPlugStoreTopologyPath[];
 }
-export interface HostPlugStoreTopologyPath extends DynamicData {
+export type HostPlugStoreTopologyPath = DynamicData &  {
   key: string;
   name: string;
   channelNumber?: number;
@@ -4507,51 +4507,51 @@ export interface HostPlugStoreTopologyPath extends DynamicData {
   target?: HostPlugStoreTopologyTarget;
   device?: HostPlugStoreTopologyDevice;
 }
-export interface HostPlugStoreTopologyPlugin extends DynamicData {
+export type HostPlugStoreTopologyPlugin = DynamicData &  {
   key: string;
   name: string;
   device?: HostPlugStoreTopologyDevice[];
   claimedPath?: HostPlugStoreTopologyPath[];
 }
-export interface HostPlugStoreTopologyTarget extends DynamicData {
+export type HostPlugStoreTopologyTarget = DynamicData &  {
   key: string;
   transport?: HostTargetTransport;
 }
-export interface HostPortGroup extends DynamicData {
+export type HostPortGroup = DynamicData &  {
   key?: string;
   port?: HostPortGroupPort[];
   vswitch?: HostVirtualSwitch;
   computedPolicy: HostNetworkPolicy;
   spec: HostPortGroupSpec;
 }
-export interface HostPortGroupConfig extends DynamicData {
+export type HostPortGroupConfig = DynamicData &  {
   changeOperation?: string;
   spec?: HostPortGroupSpec;
 }
-export interface HostPortGroupPort extends DynamicData {
+export type HostPortGroupPort = DynamicData &  {
   key?: string;
   mac?: string[];
   type: string;
 }
-export interface HostPortGroupSpec extends DynamicData {
+export type HostPortGroupSpec = DynamicData &  {
   name: string;
   vlanId: number;
   vswitchName: string;
   policy: HostNetworkPolicy;
 }
-export interface PowerSystemCapability extends DynamicData {
+export type PowerSystemCapability = DynamicData &  {
   availablePolicy: HostPowerPolicy[];
 }
-export interface PowerSystemInfo extends DynamicData {
+export type PowerSystemInfo = DynamicData &  {
   currentPolicy: HostPowerPolicy;
 }
-export interface HostPowerPolicy extends DynamicData {
+export type HostPowerPolicy = DynamicData &  {
   key: number;
   name: string;
   shortName: string;
   description: string;
 }
-export interface HostProtocolEndpoint extends DynamicData {
+export type HostProtocolEndpoint = DynamicData &  {
   peType: string;
   type?: string;
   uuid: string;
@@ -4565,7 +4565,7 @@ export interface HostProtocolEndpoint extends DynamicData {
   nfsServerUser?: string;
   deviceId?: string;
 }
-export interface HostRdmaDevice extends DynamicData {
+export type HostRdmaDevice = DynamicData &  {
   key: string;
   device: string;
   driver?: string;
@@ -4574,33 +4574,33 @@ export interface HostRdmaDevice extends DynamicData {
   connectionInfo: HostRdmaDeviceConnectionInfo;
   capability: HostRdmaDeviceCapability;
 }
-export interface HostRdmaDeviceBacking extends DynamicData {
+export type HostRdmaDeviceBacking = DynamicData &  {
   
 }
-export interface HostRdmaDeviceCapability extends DynamicData {
+export type HostRdmaDeviceCapability = DynamicData &  {
   roceV1Capable: boolean;
   roceV2Capable: boolean;
   iWarpCapable: boolean;
 }
-export interface HostRdmaDeviceConnectionInfo extends DynamicData {
+export type HostRdmaDeviceConnectionInfo = DynamicData &  {
   state: string;
   mtu: number;
   speedInMbps: number;
 }
-export interface HostRdmaDevicePnicBacking extends HostRdmaDeviceBacking {
+export type HostRdmaDevicePnicBacking = HostRdmaDeviceBacking &  {
   pairedUplink: PhysicalNic;
 }
-export interface HostRdmaHba extends HostHostBusAdapter {
+export type HostRdmaHba = HostHostBusAdapter &  {
   associatedRdmaDevice?: string;
 }
-export interface HostReliableMemoryInfo extends DynamicData {
+export type HostReliableMemoryInfo = DynamicData &  {
   memorySize: number;
 }
-export interface HostResignatureRescanResult extends DynamicData {
+export type HostResignatureRescanResult = DynamicData &  {
   rescan?: HostVmfsRescanResult[];
   result: Datastore;
 }
-export interface HostFirewallRuleset extends DynamicData {
+export type HostFirewallRuleset = DynamicData &  {
   key: string;
   label: string;
   required: boolean;
@@ -4609,26 +4609,26 @@ export interface HostFirewallRuleset extends DynamicData {
   enabled: boolean;
   allowedHosts?: HostFirewallRulesetIpList;
 }
-export interface HostFirewallRulesetIpList extends DynamicData {
+export type HostFirewallRulesetIpList = DynamicData &  {
   ipAddress?: string[];
   ipNetwork?: HostFirewallRulesetIpNetwork[];
   allIp: boolean;
 }
-export interface HostFirewallRulesetIpNetwork extends DynamicData {
+export type HostFirewallRulesetIpNetwork = DynamicData &  {
   network: string;
   prefixLength: number;
 }
-export interface HostFirewallRule extends DynamicData {
+export type HostFirewallRule = DynamicData &  {
   port: number;
   endPort?: number;
   direction: HostFirewallRuleDirection;
   portType?: HostFirewallRulePortType;
   protocol: string;
 }
-export interface HostFirewallRulesetRulesetSpec extends DynamicData {
+export type HostFirewallRulesetRulesetSpec = DynamicData &  {
   allowedHosts: HostFirewallRulesetIpList;
 }
-export interface ScsiLun extends HostDevice {
+export type ScsiLun = HostDevice &  {
   key?: string;
   uuid: string;
   descriptor?: ScsiLunDescriptor[];
@@ -4651,41 +4651,41 @@ export interface ScsiLun extends HostDevice {
   perenniallyReserved?: boolean;
   clusteredVmdkSupported?: boolean;
 }
-export interface ScsiLunCapabilities extends DynamicData {
+export type ScsiLunCapabilities = DynamicData &  {
   updateDisplayNameSupported: boolean;
 }
-export interface ScsiLunDescriptor extends DynamicData {
+export type ScsiLunDescriptor = DynamicData &  {
   quality: string;
   id: string;
 }
-export interface ScsiLunDurableName extends DynamicData {
+export type ScsiLunDurableName = DynamicData &  {
   namespace: string;
   namespaceId: number;
   data?: number[];
 }
-export interface HostScsiTopology extends DynamicData {
+export type HostScsiTopology = DynamicData &  {
   adapter?: HostScsiTopologyInterface[];
 }
-export interface HostScsiTopologyInterface extends DynamicData {
+export type HostScsiTopologyInterface = DynamicData &  {
   key: string;
   adapter: HostHostBusAdapter;
   target?: HostScsiTopologyTarget[];
 }
-export interface HostScsiTopologyLun extends DynamicData {
+export type HostScsiTopologyLun = DynamicData &  {
   key: string;
   lun: number;
   scsiLun: ScsiLun;
 }
-export interface HostScsiTopologyTarget extends DynamicData {
+export type HostScsiTopologyTarget = DynamicData &  {
   key: string;
   target: number;
   lun?: HostScsiTopologyLun[];
   transport?: HostTargetTransport;
 }
-export interface HostSerialAttachedHba extends HostHostBusAdapter {
+export type HostSerialAttachedHba = HostHostBusAdapter &  {
   nodeWorldWideName: string;
 }
-export interface HostService extends DynamicData {
+export type HostService = DynamicData &  {
   key: string;
   label: string;
   required: boolean;
@@ -4695,54 +4695,54 @@ export interface HostService extends DynamicData {
   policy: string;
   sourcePackage?: HostServiceSourcePackage;
 }
-export interface HostServiceSourcePackage extends DynamicData {
+export type HostServiceSourcePackage = DynamicData &  {
   sourcePackageName: string;
   description: string;
 }
-export interface HostServiceConfig extends DynamicData {
+export type HostServiceConfig = DynamicData &  {
   serviceId: string;
   startupPolicy: string;
 }
-export interface HostServiceInfo extends DynamicData {
+export type HostServiceInfo = DynamicData &  {
   service?: HostService[];
 }
-export interface HostSevInfo extends DynamicData {
+export type HostSevInfo = DynamicData &  {
   sevState: string;
   maxSevEsGuests: number;
 }
-export interface HostSgxInfo extends DynamicData {
+export type HostSgxInfo = DynamicData &  {
   sgxState: string;
   totalEpcMemory: number;
   flcMode: string;
   lePubKeyHash?: string;
 }
-export interface HostSharedGpuCapabilities extends DynamicData {
+export type HostSharedGpuCapabilities = DynamicData &  {
   vgpu: string;
   diskSnapshotSupported: boolean;
   memorySnapshotSupported: boolean;
   suspendSupported: boolean;
   migrateSupported: boolean;
 }
-export interface HostSnmpSystemAgentLimits extends DynamicData {
+export type HostSnmpSystemAgentLimits = DynamicData &  {
   maxReadOnlyCommunities: number;
   maxTrapDestinations: number;
   maxCommunityLength: number;
   maxBufferSize: number;
   capability: HostSnmpAgentCapability;
 }
-export interface HostSnmpConfigSpec extends DynamicData {
+export type HostSnmpConfigSpec = DynamicData &  {
   enabled?: boolean;
   port?: number;
   readOnlyCommunities?: string[];
   trapTargets?: HostSnmpDestination[];
   option?: KeyValue[];
 }
-export interface HostSnmpDestination extends DynamicData {
+export type HostSnmpDestination = DynamicData &  {
   hostName: string;
   port: number;
   community: string;
 }
-export interface SoftwarePackage extends DynamicData {
+export type SoftwarePackage = DynamicData &  {
   name: string;
   version: string;
   type: string;
@@ -4762,25 +4762,25 @@ export interface SoftwarePackage extends DynamicData {
   tag?: string[];
   payload?: string[];
 }
-export interface SoftwarePackageCapability extends DynamicData {
+export type SoftwarePackageCapability = DynamicData &  {
   liveInstallAllowed?: boolean;
   liveRemoveAllowed?: boolean;
   statelessReady?: boolean;
   overlay?: boolean;
 }
-export interface Relation extends DynamicData {
+export type Relation = DynamicData &  {
   constraint?: string;
   name: string;
   version?: string;
 }
-export interface HostSriovConfig extends HostPciPassthruConfig {
+export type HostSriovConfig = HostPciPassthruConfig &  {
   sriovEnabled: boolean;
   numVirtualFunction: number;
 }
-export interface HostSriovDevicePoolInfo extends DynamicData {
+export type HostSriovDevicePoolInfo = DynamicData &  {
   key: string;
 }
-export interface HostSriovInfo extends HostPciPassthruInfo {
+export type HostSriovInfo = HostPciPassthruInfo &  {
   sriovEnabled: boolean;
   sriovCapable: boolean;
   sriovActive: boolean;
@@ -4788,20 +4788,20 @@ export interface HostSriovInfo extends HostPciPassthruInfo {
   numVirtualFunction: number;
   maxVirtualFunctionSupported: number;
 }
-export interface HostSriovNetworkDevicePoolInfo extends HostSriovDevicePoolInfo {
+export type HostSriovNetworkDevicePoolInfo = HostSriovDevicePoolInfo &  {
   switchKey?: string;
   switchUuid?: string;
   pnic?: PhysicalNic[];
 }
-export interface HostSslThumbprintInfo extends DynamicData {
+export type HostSslThumbprintInfo = DynamicData &  {
   principal: string;
   ownerTag: string;
   sslThumbprints?: string[];
 }
-export interface HostStorageArrayTypePolicyOption extends DynamicData {
+export type HostStorageArrayTypePolicyOption = DynamicData &  {
   policy: ElementDescription;
 }
-export interface HostStorageDeviceInfo extends DynamicData {
+export type HostStorageDeviceInfo = DynamicData &  {
   hostBusAdapter?: HostHostBusAdapter[];
   scsiLun?: ScsiLun[];
   scsiTopology?: HostScsiTopology;
@@ -4810,152 +4810,152 @@ export interface HostStorageDeviceInfo extends DynamicData {
   plugStoreTopology?: HostPlugStoreTopology;
   softwareInternetScsiEnabled: boolean;
 }
-export interface SystemEventInfo extends DynamicData {
+export type SystemEventInfo = DynamicData &  {
   recordId: number;
   when: string;
   selType: number;
   message: string;
   sensorNumber: number;
 }
-export interface HostSystemHealthInfo extends DynamicData {
+export type HostSystemHealthInfo = DynamicData &  {
   numericSensorInfo?: HostNumericSensorInfo[];
 }
-export interface HostSystemIdentificationInfo extends DynamicData {
+export type HostSystemIdentificationInfo = DynamicData &  {
   identifierValue: string;
   identifierType: ElementDescription;
 }
-export interface HostSystemInfo extends DynamicData {
+export type HostSystemInfo = DynamicData &  {
   vendor: string;
   model: string;
   uuid: string;
   otherIdentifyingInfo?: HostSystemIdentificationInfo[];
   serialNumber?: string;
 }
-export interface HostSystemResourceInfo extends DynamicData {
+export type HostSystemResourceInfo = DynamicData &  {
   key: string;
   config?: ResourceConfigSpec;
   child?: HostSystemResourceInfo[];
 }
-export interface HostSystemSwapConfiguration extends DynamicData {
+export type HostSystemSwapConfiguration = DynamicData &  {
   option?: HostSystemSwapConfigurationSystemSwapOption[];
 }
-export interface HostSystemSwapConfigurationDatastoreOption extends HostSystemSwapConfigurationSystemSwapOption {
+export type HostSystemSwapConfigurationDatastoreOption = HostSystemSwapConfigurationSystemSwapOption &  {
   datastore: string;
 }
-export interface HostSystemSwapConfigurationDisabledOption extends HostSystemSwapConfigurationSystemSwapOption {
+export type HostSystemSwapConfigurationDisabledOption = HostSystemSwapConfigurationSystemSwapOption &  {
   
 }
-export interface HostSystemSwapConfigurationHostCacheOption extends HostSystemSwapConfigurationSystemSwapOption {
+export type HostSystemSwapConfigurationHostCacheOption = HostSystemSwapConfigurationSystemSwapOption &  {
   
 }
-export interface HostSystemSwapConfigurationHostLocalSwapOption extends HostSystemSwapConfigurationSystemSwapOption {
+export type HostSystemSwapConfigurationHostLocalSwapOption = HostSystemSwapConfigurationSystemSwapOption &  {
   
 }
-export interface HostSystemSwapConfigurationSystemSwapOption extends DynamicData {
+export type HostSystemSwapConfigurationSystemSwapOption = DynamicData &  {
   key: number;
 }
-export interface HostTargetTransport extends DynamicData {
+export type HostTargetTransport = DynamicData &  {
   
 }
-export interface HostTpmAttestationInfo extends DynamicData {
+export type HostTpmAttestationInfo = DynamicData &  {
   time: Date;
   status: HostTpmAttestationInfoAcceptanceStatus;
   message?: LocalizableMessage;
 }
-export interface HostTpmAttestationReport extends DynamicData {
+export type HostTpmAttestationReport = DynamicData &  {
   tpmPcrValues: HostTpmDigestInfo[];
   tpmEvents: HostTpmEventLogEntry[];
   tpmLogReliable: boolean;
 }
-export interface HostTpmDigestInfo extends HostDigestInfo {
+export type HostTpmDigestInfo = HostDigestInfo &  {
   pcrNumber: number;
 }
-export interface HostTpmEventDetails extends DynamicData {
+export type HostTpmEventDetails = DynamicData &  {
   dataHash: number[];
   dataHashMethod?: string;
 }
-export interface HostTpmEventLogEntry extends DynamicData {
+export type HostTpmEventLogEntry = DynamicData &  {
   pcrIndex: number;
   eventDetails: HostTpmEventDetails;
 }
-export interface HostTpmOptionEventDetails extends HostTpmEventDetails {
+export type HostTpmOptionEventDetails = HostTpmEventDetails &  {
   optionsFileName: string;
   bootOptions?: number[];
 }
-export interface HostTpmSoftwareComponentEventDetails extends HostTpmEventDetails {
+export type HostTpmSoftwareComponentEventDetails = HostTpmEventDetails &  {
   componentName: string;
   vibName: string;
   vibVersion: string;
   vibVendor: string;
 }
-export interface HostTrustAuthorityAttestationInfo extends DynamicData {
+export type HostTrustAuthorityAttestationInfo = DynamicData &  {
   attestationStatus: string;
   serviceId?: string;
   attestedAt?: Date;
   attestedUntil?: Date;
   messages?: LocalizableMessage[];
 }
-export interface HostUnresolvedVmfsResignatureSpec extends DynamicData {
+export type HostUnresolvedVmfsResignatureSpec = DynamicData &  {
   extentDevicePath: string[];
 }
-export interface HostUnresolvedVmfsResolutionResult extends DynamicData {
+export type HostUnresolvedVmfsResolutionResult = DynamicData &  {
   spec: HostUnresolvedVmfsResolutionSpec;
   vmfs?: HostVmfsVolume;
   fault?: MethodFault;
 }
-export interface HostUnresolvedVmfsResolutionSpec extends DynamicData {
+export type HostUnresolvedVmfsResolutionSpec = DynamicData &  {
   extentDevicePath: string[];
   uuidResolution: string;
 }
-export interface HostUnresolvedVmfsVolume extends DynamicData {
+export type HostUnresolvedVmfsVolume = DynamicData &  {
   extent: HostUnresolvedVmfsExtent[];
   vmfsLabel: string;
   vmfsUuid: string;
   totalBlocks: number;
   resolveStatus: HostUnresolvedVmfsVolumeResolveStatus;
 }
-export interface HostUnresolvedVmfsVolumeResolveStatus extends DynamicData {
+export type HostUnresolvedVmfsVolumeResolveStatus = DynamicData &  {
   resolvable: boolean;
   incompleteExtents?: boolean;
   multipleCopies?: boolean;
 }
-export interface HostVFlashResourceConfigurationResult extends DynamicData {
+export type HostVFlashResourceConfigurationResult = DynamicData &  {
   devicePath?: string[];
   vffs?: HostVffsVolume;
   diskConfigurationResult?: HostDiskConfigurationResult[];
 }
-export interface HostVMotionConfig extends DynamicData {
+export type HostVMotionConfig = DynamicData &  {
   vmotionNicKey?: string;
   enabled: boolean;
 }
-export interface HostVMotionNetConfig extends DynamicData {
+export type HostVMotionNetConfig = DynamicData &  {
   candidateVnic?: HostVirtualNic[];
   selectedVnic?: HostVirtualNic;
 }
-export interface HostVfatVolume extends HostFileSystemVolume {
+export type HostVfatVolume = HostFileSystemVolume &  {
   
 }
-export interface HostVirtualNic extends DynamicData {
+export type HostVirtualNic = DynamicData &  {
   device: string;
   key: string;
   portgroup: string;
   spec: HostVirtualNicSpec;
   port?: HostPortGroupPort;
 }
-export interface HostVirtualNicConfig extends DynamicData {
+export type HostVirtualNicConfig = DynamicData &  {
   changeOperation?: string;
   device?: string;
   portgroup: string;
   spec?: HostVirtualNicSpec;
 }
-export interface HostVirtualNicIpRouteSpec extends DynamicData {
+export type HostVirtualNicIpRouteSpec = DynamicData &  {
   ipRouteConfig?: HostIpRouteConfig;
 }
-export interface HostVirtualNicOpaqueNetworkSpec extends DynamicData {
+export type HostVirtualNicOpaqueNetworkSpec = DynamicData &  {
   opaqueNetworkId: string;
   opaqueNetworkType: string;
 }
-export interface HostVirtualNicSpec extends DynamicData {
+export type HostVirtualNicSpec = DynamicData &  {
   ip?: HostIpConfig;
   mac?: string;
   distributedVirtualPort?: DistributedVirtualSwitchPortConnection;
@@ -4969,25 +4969,25 @@ export interface HostVirtualNicSpec extends DynamicData {
   ipRouteSpec?: HostVirtualNicIpRouteSpec;
   systemOwned?: boolean;
 }
-export interface HostVirtualNicConnection extends DynamicData {
+export type HostVirtualNicConnection = DynamicData &  {
   portgroup?: string;
   dvPort?: DistributedVirtualSwitchPortConnection;
   opNetwork?: HostVirtualNicOpaqueNetworkSpec;
 }
-export interface VirtualNicManagerNetConfig extends DynamicData {
+export type VirtualNicManagerNetConfig = DynamicData &  {
   nicType: string;
   multiSelectAllowed: boolean;
   candidateVnic?: HostVirtualNic[];
   selectedVnic?: HostVirtualNic[];
 }
-export interface HostVirtualNicManagerNicTypeSelection extends DynamicData {
+export type HostVirtualNicManagerNicTypeSelection = DynamicData &  {
   vnic: HostVirtualNicConnection;
   nicType?: string[];
 }
-export interface HostVirtualNicManagerInfo extends DynamicData {
+export type HostVirtualNicManagerInfo = DynamicData &  {
   netConfig?: VirtualNicManagerNetConfig[];
 }
-export interface HostVirtualSwitch extends DynamicData {
+export type HostVirtualSwitch = DynamicData &  {
   name: string;
   key: string;
   numPorts: number;
@@ -4997,82 +4997,82 @@ export interface HostVirtualSwitch extends DynamicData {
   pnic?: PhysicalNic[];
   spec: HostVirtualSwitchSpec;
 }
-export interface HostVirtualSwitchAutoBridge extends HostVirtualSwitchBridge {
+export type HostVirtualSwitchAutoBridge = HostVirtualSwitchBridge &  {
   excludedNicDevice?: string[];
 }
-export interface HostVirtualSwitchBeaconConfig extends DynamicData {
+export type HostVirtualSwitchBeaconConfig = DynamicData &  {
   interval: number;
 }
-export interface HostVirtualSwitchBondBridge extends HostVirtualSwitchBridge {
+export type HostVirtualSwitchBondBridge = HostVirtualSwitchBridge &  {
   nicDevice: string[];
   beacon?: HostVirtualSwitchBeaconConfig;
   linkDiscoveryProtocolConfig?: LinkDiscoveryProtocolConfig;
 }
-export interface HostVirtualSwitchBridge extends DynamicData {
+export type HostVirtualSwitchBridge = DynamicData &  {
   
 }
-export interface HostVirtualSwitchConfig extends DynamicData {
+export type HostVirtualSwitchConfig = DynamicData &  {
   changeOperation?: string;
   name: string;
   spec?: HostVirtualSwitchSpec;
 }
-export interface HostVirtualSwitchSimpleBridge extends HostVirtualSwitchBridge {
+export type HostVirtualSwitchSimpleBridge = HostVirtualSwitchBridge &  {
   nicDevice: string;
 }
-export interface HostVirtualSwitchSpec extends DynamicData {
+export type HostVirtualSwitchSpec = DynamicData &  {
   numPorts: number;
   bridge?: HostVirtualSwitchBridge;
   policy?: HostNetworkPolicy;
   mtu?: number;
 }
-export interface HostVmciAccessManagerAccessSpec extends DynamicData {
+export type HostVmciAccessManagerAccessSpec = DynamicData &  {
   vm: VirtualMachine;
   services?: string[];
   mode: string;
 }
-export interface VmfsDatastoreOption extends DynamicData {
+export type VmfsDatastoreOption = DynamicData &  {
   info: VmfsDatastoreBaseOption;
   spec: VmfsDatastoreSpec;
 }
-export interface VmfsDatastoreAllExtentOption extends VmfsDatastoreSingleExtentOption {
+export type VmfsDatastoreAllExtentOption = VmfsDatastoreSingleExtentOption &  {
   
 }
-export interface VmfsDatastoreBaseOption extends DynamicData {
+export type VmfsDatastoreBaseOption = DynamicData &  {
   layout: HostDiskPartitionLayout;
   partitionFormatChange?: boolean;
 }
-export interface VmfsDatastoreMultipleExtentOption extends VmfsDatastoreBaseOption {
+export type VmfsDatastoreMultipleExtentOption = VmfsDatastoreBaseOption &  {
   vmfsExtent: HostDiskPartitionBlockRange[];
 }
-export interface VmfsDatastoreSingleExtentOption extends VmfsDatastoreBaseOption {
+export type VmfsDatastoreSingleExtentOption = VmfsDatastoreBaseOption &  {
   vmfsExtent: HostDiskPartitionBlockRange;
 }
-export interface VmfsDatastoreSpec extends DynamicData {
+export type VmfsDatastoreSpec = DynamicData &  {
   diskUuid: string;
 }
-export interface HostVmfsRescanResult extends DynamicData {
+export type HostVmfsRescanResult = DynamicData &  {
   host: HostSystem;
   fault?: MethodFault;
 }
-export interface HostVsanInternalSystemCmmdsQuery extends DynamicData {
+export type HostVsanInternalSystemCmmdsQuery = DynamicData &  {
   type?: string;
   uuid?: string;
   owner?: string;
 }
-export interface HostVsanInternalSystemDeleteVsanObjectsResult extends DynamicData {
+export type HostVsanInternalSystemDeleteVsanObjectsResult = DynamicData &  {
   uuid: string;
   success: boolean;
   failureReason?: LocalizableMessage[];
 }
-export interface VsanNewPolicyBatch extends DynamicData {
+export type VsanNewPolicyBatch = DynamicData &  {
   size?: number[];
   policy?: string;
 }
-export interface VsanPolicyChangeBatch extends DynamicData {
+export type VsanPolicyChangeBatch = DynamicData &  {
   uuid?: string[];
   policy?: string;
 }
-export interface VsanPolicyCost extends DynamicData {
+export type VsanPolicyCost = DynamicData &  {
   changeDataSize?: number;
   currentDataSize?: number;
   tempDataSize?: number;
@@ -5082,158 +5082,158 @@ export interface VsanPolicyCost extends DynamicData {
   currentDiskSpaceToAddressSpaceRatio?: number;
   diskSpaceToAddressSpaceRatio?: number;
 }
-export interface VsanPolicySatisfiability extends DynamicData {
+export type VsanPolicySatisfiability = DynamicData &  {
   uuid?: string;
   isSatisfiable: boolean;
   reason?: LocalizableMessage;
   cost?: VsanPolicyCost;
 }
-export interface HostVsanInternalSystemVsanObjectOperationResult extends DynamicData {
+export type HostVsanInternalSystemVsanObjectOperationResult = DynamicData &  {
   uuid: string;
   failureReason?: LocalizableMessage[];
 }
-export interface HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult extends DynamicData {
+export type HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult = DynamicData &  {
   diskUuid: string;
   success: boolean;
   failureReason?: string;
 }
-export interface HostVvolVolume extends HostFileSystemVolume {
+export type HostVvolVolume = HostFileSystemVolume &  {
   scId: string;
   hostPE?: VVolHostPE[];
   vasaProviderInfo?: VimVasaProviderInfo[];
   storageArray?: VASAStorageArray[];
 }
-export interface VVolHostPE extends DynamicData {
+export type VVolHostPE = DynamicData &  {
   key: HostSystem;
   protocolEndpoint: HostProtocolEndpoint[];
 }
-export interface HostVvolVolumeSpecification extends DynamicData {
+export type HostVvolVolumeSpecification = DynamicData &  {
   maxSizeInMB: number;
   volumeName: string;
   vasaProviderInfo?: VimVasaProviderInfo[];
   storageArray?: VASAStorageArray[];
   uuid: string;
 }
-export interface NetDhcpConfigInfo extends DynamicData {
+export type NetDhcpConfigInfo = DynamicData &  {
   ipv6?: NetDhcpConfigInfoDhcpOptions;
   ipv4?: NetDhcpConfigInfoDhcpOptions;
 }
-export interface NetDhcpConfigInfoDhcpOptions extends DynamicData {
+export type NetDhcpConfigInfoDhcpOptions = DynamicData &  {
   enable: boolean;
   config?: KeyValue[];
 }
-export interface NetDhcpConfigSpec extends DynamicData {
+export type NetDhcpConfigSpec = DynamicData &  {
   ipv6?: NetDhcpConfigSpecDhcpOptionsSpec;
   ipv4?: NetDhcpConfigSpecDhcpOptionsSpec;
 }
-export interface NetDhcpConfigSpecDhcpOptionsSpec extends DynamicData {
+export type NetDhcpConfigSpecDhcpOptionsSpec = DynamicData &  {
   enable?: boolean;
   config: KeyValue[];
   operation: string;
 }
-export interface NetDnsConfigInfo extends DynamicData {
+export type NetDnsConfigInfo = DynamicData &  {
   dhcp: boolean;
   hostName: string;
   domainName: string;
   ipAddress?: string[];
   searchDomain?: string[];
 }
-export interface NetDnsConfigSpec extends DynamicData {
+export type NetDnsConfigSpec = DynamicData &  {
   dhcp?: boolean;
   hostName?: string;
   domainName?: string;
   ipAddress?: string[];
   searchDomain?: string[];
 }
-export interface NetIpConfigInfo extends DynamicData {
+export type NetIpConfigInfo = DynamicData &  {
   ipAddress?: NetIpConfigInfoIpAddress[];
   dhcp?: NetDhcpConfigInfo;
   autoConfigurationEnabled?: boolean;
 }
-export interface NetIpConfigInfoIpAddress extends DynamicData {
+export type NetIpConfigInfoIpAddress = DynamicData &  {
   ipAddress: string;
   prefixLength: number;
   origin?: string;
   state?: string;
   lifetime?: Date;
 }
-export interface NetIpConfigSpec extends DynamicData {
+export type NetIpConfigSpec = DynamicData &  {
   ipAddress?: NetIpConfigSpecIpAddressSpec[];
   dhcp?: NetDhcpConfigSpec;
   autoConfigurationEnabled?: boolean;
 }
-export interface NetIpConfigSpecIpAddressSpec extends DynamicData {
+export type NetIpConfigSpecIpAddressSpec = DynamicData &  {
   ipAddress: string;
   prefixLength: number;
   operation: string;
 }
-export interface NetIpRouteConfigInfo extends DynamicData {
+export type NetIpRouteConfigInfo = DynamicData &  {
   ipRoute?: NetIpRouteConfigInfoIpRoute[];
 }
-export interface NetIpRouteConfigInfoGateway extends DynamicData {
+export type NetIpRouteConfigInfoGateway = DynamicData &  {
   ipAddress?: string;
   device?: string;
 }
-export interface NetIpRouteConfigInfoIpRoute extends DynamicData {
+export type NetIpRouteConfigInfoIpRoute = DynamicData &  {
   network: string;
   prefixLength: number;
   gateway: NetIpRouteConfigInfoGateway;
 }
-export interface NetIpRouteConfigSpec extends DynamicData {
+export type NetIpRouteConfigSpec = DynamicData &  {
   ipRoute?: NetIpRouteConfigSpecIpRouteSpec[];
 }
-export interface NetIpRouteConfigSpecGatewaySpec extends DynamicData {
+export type NetIpRouteConfigSpecGatewaySpec = DynamicData &  {
   ipAddress?: string;
   device?: string;
 }
-export interface NetIpRouteConfigSpecIpRouteSpec extends DynamicData {
+export type NetIpRouteConfigSpecIpRouteSpec = DynamicData &  {
   network: string;
   prefixLength: number;
   gateway: NetIpRouteConfigSpecGatewaySpec;
   operation: string;
 }
-export interface NetIpStackInfo extends DynamicData {
+export type NetIpStackInfo = DynamicData &  {
   neighbor?: NetIpStackInfoNetToMedia[];
   defaultRouter?: NetIpStackInfoDefaultRouter[];
 }
-export interface NetIpStackInfoDefaultRouter extends DynamicData {
+export type NetIpStackInfoDefaultRouter = DynamicData &  {
   ipAddress: string;
   device: string;
   lifetime: Date;
   preference: string;
 }
-export interface NetIpStackInfoNetToMedia extends DynamicData {
+export type NetIpStackInfoNetToMedia = DynamicData &  {
   ipAddress: string;
   physicalAddress: string;
   device: string;
   type: string;
 }
-export interface NetBIOSConfigInfo extends DynamicData {
+export type NetBIOSConfigInfo = DynamicData &  {
   mode: string;
 }
-export interface WinNetBIOSConfigInfo extends NetBIOSConfigInfo {
+export type WinNetBIOSConfigInfo = NetBIOSConfigInfo &  {
   primaryWINS: string;
   secondaryWINS?: string;
 }
-export interface ArrayUpdateSpec extends DynamicData {
+export type ArrayUpdateSpec = DynamicData &  {
   operation: ArrayUpdateOperation;
   removeKey?: any;
 }
-export interface OptionDef extends ElementDescription {
+export type OptionDef = ElementDescription &  {
   optionType: OptionType;
 }
-export interface OptionType extends DynamicData {
+export type OptionType = DynamicData &  {
   valueIsReadonly?: boolean;
 }
-export interface OptionValue extends DynamicData {
+export type OptionValue = DynamicData &  {
   key: string;
   value?: any;
 }
-export interface StringOption extends OptionType {
+export type StringOption = OptionType &  {
   defaultValue: string;
   validCharacters?: string;
 }
-export interface ApplyProfile extends DynamicData {
+export type ApplyProfile = DynamicData &  {
   enabled: boolean;
   policy?: ProfilePolicy[];
   profileTypeName?: string;
@@ -5246,55 +5246,55 @@ export interface ApplyProfile extends DynamicData {
   copyEnableStatus?: boolean;
   hidden?: boolean;
 }
-export interface ProfileApplyProfileElement extends ApplyProfile {
+export type ProfileApplyProfileElement = ApplyProfile &  {
   key: string;
 }
-export interface ProfileApplyProfileProperty extends DynamicData {
+export type ProfileApplyProfileProperty = DynamicData &  {
   propertyName: string;
   array: boolean;
   profile?: ApplyProfile[];
 }
-export interface ComplianceLocator extends DynamicData {
+export type ComplianceLocator = DynamicData &  {
   expressionName: string;
   applyPath: ProfilePropertyPath;
 }
-export interface ComplianceProfile extends DynamicData {
+export type ComplianceProfile = DynamicData &  {
   expression: ProfileExpression[];
   rootExpression: string;
 }
-export interface ComplianceResult extends DynamicData {
+export type ComplianceResult = DynamicData &  {
   profile?: Profile;
   complianceStatus: string;
   entity?: ManagedEntity;
   checkTime?: Date;
   failure?: ComplianceFailure[];
 }
-export interface ComplianceFailure extends DynamicData {
+export type ComplianceFailure = DynamicData &  {
   failureType: string;
   message: LocalizableMessage;
   expressionName?: string;
   failureValues?: ComplianceFailureComplianceFailureValues[];
 }
-export interface ComplianceFailureComplianceFailureValues extends DynamicData {
+export type ComplianceFailureComplianceFailureValues = DynamicData &  {
   comparisonIdentifier: string;
   profileInstance?: string;
   hostValue?: any;
   profileValue?: any;
 }
-export interface ProfileDeferredPolicyOptionParameter extends DynamicData {
+export type ProfileDeferredPolicyOptionParameter = DynamicData &  {
   inputPath: ProfilePropertyPath;
   parameter?: KeyAnyValue[];
 }
-export interface ProfileExpression extends DynamicData {
+export type ProfileExpression = DynamicData &  {
   id: string;
   displayName: string;
   negated: boolean;
 }
-export interface ProfileExpressionMetadata extends DynamicData {
+export type ProfileExpressionMetadata = DynamicData &  {
   expressionId: ExtendedElementDescription;
   parameter?: ProfileParameterMetadata[];
 }
-export interface ProfileParameterMetadata extends DynamicData {
+export type ProfileParameterMetadata = DynamicData &  {
   id: ExtendedElementDescription;
   type: string;
   optional: boolean;
@@ -5304,50 +5304,50 @@ export interface ProfileParameterMetadata extends DynamicData {
   readOnly?: boolean;
   parameterRelations?: ProfileParameterMetadataParameterRelationMetadata[];
 }
-export interface ProfileParameterMetadataParameterRelationMetadata extends DynamicData {
+export type ProfileParameterMetadataParameterRelationMetadata = DynamicData &  {
   relationTypes?: string[];
   values?: any[];
   path?: ProfilePropertyPath;
   minCount: number;
   maxCount: number;
 }
-export interface ProfilePolicy extends DynamicData {
+export type ProfilePolicy = DynamicData &  {
   id: string;
   policyOption: PolicyOption;
 }
-export interface ProfilePolicyMetadata extends DynamicData {
+export type ProfilePolicyMetadata = DynamicData &  {
   id: ExtendedElementDescription;
   possibleOption: ProfilePolicyOptionMetadata[];
 }
-export interface PolicyOption extends DynamicData {
+export type PolicyOption = DynamicData &  {
   id: string;
   parameter?: KeyAnyValue[];
 }
-export interface ProfilePolicyOptionMetadata extends DynamicData {
+export type ProfilePolicyOptionMetadata = DynamicData &  {
   id: ExtendedElementDescription;
   parameter?: ProfileParameterMetadata[];
 }
-export interface ProfileConfigInfo extends DynamicData {
+export type ProfileConfigInfo = DynamicData &  {
   name: string;
   annotation?: string;
   enabled: boolean;
 }
-export interface ProfileCreateSpec extends DynamicData {
+export type ProfileCreateSpec = DynamicData &  {
   name?: string;
   annotation?: string;
   enabled?: boolean;
 }
-export interface ProfileDescription extends DynamicData {
+export type ProfileDescription = DynamicData &  {
   section: ProfileDescriptionSection[];
 }
-export interface ProfileDescriptionSection extends DynamicData {
+export type ProfileDescriptionSection = DynamicData &  {
   description: ExtendedElementDescription;
   message?: LocalizableMessage[];
 }
-export interface ProfileSerializedCreateSpec extends ProfileCreateSpec {
+export type ProfileSerializedCreateSpec = ProfileCreateSpec &  {
   profileConfigString: string;
 }
-export interface ProfileMetadata extends DynamicData {
+export type ProfileMetadata = DynamicData &  {
   key: string;
   profileTypeName?: string;
   description?: ExtendedDescription;
@@ -5356,102 +5356,102 @@ export interface ProfileMetadata extends DynamicData {
   profileComponent?: string;
   operationMessages?: ProfileMetadataProfileOperationMessage[];
 }
-export interface ProfileMetadataProfileOperationMessage extends DynamicData {
+export type ProfileMetadataProfileOperationMessage = DynamicData &  {
   operationName: string;
   message: LocalizableMessage;
 }
-export interface ProfileMetadataProfileSortSpec extends DynamicData {
+export type ProfileMetadataProfileSortSpec = DynamicData &  {
   policyId: string;
   parameter: string;
 }
-export interface ProfilePropertyPath extends DynamicData {
+export type ProfilePropertyPath = DynamicData &  {
   profilePath: string;
   policyId?: string;
   parameterId?: string;
   policyOptionId?: string;
 }
-export interface ProfileProfileStructure extends DynamicData {
+export type ProfileProfileStructure = DynamicData &  {
   profileTypeName: string;
   child?: ProfileProfileStructureProperty[];
 }
-export interface ProfileProfileStructureProperty extends DynamicData {
+export type ProfileProfileStructureProperty = DynamicData &  {
   propertyName: string;
   array: boolean;
   element: ProfileProfileStructure;
 }
-export interface ProfileSimpleExpression extends ProfileExpression {
+export type ProfileSimpleExpression = ProfileExpression &  {
   expressionType: string;
   parameter?: KeyAnyValue[];
 }
-export interface UserInputRequiredParameterMetadata extends ProfilePolicyOptionMetadata {
+export type UserInputRequiredParameterMetadata = ProfilePolicyOptionMetadata &  {
   userInputParameter?: ProfileParameterMetadata[];
 }
-export interface ClusterProfileCompleteConfigSpec extends ClusterProfileConfigSpec {
+export type ClusterProfileCompleteConfigSpec = ClusterProfileConfigSpec &  {
   complyProfile?: ComplianceProfile;
 }
-export interface ClusterProfileConfigInfo extends ProfileConfigInfo {
+export type ClusterProfileConfigInfo = ProfileConfigInfo &  {
   complyProfile?: ComplianceProfile;
 }
-export interface ClusterProfileConfigServiceCreateSpec extends ClusterProfileConfigSpec {
+export type ClusterProfileConfigServiceCreateSpec = ClusterProfileConfigSpec &  {
   serviceType?: string[];
 }
-export interface ClusterProfileConfigSpec extends ClusterProfileCreateSpec {
+export type ClusterProfileConfigSpec = ClusterProfileCreateSpec &  {
   
 }
-export interface ClusterProfileCreateSpec extends ProfileCreateSpec {
+export type ClusterProfileCreateSpec = ProfileCreateSpec &  {
   
 }
-export interface ActiveDirectoryProfile extends ApplyProfile {
+export type ActiveDirectoryProfile = ApplyProfile &  {
   
 }
-export interface AnswerFile extends DynamicData {
+export type AnswerFile = DynamicData &  {
   userInput?: ProfileDeferredPolicyOptionParameter[];
   createdTime: Date;
   modifiedTime: Date;
 }
-export interface AnswerFileStatusResult extends DynamicData {
+export type AnswerFileStatusResult = DynamicData &  {
   checkedTime: Date;
   host: HostSystem;
   status: string;
   error?: AnswerFileStatusError[];
 }
-export interface AnswerFileStatusError extends DynamicData {
+export type AnswerFileStatusError = DynamicData &  {
   userInputPath: ProfilePropertyPath;
   errMsg: LocalizableMessage;
 }
-export interface AuthenticationProfile extends ApplyProfile {
+export type AuthenticationProfile = ApplyProfile &  {
   activeDirectory?: ActiveDirectoryProfile;
 }
-export interface DateTimeProfile extends ApplyProfile {
+export type DateTimeProfile = ApplyProfile &  {
   
 }
-export interface DvsProfile extends ApplyProfile {
+export type DvsProfile = ApplyProfile &  {
   key: string;
   name: string;
   uplink?: PnicUplinkProfile[];
 }
-export interface DvsVNicProfile extends ApplyProfile {
+export type DvsVNicProfile = ApplyProfile &  {
   key: string;
   ipConfig: IpAddressProfile;
 }
-export interface ProfileExecuteResult extends DynamicData {
+export type ProfileExecuteResult = DynamicData &  {
   status: string;
   configSpec?: HostConfigSpec;
   inapplicablePath?: string[];
   requireInput?: ProfileDeferredPolicyOptionParameter[];
   error?: ProfileExecuteError[];
 }
-export interface ProfileExecuteError extends DynamicData {
+export type ProfileExecuteError = DynamicData &  {
   path?: ProfilePropertyPath;
   message: LocalizableMessage;
 }
-export interface FirewallProfile extends ApplyProfile {
+export type FirewallProfile = ApplyProfile &  {
   ruleset?: FirewallProfileRulesetProfile[];
 }
-export interface FirewallProfileRulesetProfile extends ApplyProfile {
+export type FirewallProfileRulesetProfile = ApplyProfile &  {
   key: string;
 }
-export interface HostApplyProfile extends ApplyProfile {
+export type HostApplyProfile = ApplyProfile &  {
   memory?: HostMemoryProfile;
   storage?: StorageProfile;
   network?: NetworkProfile;
@@ -5464,35 +5464,35 @@ export interface HostApplyProfile extends ApplyProfile {
   usergroupAccount?: UserGroupProfile[];
   authentication?: AuthenticationProfile;
 }
-export interface HostMemoryProfile extends ApplyProfile {
+export type HostMemoryProfile = ApplyProfile &  {
   
 }
-export interface HostSpecification extends DynamicData {
+export type HostSpecification = DynamicData &  {
   createdTime: Date;
   lastModified?: Date;
   host: HostSystem;
   subSpecs?: HostSubSpecification[];
   changeID?: string;
 }
-export interface HostSubSpecification extends DynamicData {
+export type HostSubSpecification = DynamicData &  {
   name: string;
   createdTime: Date;
   data?: number[];
   binaryData?: Buffer;
 }
-export interface IpAddressProfile extends ApplyProfile {
+export type IpAddressProfile = ApplyProfile &  {
   
 }
-export interface IpRouteProfile extends ApplyProfile {
+export type IpRouteProfile = ApplyProfile &  {
   staticRoute?: StaticRouteProfile[];
 }
-export interface NasStorageProfile extends ApplyProfile {
+export type NasStorageProfile = ApplyProfile &  {
   key: string;
 }
-export interface NetworkPolicyProfile extends ApplyProfile {
+export type NetworkPolicyProfile = ApplyProfile &  {
   
 }
-export interface NetworkProfile extends ApplyProfile {
+export type NetworkProfile = ApplyProfile &  {
   vswitch?: VirtualSwitchProfile[];
   vmPortGroup?: VmPortGroupProfile[];
   hostPortGroup?: HostPortGroupProfile[];
@@ -5508,89 +5508,89 @@ export interface NetworkProfile extends ApplyProfile {
   netStackInstance?: NetStackInstanceProfile[];
   opaqueSwitch?: OpaqueSwitchProfile;
 }
-export interface NetworkProfileDnsConfigProfile extends ApplyProfile {
+export type NetworkProfileDnsConfigProfile = ApplyProfile &  {
   
 }
-export interface NsxHostVNicProfile extends ApplyProfile {
+export type NsxHostVNicProfile = ApplyProfile &  {
   key: string;
   ipConfig: IpAddressProfile;
 }
-export interface OpaqueSwitchProfile extends ApplyProfile {
+export type OpaqueSwitchProfile = ApplyProfile &  {
   
 }
-export interface OptionProfile extends ApplyProfile {
+export type OptionProfile = ApplyProfile &  {
   key: string;
 }
-export interface PermissionProfile extends ApplyProfile {
+export type PermissionProfile = ApplyProfile &  {
   key: string;
 }
-export interface PhysicalNicProfile extends ApplyProfile {
+export type PhysicalNicProfile = ApplyProfile &  {
   key: string;
 }
-export interface PnicUplinkProfile extends ApplyProfile {
+export type PnicUplinkProfile = ApplyProfile &  {
   key: string;
 }
-export interface PortGroupProfile extends ApplyProfile {
+export type PortGroupProfile = ApplyProfile &  {
   key: string;
   name: string;
   vlan: VlanProfile;
   vswitch: VirtualSwitchSelectionProfile;
   networkPolicy: NetworkPolicyProfile;
 }
-export interface VirtualSwitchSelectionProfile extends ApplyProfile {
+export type VirtualSwitchSelectionProfile = ApplyProfile &  {
   
 }
-export interface VlanProfile extends ApplyProfile {
+export type VlanProfile = ApplyProfile &  {
   
 }
-export interface SecurityProfile extends ApplyProfile {
+export type SecurityProfile = ApplyProfile &  {
   permission?: PermissionProfile[];
 }
-export interface ServiceConsolePortGroupProfile extends PortGroupProfile {
+export type ServiceConsolePortGroupProfile = PortGroupProfile &  {
   ipConfig: IpAddressProfile;
 }
-export interface ServiceProfile extends ApplyProfile {
+export type ServiceProfile = ApplyProfile &  {
   key: string;
 }
-export interface StaticRouteProfile extends ApplyProfile {
+export type StaticRouteProfile = ApplyProfile &  {
   key?: string;
 }
-export interface StorageProfile extends ApplyProfile {
+export type StorageProfile = ApplyProfile &  {
   nasStorage?: NasStorageProfile[];
 }
-export interface UserGroupProfile extends ApplyProfile {
+export type UserGroupProfile = ApplyProfile &  {
   key: string;
 }
-export interface UserProfile extends ApplyProfile {
+export type UserProfile = ApplyProfile &  {
   key: string;
 }
-export interface VirtualSwitchProfile extends ApplyProfile {
+export type VirtualSwitchProfile = ApplyProfile &  {
   key: string;
   name: string;
   link: LinkProfile;
   numPorts: NumPortsProfile;
   networkPolicy: NetworkPolicyProfile;
 }
-export interface LinkProfile extends ApplyProfile {
+export type LinkProfile = ApplyProfile &  {
   
 }
-export interface NumPortsProfile extends ApplyProfile {
+export type NumPortsProfile = ApplyProfile &  {
   
 }
-export interface VmPortGroupProfile extends PortGroupProfile {
+export type VmPortGroupProfile = PortGroupProfile &  {
   
 }
-export interface ScheduledTaskDescription extends DynamicData {
+export type ScheduledTaskDescription = DynamicData &  {
   action: TypeDescription[];
   schedulerInfo: ScheduledTaskDetail[];
   state: ElementDescription[];
   dayOfWeek: ElementDescription[];
   weekOfMonth: ElementDescription[];
 }
-export interface ScheduledTaskDetail extends TypeDescription {
+export type ScheduledTaskDetail = TypeDescription &  {
   frequency: string;
 }
-export interface ScheduledTaskSpec extends DynamicData {
+export type ScheduledTaskSpec = DynamicData &  {
   name: string;
   description: string;
   enabled: boolean;
@@ -5598,29 +5598,29 @@ export interface ScheduledTaskSpec extends DynamicData {
   action: Action;
   notification?: string;
 }
-export interface TaskScheduler extends DynamicData {
+export type TaskScheduler = DynamicData &  {
   activeTime?: Date;
   expireTime?: Date;
 }
-export interface ApplyStorageRecommendationResult extends DynamicData {
+export type ApplyStorageRecommendationResult = DynamicData &  {
   vm?: VirtualMachine;
 }
-export interface StorageDrsAutomationConfig extends DynamicData {
+export type StorageDrsAutomationConfig = DynamicData &  {
   spaceLoadBalanceAutomationMode?: string;
   ioLoadBalanceAutomationMode?: string;
   ruleEnforcementAutomationMode?: string;
   policyEnforcementAutomationMode?: string;
   vmEvacuationAutomationMode?: string;
 }
-export interface StorageDrsConfigInfo extends DynamicData {
+export type StorageDrsConfigInfo = DynamicData &  {
   podConfig: StorageDrsPodConfigInfo;
   vmConfig?: StorageDrsVmConfigInfo[];
 }
-export interface StorageDrsConfigSpec extends DynamicData {
+export type StorageDrsConfigSpec = DynamicData &  {
   podConfigSpec?: StorageDrsPodConfigSpec;
   vmConfigSpec?: StorageDrsVmConfigSpec[];
 }
-export interface HbrDiskMigrationAction extends ClusterAction {
+export type HbrDiskMigrationAction = ClusterAction &  {
   collectionId: string;
   collectionName: string;
   diskIds: string[];
@@ -5634,23 +5634,23 @@ export interface HbrDiskMigrationAction extends ClusterAction {
   ioLatencySrcBefore?: number;
   ioLatencyDstBefore?: number;
 }
-export interface StorageDrsIoLoadBalanceConfig extends DynamicData {
+export type StorageDrsIoLoadBalanceConfig = DynamicData &  {
   reservablePercentThreshold?: number;
   reservableIopsThreshold?: number;
   reservableThresholdMode?: string;
   ioLatencyThreshold?: number;
   ioLoadImbalanceThreshold?: number;
 }
-export interface StorageDrsOptionSpec extends ArrayUpdateSpec {
+export type StorageDrsOptionSpec = ArrayUpdateSpec &  {
   option?: OptionValue;
 }
-export interface PlacementAffinityRule extends DynamicData {
+export type PlacementAffinityRule = DynamicData &  {
   ruleType: string;
   ruleScope: string;
   vms?: VirtualMachine[];
   keys?: string[];
 }
-export interface PlacementRankResult extends DynamicData {
+export type PlacementRankResult = DynamicData &  {
   key: string;
   candidate: ClusterComputeResource;
   reservedSpaceMB: number;
@@ -5659,17 +5659,17 @@ export interface PlacementRankResult extends DynamicData {
   utilization: number;
   faults?: MethodFault[];
 }
-export interface PlacementRankSpec extends DynamicData {
+export type PlacementRankSpec = DynamicData &  {
   specs: PlacementSpec[];
   clusters: ClusterComputeResource[];
   rules?: PlacementAffinityRule[];
   placementRankByVm?: StorageDrsPlacementRankVmSpec[];
 }
-export interface StorageDrsPlacementRankVmSpec extends DynamicData {
+export type StorageDrsPlacementRankVmSpec = DynamicData &  {
   vmPlacementSpec: PlacementSpec;
   vmClusters: ClusterComputeResource[];
 }
-export interface StorageDrsPodConfigInfo extends DynamicData {
+export type StorageDrsPodConfigInfo = DynamicData &  {
   enabled: boolean;
   ioLoadBalanceEnabled: boolean;
   defaultVmBehavior: string;
@@ -5681,7 +5681,7 @@ export interface StorageDrsPodConfigInfo extends DynamicData {
   rule?: ClusterRuleInfo[];
   option?: OptionValue[];
 }
-export interface StorageDrsPodConfigSpec extends DynamicData {
+export type StorageDrsPodConfigSpec = DynamicData &  {
   enabled?: boolean;
   ioLoadBalanceEnabled?: boolean;
   defaultVmBehavior?: string;
@@ -5693,13 +5693,13 @@ export interface StorageDrsPodConfigSpec extends DynamicData {
   rule?: ClusterRuleSpec[];
   option?: StorageDrsOptionSpec[];
 }
-export interface StorageDrsSpaceLoadBalanceConfig extends DynamicData {
+export type StorageDrsSpaceLoadBalanceConfig = DynamicData &  {
   spaceThresholdMode?: string;
   spaceUtilizationThreshold?: number;
   freeSpaceThresholdGB?: number;
   minSpaceUtilizationDifference?: number;
 }
-export interface StorageMigrationAction extends ClusterAction {
+export type StorageMigrationAction = ClusterAction &  {
   vm: VirtualMachine;
   relocateSpec: VirtualMachineRelocateSpec;
   source: Datastore;
@@ -5712,7 +5712,7 @@ export interface StorageMigrationAction extends ClusterAction {
   ioLatencySrcBefore?: number;
   ioLatencyDstBefore?: number;
 }
-export interface StoragePlacementAction extends ClusterAction {
+export type StoragePlacementAction = ClusterAction &  {
   vm?: VirtualMachine;
   relocateSpec: VirtualMachineRelocateSpec;
   destination: Datastore;
@@ -5722,12 +5722,12 @@ export interface StoragePlacementAction extends ClusterAction {
   spaceDemandAfter?: number;
   ioLatencyBefore?: number;
 }
-export interface StoragePlacementResult extends DynamicData {
+export type StoragePlacementResult = DynamicData &  {
   recommendations?: ClusterRecommendation[];
   drsFault?: ClusterDrsFaults;
   task?: Task;
 }
-export interface StorageDrsVmConfigInfo extends DynamicData {
+export type StorageDrsVmConfigInfo = DynamicData &  {
   vm?: VirtualMachine;
   enabled?: boolean;
   behavior?: string;
@@ -5735,10 +5735,10 @@ export interface StorageDrsVmConfigInfo extends DynamicData {
   intraVmAntiAffinity?: VirtualDiskAntiAffinityRuleSpec;
   virtualDiskRules?: VirtualDiskRuleSpec[];
 }
-export interface StorageDrsVmConfigSpec extends ArrayUpdateSpec {
+export type StorageDrsVmConfigSpec = ArrayUpdateSpec &  {
   info?: StorageDrsVmConfigInfo;
 }
-export interface VAppCloneSpec extends DynamicData {
+export type VAppCloneSpec = DynamicData &  {
   location: Datastore;
   host?: HostSystem;
   resourceSpec?: ResourceConfigSpec;
@@ -5748,17 +5748,17 @@ export interface VAppCloneSpec extends DynamicData {
   resourceMapping?: VAppCloneSpecResourceMap[];
   provisioning?: string;
 }
-export interface VAppCloneSpecNetworkMappingPair extends DynamicData {
+export type VAppCloneSpecNetworkMappingPair = DynamicData &  {
   source: Network;
   destination: Network;
 }
-export interface VAppCloneSpecResourceMap extends DynamicData {
+export type VAppCloneSpecResourceMap = DynamicData &  {
   source: ManagedEntity;
   parent?: ResourcePool;
   resourceSpec?: ResourceConfigSpec;
   location?: Datastore;
 }
-export interface VAppEntityConfigInfo extends DynamicData {
+export type VAppEntityConfigInfo = DynamicData &  {
   key?: ManagedEntity;
   tag?: string;
   startOrder?: number;
@@ -5769,13 +5769,13 @@ export interface VAppEntityConfigInfo extends DynamicData {
   stopAction?: string;
   destroyWithParent?: boolean;
 }
-export interface VAppIPAssignmentInfo extends DynamicData {
+export type VAppIPAssignmentInfo = DynamicData &  {
   supportedAllocationScheme?: string[];
   ipAllocationPolicy?: string;
   supportedIpProtocol?: string[];
   ipProtocol?: string;
 }
-export interface IpPool extends DynamicData {
+export type IpPool = DynamicData &  {
   id?: number;
   name?: string;
   ipv4Config?: IpPoolIpPoolConfigInfo;
@@ -5790,11 +5790,11 @@ export interface IpPool extends DynamicData {
   allocatedIpv4Addresses?: number;
   allocatedIpv6Addresses?: number;
 }
-export interface IpPoolAssociation extends DynamicData {
+export type IpPoolAssociation = DynamicData &  {
   network?: Network;
   networkName: string;
 }
-export interface IpPoolIpPoolConfigInfo extends DynamicData {
+export type IpPoolIpPoolConfigInfo = DynamicData &  {
   subnetAddress?: string;
   netmask?: string;
   gateway?: string;
@@ -5803,17 +5803,17 @@ export interface IpPoolIpPoolConfigInfo extends DynamicData {
   dhcpServerAvailable?: boolean;
   ipPoolEnabled?: boolean;
 }
-export interface VAppOvfSectionInfo extends DynamicData {
+export type VAppOvfSectionInfo = DynamicData &  {
   key?: number;
   namespace?: string;
   type?: string;
   atEnvelopeLevel?: boolean;
   contents?: string;
 }
-export interface VAppOvfSectionSpec extends ArrayUpdateSpec {
+export type VAppOvfSectionSpec = ArrayUpdateSpec &  {
   info?: VAppOvfSectionInfo;
 }
-export interface VAppProductInfo extends DynamicData {
+export type VAppProductInfo = DynamicData &  {
   key: number;
   classId?: string;
   instanceId?: string;
@@ -5825,10 +5825,10 @@ export interface VAppProductInfo extends DynamicData {
   productUrl?: string;
   appUrl?: string;
 }
-export interface VAppProductSpec extends ArrayUpdateSpec {
+export type VAppProductSpec = ArrayUpdateSpec &  {
   info?: VAppProductInfo;
 }
-export interface VAppPropertyInfo extends DynamicData {
+export type VAppPropertyInfo = DynamicData &  {
   key: number;
   classId?: string;
   instanceId?: string;
@@ -5842,10 +5842,10 @@ export interface VAppPropertyInfo extends DynamicData {
   value?: string;
   description?: string;
 }
-export interface VAppPropertySpec extends ArrayUpdateSpec {
+export type VAppPropertySpec = ArrayUpdateSpec &  {
   info?: VAppPropertyInfo;
 }
-export interface VmConfigInfo extends DynamicData {
+export type VmConfigInfo = DynamicData &  {
   product?: VAppProductInfo[];
   property?: VAppPropertyInfo[];
   ipAssignment: VAppIPAssignmentInfo;
@@ -5855,7 +5855,7 @@ export interface VmConfigInfo extends DynamicData {
   installBootRequired: boolean;
   installBootStopDelay: number;
 }
-export interface VmConfigSpec extends DynamicData {
+export type VmConfigSpec = DynamicData &  {
   product?: VAppProductSpec[];
   property?: VAppPropertySpec[];
   ipAssignment?: VAppIPAssignmentInfo;
@@ -5865,16 +5865,16 @@ export interface VmConfigSpec extends DynamicData {
   installBootRequired?: boolean;
   installBootStopDelay?: number;
 }
-export interface ClusterNetworkConfigSpec extends DynamicData {
+export type ClusterNetworkConfigSpec = DynamicData &  {
   networkPortGroup: Network;
   ipSettings: CustomizationIPSettings;
 }
-export interface FailoverNodeInfo extends DynamicData {
+export type FailoverNodeInfo = DynamicData &  {
   clusterIpSettings: CustomizationIPSettings;
   failoverIp?: CustomizationIPSettings;
   biosUuid?: string;
 }
-export interface NodeDeploymentSpec extends DynamicData {
+export type NodeDeploymentSpec = DynamicData &  {
   esxHost?: HostSystem;
   datastore?: Datastore;
   publicNetworkPortGroup?: Network;
@@ -5885,62 +5885,62 @@ export interface NodeDeploymentSpec extends DynamicData {
   nodeName: string;
   ipSettings: CustomizationIPSettings;
 }
-export interface NodeNetworkSpec extends DynamicData {
+export type NodeNetworkSpec = DynamicData &  {
   ipSettings: CustomizationIPSettings;
 }
-export interface PassiveNodeDeploymentSpec extends NodeDeploymentSpec {
+export type PassiveNodeDeploymentSpec = NodeDeploymentSpec &  {
   failoverIpSettings?: CustomizationIPSettings;
 }
-export interface PassiveNodeNetworkSpec extends NodeNetworkSpec {
+export type PassiveNodeNetworkSpec = NodeNetworkSpec &  {
   failoverIpSettings?: CustomizationIPSettings;
 }
-export interface SourceNodeSpec extends DynamicData {
+export type SourceNodeSpec = DynamicData &  {
   managementVc: ServiceLocator;
   activeVc: VirtualMachine;
 }
-export interface VchaClusterConfigInfo extends DynamicData {
+export type VchaClusterConfigInfo = DynamicData &  {
   failoverNodeInfo1?: FailoverNodeInfo;
   failoverNodeInfo2?: FailoverNodeInfo;
   witnessNodeInfo?: WitnessNodeInfo;
   state: string;
 }
-export interface VchaClusterConfigSpec extends DynamicData {
+export type VchaClusterConfigSpec = DynamicData &  {
   passiveIp: string;
   witnessIp: string;
 }
-export interface VchaClusterDeploymentSpec extends DynamicData {
+export type VchaClusterDeploymentSpec = DynamicData &  {
   passiveDeploymentSpec: PassiveNodeDeploymentSpec;
   witnessDeploymentSpec: NodeDeploymentSpec;
   activeVcSpec: SourceNodeSpec;
   activeVcNetworkConfig?: ClusterNetworkConfigSpec;
 }
-export interface VchaClusterNetworkSpec extends DynamicData {
+export type VchaClusterNetworkSpec = DynamicData &  {
   witnessNetworkSpec: NodeNetworkSpec;
   passiveNetworkSpec: PassiveNodeNetworkSpec;
 }
-export interface WitnessNodeInfo extends DynamicData {
+export type WitnessNodeInfo = DynamicData &  {
   ipSettings: CustomizationIPSettings;
   biosUuid?: string;
 }
-export interface VchaClusterHealth extends DynamicData {
+export type VchaClusterHealth = DynamicData &  {
   runtimeInfo: VchaClusterRuntimeInfo;
   healthMessages?: LocalizableMessage[];
   additionalInformation?: LocalizableMessage[];
 }
-export interface VchaClusterRuntimeInfo extends DynamicData {
+export type VchaClusterRuntimeInfo = DynamicData &  {
   clusterState: string;
   nodeInfo?: VchaNodeRuntimeInfo[];
   clusterMode: string;
 }
-export interface VchaNodeRuntimeInfo extends DynamicData {
+export type VchaNodeRuntimeInfo = DynamicData &  {
   nodeState: string;
   nodeRole: string;
   nodeIp: string;
 }
-export interface VirtualMachineAffinityInfo extends DynamicData {
+export type VirtualMachineAffinityInfo = DynamicData &  {
   affinitySet?: number[];
 }
-export interface VirtualMachineBootOptions extends DynamicData {
+export type VirtualMachineBootOptions = DynamicData &  {
   bootDelay?: number;
   enterBIOSSetup?: boolean;
   efiSecureBootEnabled?: boolean;
@@ -5949,22 +5949,22 @@ export interface VirtualMachineBootOptions extends DynamicData {
   bootOrder?: VirtualMachineBootOptionsBootableDevice[];
   networkBootProtocol?: string;
 }
-export interface VirtualMachineBootOptionsBootableCdromDevice extends VirtualMachineBootOptionsBootableDevice {
+export type VirtualMachineBootOptionsBootableCdromDevice = VirtualMachineBootOptionsBootableDevice &  {
   
 }
-export interface VirtualMachineBootOptionsBootableDevice extends DynamicData {
+export type VirtualMachineBootOptionsBootableDevice = DynamicData &  {
   
 }
-export interface VirtualMachineBootOptionsBootableDiskDevice extends VirtualMachineBootOptionsBootableDevice {
+export type VirtualMachineBootOptionsBootableDiskDevice = VirtualMachineBootOptionsBootableDevice &  {
   deviceKey: number;
 }
-export interface VirtualMachineBootOptionsBootableEthernetDevice extends VirtualMachineBootOptionsBootableDevice {
+export type VirtualMachineBootOptionsBootableEthernetDevice = VirtualMachineBootOptionsBootableDevice &  {
   deviceKey: number;
 }
-export interface VirtualMachineBootOptionsBootableFloppyDevice extends VirtualMachineBootOptionsBootableDevice {
+export type VirtualMachineBootOptionsBootableFloppyDevice = VirtualMachineBootOptionsBootableDevice &  {
   
 }
-export interface VirtualMachineCapability extends DynamicData {
+export type VirtualMachineCapability = DynamicData &  {
   snapshotOperationsSupported: boolean;
   multipleSnapshotsSupported: boolean;
   snapshotConfigSupported: boolean;
@@ -6010,7 +6010,7 @@ export interface VirtualMachineCapability extends DynamicData {
   toolsSyncTimeAllowSupported?: boolean;
   sevSupported?: boolean;
 }
-export interface VirtualMachineCloneSpec extends DynamicData {
+export type VirtualMachineCloneSpec = DynamicData &  {
   location: VirtualMachineRelocateSpec;
   template: boolean;
   config?: VirtualMachineConfigSpec;
@@ -6019,7 +6019,7 @@ export interface VirtualMachineCloneSpec extends DynamicData {
   snapshot?: VirtualMachineSnapshot;
   memory?: boolean;
 }
-export interface VirtualMachineConfigInfo extends DynamicData {
+export type VirtualMachineConfigInfo = DynamicData &  {
   changeVersion: string;
   modified: Date;
   name: string;
@@ -6091,15 +6091,15 @@ export interface VirtualMachineConfigInfo extends DynamicData {
   guestMonitoringModeInfo?: VirtualMachineGuestMonitoringModeInfo;
   sevEnabled?: boolean;
 }
-export interface VirtualMachineConfigInfoDatastoreUrlPair extends DynamicData {
+export type VirtualMachineConfigInfoDatastoreUrlPair = DynamicData &  {
   name: string;
   url: string;
 }
-export interface VirtualMachineConfigInfoOverheadInfo extends DynamicData {
+export type VirtualMachineConfigInfoOverheadInfo = DynamicData &  {
   initialMemoryReservation?: number;
   initialSwapReservation?: number;
 }
-export interface VirtualMachineConfigOption extends DynamicData {
+export type VirtualMachineConfigOption = DynamicData &  {
   version: string;
   description: string;
   guestOSDescriptor: GuestOsDescriptor[];
@@ -6113,7 +6113,7 @@ export interface VirtualMachineConfigOption extends DynamicData {
   supportedOvfInstallTransport?: string[];
   propertyRelations?: VirtualMachinePropertyRelation[];
 }
-export interface VirtualMachineConfigOptionDescriptor extends DynamicData {
+export type VirtualMachineConfigOptionDescriptor = DynamicData &  {
   key: string;
   description?: string;
   host?: HostSystem[];
@@ -6122,7 +6122,7 @@ export interface VirtualMachineConfigOptionDescriptor extends DynamicData {
   runSupported: boolean;
   upgradeSupported: boolean;
 }
-export interface VirtualMachineConfigSpec extends DynamicData {
+export type VirtualMachineConfigSpec = DynamicData &  {
   changeVersion?: string;
   name?: string;
   version?: string;
@@ -6188,26 +6188,26 @@ export interface VirtualMachineConfigSpec extends DynamicData {
   guestMonitoringModeInfo?: VirtualMachineGuestMonitoringModeInfo;
   sevEnabled?: boolean;
 }
-export interface VirtualMachineCpuIdInfoSpec extends ArrayUpdateSpec {
+export type VirtualMachineCpuIdInfoSpec = ArrayUpdateSpec &  {
   info?: HostCpuIdInfo;
 }
-export interface VirtualMachineConsolePreferences extends DynamicData {
+export type VirtualMachineConsolePreferences = DynamicData &  {
   powerOnWhenOpened?: boolean;
   enterFullScreenOnPowerOn?: boolean;
   closeOnPowerOffOrSuspend?: boolean;
 }
-export interface VirtualMachineContentLibraryItemInfo extends DynamicData {
+export type VirtualMachineContentLibraryItemInfo = DynamicData &  {
   contentLibraryItemUuid: string;
   contentLibraryItemVersion?: string;
 }
-export interface DatastoreOption extends DynamicData {
+export type DatastoreOption = DynamicData &  {
   unsupportedVolumes?: VirtualMachineDatastoreVolumeOption[];
 }
-export interface VirtualMachineDatastoreVolumeOption extends DynamicData {
+export type VirtualMachineDatastoreVolumeOption = DynamicData &  {
   fileSystemType: string;
   majorVersion?: number;
 }
-export interface VirtualMachineDefaultPowerOpInfo extends DynamicData {
+export type VirtualMachineDefaultPowerOpInfo = DynamicData &  {
   powerOffType?: string;
   suspendType?: string;
   resetType?: string;
@@ -6216,14 +6216,14 @@ export interface VirtualMachineDefaultPowerOpInfo extends DynamicData {
   defaultResetType?: string;
   standbyAction?: string;
 }
-export interface VirtualMachineDeviceRuntimeInfo extends DynamicData {
+export type VirtualMachineDeviceRuntimeInfo = DynamicData &  {
   runtimeState: VirtualMachineDeviceRuntimeInfoDeviceRuntimeState;
   key: number;
 }
-export interface VirtualMachineDeviceRuntimeInfoDeviceRuntimeState extends DynamicData {
+export type VirtualMachineDeviceRuntimeInfoDeviceRuntimeState = DynamicData &  {
   
 }
-export interface VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeState extends VirtualMachineDeviceRuntimeInfoDeviceRuntimeState {
+export type VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeState = VirtualMachineDeviceRuntimeInfoDeviceRuntimeState &  {
   vmDirectPathGen2Active: boolean;
   vmDirectPathGen2InactiveReasonVm?: string[];
   vmDirectPathGen2InactiveReasonOther?: string[];
@@ -6232,79 +6232,79 @@ export interface VirtualMachineDeviceRuntimeInfoVirtualEthernetCardRuntimeState 
   attachmentStatus?: string;
   featureRequirement?: VirtualMachineFeatureRequirement[];
 }
-export interface FaultToleranceConfigInfo extends DynamicData {
+export type FaultToleranceConfigInfo = DynamicData &  {
   role: number;
   instanceUuids: string[];
   configPaths: string[];
   orphaned?: boolean;
 }
-export interface FaultToleranceConfigSpec extends DynamicData {
+export type FaultToleranceConfigSpec = DynamicData &  {
   metaDataPath?: FaultToleranceMetaSpec;
   secondaryVmSpec?: FaultToleranceVMConfigSpec;
 }
-export interface FaultToleranceMetaSpec extends DynamicData {
+export type FaultToleranceMetaSpec = DynamicData &  {
   metaDataDatastore: Datastore;
 }
-export interface FaultTolerancePrimaryConfigInfo extends FaultToleranceConfigInfo {
+export type FaultTolerancePrimaryConfigInfo = FaultToleranceConfigInfo &  {
   secondaries: VirtualMachine[];
 }
-export interface FaultToleranceSecondaryConfigInfo extends FaultToleranceConfigInfo {
+export type FaultToleranceSecondaryConfigInfo = FaultToleranceConfigInfo &  {
   primaryVM: VirtualMachine;
 }
-export interface FaultToleranceSecondaryOpResult extends DynamicData {
+export type FaultToleranceSecondaryOpResult = DynamicData &  {
   vm: VirtualMachine;
   powerOnAttempted: boolean;
   powerOnResult?: ClusterPowerOnVmResult;
 }
-export interface FaultToleranceVMConfigSpec extends DynamicData {
+export type FaultToleranceVMConfigSpec = DynamicData &  {
   vmConfig?: Datastore;
   disks?: FaultToleranceDiskSpec[];
 }
-export interface FaultToleranceDiskSpec extends DynamicData {
+export type FaultToleranceDiskSpec = DynamicData &  {
   disk: VirtualDevice;
   datastore: Datastore;
 }
-export interface VirtualMachineFeatureRequirement extends DynamicData {
+export type VirtualMachineFeatureRequirement = DynamicData &  {
   key: string;
   featureName: string;
   value: string;
 }
-export interface VirtualMachineFileInfo extends DynamicData {
+export type VirtualMachineFileInfo = DynamicData &  {
   vmPathName?: string;
   snapshotDirectory?: string;
   suspendDirectory?: string;
   logDirectory?: string;
   ftMetadataDirectory?: string;
 }
-export interface VirtualMachineFileLayout extends DynamicData {
+export type VirtualMachineFileLayout = DynamicData &  {
   configFile?: string[];
   logFile?: string[];
   disk?: VirtualMachineFileLayoutDiskLayout[];
   snapshot?: VirtualMachineFileLayoutSnapshotLayout[];
   swapFile?: string;
 }
-export interface VirtualMachineFileLayoutDiskLayout extends DynamicData {
+export type VirtualMachineFileLayoutDiskLayout = DynamicData &  {
   key: number;
   diskFile: string[];
 }
-export interface VirtualMachineFileLayoutSnapshotLayout extends DynamicData {
+export type VirtualMachineFileLayoutSnapshotLayout = DynamicData &  {
   key: VirtualMachineSnapshot;
   snapshotFile: string[];
 }
-export interface VirtualMachineFileLayoutEx extends DynamicData {
+export type VirtualMachineFileLayoutEx = DynamicData &  {
   file?: VirtualMachineFileLayoutExFileInfo[];
   disk?: VirtualMachineFileLayoutExDiskLayout[];
   snapshot?: VirtualMachineFileLayoutExSnapshotLayout[];
   timestamp: Date;
 }
-export interface VirtualMachineFileLayoutExDiskLayout extends DynamicData {
+export type VirtualMachineFileLayoutExDiskLayout = DynamicData &  {
   key: number;
   chain?: VirtualMachineFileLayoutExDiskUnit[];
 }
-export interface VirtualMachineFileLayoutExDiskUnit extends DynamicData {
+export type VirtualMachineFileLayoutExDiskUnit = DynamicData &  {
   fileKey: number[];
 }
-export interface VirtualMachineFileLayoutExFileInfo extends DynamicData {
+export type VirtualMachineFileLayoutExFileInfo = DynamicData &  {
   key: number;
   name: string;
   type: string;
@@ -6313,13 +6313,13 @@ export interface VirtualMachineFileLayoutExFileInfo extends DynamicData {
   backingObjectId?: string;
   accessible?: boolean;
 }
-export interface VirtualMachineFileLayoutExSnapshotLayout extends DynamicData {
+export type VirtualMachineFileLayoutExSnapshotLayout = DynamicData &  {
   key: VirtualMachineSnapshot;
   dataKey: number;
   memoryKey: number;
   disk?: VirtualMachineFileLayoutExDiskLayout[];
 }
-export interface VirtualMachineFlagInfo extends DynamicData {
+export type VirtualMachineFlagInfo = DynamicData &  {
   disableAcceleration?: boolean;
   enableLogging?: boolean;
   useToe?: boolean;
@@ -6338,13 +6338,13 @@ export interface VirtualMachineFlagInfo extends DynamicData {
   vvtdEnabled?: boolean;
   vbsEnabled?: boolean;
 }
-export interface VirtualMachineForkConfigInfo extends DynamicData {
+export type VirtualMachineForkConfigInfo = DynamicData &  {
   parentEnabled?: boolean;
   childForkGroupId?: string;
   parentForkGroupId?: string;
   childType?: string;
 }
-export interface GuestInfo extends DynamicData {
+export type GuestInfo = DynamicData &  {
   toolsStatus?: VirtualMachineToolsStatus;
   toolsVersionStatus?: string;
   toolsVersionStatus2?: string;
@@ -6370,18 +6370,18 @@ export interface GuestInfo extends DynamicData {
   generationInfo?: GuestInfoNamespaceGenerationInfo[];
   hwVersion?: string;
 }
-export interface GuestDiskInfo extends DynamicData {
+export type GuestDiskInfo = DynamicData &  {
   diskPath?: string;
   capacity?: number;
   freeSpace?: number;
   filesystemType?: string;
   mappings?: GuestInfoVirtualDiskMapping[];
 }
-export interface GuestInfoNamespaceGenerationInfo extends DynamicData {
+export type GuestInfoNamespaceGenerationInfo = DynamicData &  {
   key: string;
   generationNo: number;
 }
-export interface GuestNicInfo extends DynamicData {
+export type GuestNicInfo = DynamicData &  {
   network?: string;
   ipAddress?: string[];
   macAddress?: string;
@@ -6391,27 +6391,27 @@ export interface GuestNicInfo extends DynamicData {
   ipConfig?: NetIpConfigInfo;
   netBIOSConfig?: NetBIOSConfigInfo;
 }
-export interface GuestScreenInfo extends DynamicData {
+export type GuestScreenInfo = DynamicData &  {
   width: number;
   height: number;
 }
-export interface GuestStackInfo extends DynamicData {
+export type GuestStackInfo = DynamicData &  {
   dnsConfig?: NetDnsConfigInfo;
   ipRouteConfig?: NetIpRouteConfigInfo;
   ipStackConfig?: KeyValue[];
   dhcpConfig?: NetDhcpConfigInfo;
 }
-export interface GuestInfoVirtualDiskMapping extends DynamicData {
+export type GuestInfoVirtualDiskMapping = DynamicData &  {
   key: number;
 }
-export interface VirtualMachineGuestIntegrityInfo extends DynamicData {
+export type VirtualMachineGuestIntegrityInfo = DynamicData &  {
   enabled?: boolean;
 }
-export interface VirtualMachineGuestMonitoringModeInfo extends DynamicData {
+export type VirtualMachineGuestMonitoringModeInfo = DynamicData &  {
   gmmFile?: string;
   gmmAppliance?: string;
 }
-export interface GuestOsDescriptor extends DynamicData {
+export type GuestOsDescriptor = DynamicData &  {
   id: string;
   family: string;
   fullName: string;
@@ -6475,70 +6475,70 @@ export interface GuestOsDescriptor extends DynamicData {
   supportsTPM20?: boolean;
   vwdtSupported?: boolean;
 }
-export interface VirtualMachineGuestQuiesceSpec extends DynamicData {
+export type VirtualMachineGuestQuiesceSpec = DynamicData &  {
   timeout?: number;
 }
-export interface VirtualMachineInstantCloneSpec extends DynamicData {
+export type VirtualMachineInstantCloneSpec = DynamicData &  {
   name: string;
   location: VirtualMachineRelocateSpec;
   config?: OptionValue[];
   biosUuid?: string;
 }
-export interface VirtualMachineLegacyNetworkSwitchInfo extends DynamicData {
+export type VirtualMachineLegacyNetworkSwitchInfo = DynamicData &  {
   name: string;
 }
-export interface VirtualMachineMessage extends DynamicData {
+export type VirtualMachineMessage = DynamicData &  {
   id: string;
   argument?: any[];
   text?: string;
 }
-export interface VirtualMachineMetadataManagerVmMetadata extends DynamicData {
+export type VirtualMachineMetadataManagerVmMetadata = DynamicData &  {
   vmId: string;
   metadata?: string;
 }
-export interface VirtualMachineMetadataManagerVmMetadataInput extends DynamicData {
+export type VirtualMachineMetadataManagerVmMetadataInput = DynamicData &  {
   operation: string;
   vmMetadata: VirtualMachineMetadataManagerVmMetadata;
 }
-export interface VirtualMachineMetadataManagerVmMetadataOwner extends DynamicData {
+export type VirtualMachineMetadataManagerVmMetadataOwner = DynamicData &  {
   name: string;
 }
-export interface VirtualMachineMetadataManagerVmMetadataResult extends DynamicData {
+export type VirtualMachineMetadataManagerVmMetadataResult = DynamicData &  {
   vmMetadata: VirtualMachineMetadataManagerVmMetadata;
   error?: MethodFault;
 }
-export interface VirtualMachineNetworkShaperInfo extends DynamicData {
+export type VirtualMachineNetworkShaperInfo = DynamicData &  {
   enabled?: boolean;
   peakBps?: number;
   averageBps?: number;
   burstSize?: number;
 }
-export interface VirtualMachineProfileDetails extends DynamicData {
+export type VirtualMachineProfileDetails = DynamicData &  {
   profile?: VirtualMachineProfileSpec[];
   diskProfileDetails?: VirtualMachineProfileDetailsDiskProfileDetails[];
 }
-export interface VirtualMachineProfileDetailsDiskProfileDetails extends DynamicData {
+export type VirtualMachineProfileDetailsDiskProfileDetails = DynamicData &  {
   diskId: number;
   profile?: VirtualMachineProfileSpec[];
 }
-export interface VirtualMachineProfileRawData extends DynamicData {
+export type VirtualMachineProfileRawData = DynamicData &  {
   extensionKey: string;
   objectData?: string;
 }
-export interface VirtualMachineProfileSpec extends DynamicData {
+export type VirtualMachineProfileSpec = DynamicData &  {
   
 }
-export interface VirtualMachinePropertyRelation extends DynamicData {
+export type VirtualMachinePropertyRelation = DynamicData &  {
   key: DynamicProperty;
   relations?: DynamicProperty[];
 }
-export interface VirtualMachineQuestionInfo extends DynamicData {
+export type VirtualMachineQuestionInfo = DynamicData &  {
   id: string;
   text: string;
   choice: ChoiceOption;
   message?: VirtualMachineMessage[];
 }
-export interface ReplicationConfigSpec extends DynamicData {
+export type ReplicationConfigSpec = DynamicData &  {
   generation: number;
   vmReplicationId: string;
   destination: string;
@@ -6554,47 +6554,47 @@ export interface ReplicationConfigSpec extends DynamicData {
   remoteCertificateThumbprint?: string;
   disk?: ReplicationInfoDiskSettings[];
 }
-export interface ReplicationInfoDiskSettings extends DynamicData {
+export type ReplicationInfoDiskSettings = DynamicData &  {
   key: number;
   diskReplicationId: string;
 }
-export interface ScheduledHardwareUpgradeInfo extends DynamicData {
+export type ScheduledHardwareUpgradeInfo = DynamicData &  {
   upgradePolicy?: string;
   versionKey?: string;
   scheduledHardwareUpgradeStatus?: string;
   fault?: MethodFault;
 }
-export interface VirtualMachineSgxInfo extends DynamicData {
+export type VirtualMachineSgxInfo = DynamicData &  {
   epcSize: number;
   flcMode?: string;
   lePubKeyHash?: string;
 }
-export interface VirtualMachineSnapshotInfo extends DynamicData {
+export type VirtualMachineSnapshotInfo = DynamicData &  {
   currentSnapshot?: VirtualMachineSnapshot;
   rootSnapshotList: VirtualMachineSnapshotTree[];
 }
-export interface VirtualMachineSriovDevicePoolInfo extends DynamicData {
+export type VirtualMachineSriovDevicePoolInfo = DynamicData &  {
   key: string;
 }
-export interface VirtualMachineSriovNetworkDevicePoolInfo extends VirtualMachineSriovDevicePoolInfo {
+export type VirtualMachineSriovNetworkDevicePoolInfo = VirtualMachineSriovDevicePoolInfo &  {
   switchKey?: string;
   switchUuid?: string;
 }
-export interface VirtualMachineStorageInfo extends DynamicData {
+export type VirtualMachineStorageInfo = DynamicData &  {
   perDatastoreUsage?: VirtualMachineUsageOnDatastore[];
   timestamp: Date;
 }
-export interface VirtualMachineUsageOnDatastore extends DynamicData {
+export type VirtualMachineUsageOnDatastore = DynamicData &  {
   datastore: Datastore;
   committed: number;
   uncommitted: number;
   unshared: number;
 }
-export interface VirtualMachineTargetInfo extends DynamicData {
+export type VirtualMachineTargetInfo = DynamicData &  {
   name: string;
   configurationTag?: string[];
 }
-export interface ToolsConfigInfo extends DynamicData {
+export type ToolsConfigInfo = DynamicData &  {
   toolsVersion?: number;
   toolsInstallType?: string;
   afterPowerOn?: boolean;
@@ -6609,11 +6609,11 @@ export interface ToolsConfigInfo extends DynamicData {
   syncTimeWithHost?: boolean;
   lastInstallInfo?: ToolsConfigInfoToolsLastInstallInfo;
 }
-export interface ToolsConfigInfoToolsLastInstallInfo extends DynamicData {
+export type ToolsConfigInfoToolsLastInstallInfo = DynamicData &  {
   counter: number;
   fault?: MethodFault;
 }
-export interface VirtualMachineUsbInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineUsbInfo = VirtualMachineTargetInfo &  {
   description: string;
   vendor: number;
   product: number;
@@ -6622,14 +6622,14 @@ export interface VirtualMachineUsbInfo extends VirtualMachineTargetInfo {
   speed?: string[];
   summary?: VirtualMachineSummary;
 }
-export interface UsbScanCodeSpec extends DynamicData {
+export type UsbScanCodeSpec = DynamicData &  {
   keyEvents: UsbScanCodeSpecKeyEvent[];
 }
-export interface UsbScanCodeSpecKeyEvent extends DynamicData {
+export type UsbScanCodeSpecKeyEvent = DynamicData &  {
   usbHidCode: number;
   modifiers?: UsbScanCodeSpecModifierType;
 }
-export interface UsbScanCodeSpecModifierType extends DynamicData {
+export type UsbScanCodeSpecModifierType = DynamicData &  {
   leftControl?: boolean;
   leftShift?: boolean;
   leftAlt?: boolean;
@@ -6639,10 +6639,10 @@ export interface UsbScanCodeSpecModifierType extends DynamicData {
   rightAlt?: boolean;
   rightGui?: boolean;
 }
-export interface VirtualMachineVcpuConfig extends DynamicData {
+export type VirtualMachineVcpuConfig = DynamicData &  {
   latencySensitivity?: LatencySensitivity;
 }
-export interface VirtualHardware extends DynamicData {
+export type VirtualHardware = DynamicData &  {
   numCPU: number;
   numCoresPerSocket?: number;
   memoryMB: number;
@@ -6650,7 +6650,7 @@ export interface VirtualHardware extends DynamicData {
   virtualSMCPresent?: boolean;
   device?: VirtualDevice[];
 }
-export interface VirtualHardwareOption extends DynamicData {
+export type VirtualHardwareOption = DynamicData &  {
   hwVersion: number;
   virtualDeviceOption: VirtualDeviceOption[];
   deviceListReadonly: boolean;
@@ -6674,36 +6674,36 @@ export interface VirtualHardwareOption extends DynamicData {
   numPrecisionClockDevices?: IntOption;
   epcMemoryMB?: LongOption;
 }
-export interface VirtualMachineWindowsQuiesceSpec extends VirtualMachineGuestQuiesceSpec {
+export type VirtualMachineWindowsQuiesceSpec = VirtualMachineGuestQuiesceSpec &  {
   vssBackupType?: number;
   vssBootableSystemState?: boolean;
   vssPartialFileSupport?: boolean;
   vssBackupContext?: string;
 }
-export interface CheckResult extends DynamicData {
+export type CheckResult = DynamicData &  {
   vm?: VirtualMachine;
   host?: HostSystem;
   warning?: MethodFault[];
   error?: MethodFault[];
 }
-export interface CustomizationAdapterMapping extends DynamicData {
+export type CustomizationAdapterMapping = DynamicData &  {
   macAddress?: string;
   adapter: CustomizationIPSettings;
 }
-export interface CustomizationGlobalIPSettings extends DynamicData {
+export type CustomizationGlobalIPSettings = DynamicData &  {
   dnsSuffixList?: string[];
   dnsServerList?: string[];
 }
-export interface CustomizationGuiRunOnce extends DynamicData {
+export type CustomizationGuiRunOnce = DynamicData &  {
   commandList: string[];
 }
-export interface CustomizationGuiUnattended extends DynamicData {
+export type CustomizationGuiUnattended = DynamicData &  {
   password?: CustomizationPassword;
   timeZone: number;
   autoLogon: boolean;
   autoLogonCount: number;
 }
-export interface CustomizationIPSettings extends DynamicData {
+export type CustomizationIPSettings = DynamicData &  {
   ip: CustomizationIpGenerator;
   subnetMask?: string;
   gateway?: string[];
@@ -6714,112 +6714,112 @@ export interface CustomizationIPSettings extends DynamicData {
   secondaryWINS?: string;
   netBIOS?: CustomizationNetBIOSMode;
 }
-export interface CustomizationIPSettingsIpV6AddressSpec extends DynamicData {
+export type CustomizationIPSettingsIpV6AddressSpec = DynamicData &  {
   ip: CustomizationIpV6Generator[];
   gateway?: string[];
 }
-export interface CustomizationIdentification extends DynamicData {
+export type CustomizationIdentification = DynamicData &  {
   joinWorkgroup?: string;
   joinDomain?: string;
   domainAdmin?: string;
   domainAdminPassword?: CustomizationPassword;
 }
-export interface CustomizationIdentitySettings extends DynamicData {
+export type CustomizationIdentitySettings = DynamicData &  {
   
 }
-export interface CustomizationIpGenerator extends DynamicData {
+export type CustomizationIpGenerator = DynamicData &  {
   
 }
-export interface CustomizationIpV6Generator extends DynamicData {
+export type CustomizationIpV6Generator = DynamicData &  {
   
 }
-export interface CustomizationLicenseFilePrintData extends DynamicData {
+export type CustomizationLicenseFilePrintData = DynamicData &  {
   autoMode: CustomizationLicenseDataMode;
   autoUsers?: number;
 }
-export interface CustomizationLinuxPrep extends CustomizationIdentitySettings {
+export type CustomizationLinuxPrep = CustomizationIdentitySettings &  {
   hostName: CustomizationName;
   domain: string;
   timeZone?: string;
   hwClockUTC?: boolean;
   scriptText?: string;
 }
-export interface CustomizationName extends DynamicData {
+export type CustomizationName = DynamicData &  {
   
 }
-export interface CustomizationOptions extends DynamicData {
+export type CustomizationOptions = DynamicData &  {
   
 }
-export interface CustomizationPassword extends DynamicData {
+export type CustomizationPassword = DynamicData &  {
   value: string;
   plainText: boolean;
 }
-export interface CustomizationPrefixName extends CustomizationName {
+export type CustomizationPrefixName = CustomizationName &  {
   base: string;
 }
-export interface CustomizationSpec extends DynamicData {
+export type CustomizationSpec = DynamicData &  {
   options?: CustomizationOptions;
   identity: CustomizationIdentitySettings;
   globalIPSettings: CustomizationGlobalIPSettings;
   nicSettingMap?: CustomizationAdapterMapping[];
   encryptionKey?: number[];
 }
-export interface CustomizationStatelessIpV6Generator extends CustomizationIpV6Generator {
+export type CustomizationStatelessIpV6Generator = CustomizationIpV6Generator &  {
   
 }
-export interface CustomizationSysprep extends CustomizationIdentitySettings {
+export type CustomizationSysprep = CustomizationIdentitySettings &  {
   guiUnattended: CustomizationGuiUnattended;
   userData: CustomizationUserData;
   guiRunOnce?: CustomizationGuiRunOnce;
   identification: CustomizationIdentification;
   licenseFilePrintData?: CustomizationLicenseFilePrintData;
 }
-export interface CustomizationSysprepText extends CustomizationIdentitySettings {
+export type CustomizationSysprepText = CustomizationIdentitySettings &  {
   value: string;
 }
-export interface CustomizationUnknownIpGenerator extends CustomizationIpGenerator {
+export type CustomizationUnknownIpGenerator = CustomizationIpGenerator &  {
   
 }
-export interface CustomizationUnknownIpV6Generator extends CustomizationIpV6Generator {
+export type CustomizationUnknownIpV6Generator = CustomizationIpV6Generator &  {
   
 }
-export interface CustomizationUnknownName extends CustomizationName {
+export type CustomizationUnknownName = CustomizationName &  {
   
 }
-export interface CustomizationUserData extends DynamicData {
+export type CustomizationUserData = DynamicData &  {
   fullName: string;
   orgName: string;
   computerName: CustomizationName;
   productId: string;
 }
-export interface CustomizationVirtualMachineName extends CustomizationName {
+export type CustomizationVirtualMachineName = CustomizationName &  {
   
 }
-export interface CustomizationWinOptions extends CustomizationOptions {
+export type CustomizationWinOptions = CustomizationOptions &  {
   changeSID: boolean;
   deleteAccounts: boolean;
   reboot?: CustomizationSysprepRebootOption;
 }
-export interface HostDiskMappingInfo extends DynamicData {
+export type HostDiskMappingInfo = DynamicData &  {
   physicalPartition?: HostDiskMappingPartitionInfo;
   name: string;
   exclusive?: boolean;
 }
-export interface HostDiskMappingPartitionInfo extends DynamicData {
+export type HostDiskMappingPartitionInfo = DynamicData &  {
   name: string;
   fileSystem: string;
   capacityInKb: number;
 }
-export interface HostDiskMappingOption extends DynamicData {
+export type HostDiskMappingOption = DynamicData &  {
   physicalPartition?: HostDiskMappingPartitionOption[];
   name: string;
 }
-export interface HostDiskMappingPartitionOption extends DynamicData {
+export type HostDiskMappingPartitionOption = DynamicData &  {
   name: string;
   fileSystem: string;
   capacityInKb: number;
 }
-export interface VirtualDevice extends DynamicData {
+export type VirtualDevice = DynamicData &  {
   key: number;
   deviceInfo?: Description;
   backing?: VirtualDeviceBackingInfo;
@@ -6828,44 +6828,44 @@ export interface VirtualDevice extends DynamicData {
   controllerKey?: number;
   unitNumber?: number;
 }
-export interface VirtualDeviceBackingInfo extends DynamicData {
+export type VirtualDeviceBackingInfo = DynamicData &  {
   
 }
-export interface VirtualDeviceBusSlotInfo extends DynamicData {
+export type VirtualDeviceBusSlotInfo = DynamicData &  {
   
 }
-export interface VirtualDeviceConnectInfo extends DynamicData {
+export type VirtualDeviceConnectInfo = DynamicData &  {
   migrateConnect?: string;
   startConnected: boolean;
   allowGuestControl: boolean;
   connected: boolean;
   status?: string;
 }
-export interface VirtualDeviceDeviceBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualDeviceDeviceBackingInfo = VirtualDeviceBackingInfo &  {
   deviceName: string;
   useAutoDetect?: boolean;
 }
-export interface VirtualDeviceFileBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualDeviceFileBackingInfo = VirtualDeviceBackingInfo &  {
   fileName: string;
   datastore?: Datastore;
   backingObjectId?: string;
 }
-export interface VirtualDevicePciBusSlotInfo extends VirtualDeviceBusSlotInfo {
+export type VirtualDevicePciBusSlotInfo = VirtualDeviceBusSlotInfo &  {
   pciSlotNumber: number;
 }
-export interface VirtualDevicePipeBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualDevicePipeBackingInfo = VirtualDeviceBackingInfo &  {
   pipeName: string;
 }
-export interface VirtualDeviceRemoteDeviceBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualDeviceRemoteDeviceBackingInfo = VirtualDeviceBackingInfo &  {
   deviceName: string;
   useAutoDetect?: boolean;
 }
-export interface VirtualDeviceURIBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualDeviceURIBackingInfo = VirtualDeviceBackingInfo &  {
   serviceURI: string;
   direction: string;
   proxyURI?: string;
 }
-export interface VirtualDeviceOption extends DynamicData {
+export type VirtualDeviceOption = DynamicData &  {
   type: string;
   connectOption?: VirtualDeviceConnectOption;
   busSlotOption?: VirtualDeviceBusSlotOption;
@@ -6878,43 +6878,43 @@ export interface VirtualDeviceOption extends DynamicData {
   plugAndPlay: boolean;
   hotRemoveSupported: boolean;
 }
-export interface VirtualDeviceBackingOption extends DynamicData {
+export type VirtualDeviceBackingOption = DynamicData &  {
   type: string;
 }
-export interface VirtualDeviceBusSlotOption extends DynamicData {
+export type VirtualDeviceBusSlotOption = DynamicData &  {
   type: string;
 }
-export interface VirtualDeviceConnectOption extends DynamicData {
+export type VirtualDeviceConnectOption = DynamicData &  {
   startConnected: BoolOption;
   allowGuestControl: BoolOption;
 }
-export interface VirtualDeviceDeviceBackingOption extends VirtualDeviceBackingOption {
+export type VirtualDeviceDeviceBackingOption = VirtualDeviceBackingOption &  {
   autoDetectAvailable: BoolOption;
 }
-export interface VirtualDeviceFileBackingOption extends VirtualDeviceBackingOption {
+export type VirtualDeviceFileBackingOption = VirtualDeviceBackingOption &  {
   fileNameExtensions?: ChoiceOption;
 }
-export interface VirtualDevicePipeBackingOption extends VirtualDeviceBackingOption {
+export type VirtualDevicePipeBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualDeviceRemoteDeviceBackingOption extends VirtualDeviceBackingOption {
+export type VirtualDeviceRemoteDeviceBackingOption = VirtualDeviceBackingOption &  {
   autoDetectAvailable: BoolOption;
 }
-export interface VirtualDeviceURIBackingOption extends VirtualDeviceBackingOption {
+export type VirtualDeviceURIBackingOption = VirtualDeviceBackingOption &  {
   directions: ChoiceOption;
 }
-export interface VirtualDeviceConfigSpec extends DynamicData {
+export type VirtualDeviceConfigSpec = DynamicData &  {
   operation?: VirtualDeviceConfigSpecOperation;
   fileOperation?: VirtualDeviceConfigSpecFileOperation;
   device: VirtualDevice;
   profile?: VirtualMachineProfileSpec[];
   backing?: VirtualDeviceConfigSpecBackingSpec;
 }
-export interface VirtualDeviceConfigSpecBackingSpec extends DynamicData {
+export type VirtualDeviceConfigSpecBackingSpec = DynamicData &  {
   parent?: VirtualDeviceConfigSpecBackingSpec;
   crypto?: CryptoSpec;
 }
-export interface VirtualDisk extends VirtualDevice {
+export type VirtualDisk = VirtualDevice &  {
   capacityInKB: number;
   capacityInBytes?: number;
   shares?: SharesInfo;
@@ -6925,14 +6925,14 @@ export interface VirtualDisk extends VirtualDevice {
   vDiskId?: ID;
   nativeUnmanagedLinkedClone?: boolean;
 }
-export interface VirtualDiskFlatVer1BackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskFlatVer1BackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   split?: boolean;
   writeThrough?: boolean;
   contentId?: string;
   parent?: VirtualDiskFlatVer1BackingInfo;
 }
-export interface VirtualDiskFlatVer2BackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskFlatVer2BackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   split?: boolean;
   writeThrough?: boolean;
@@ -6949,16 +6949,16 @@ export interface VirtualDiskFlatVer2BackingInfo extends VirtualDeviceFileBacking
   sharing?: string;
   keyId?: CryptoKeyId;
 }
-export interface VirtualDiskLocalPMemBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskLocalPMemBackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   uuid?: string;
   volumeUUID?: string;
   contentId?: string;
 }
-export interface VirtualDiskPartitionedRawDiskVer2BackingInfo extends VirtualDiskRawDiskVer2BackingInfo {
+export type VirtualDiskPartitionedRawDiskVer2BackingInfo = VirtualDiskRawDiskVer2BackingInfo &  {
   partition: number[];
 }
-export interface VirtualDiskRawDiskMappingVer1BackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskRawDiskMappingVer1BackingInfo = VirtualDeviceFileBackingInfo &  {
   lunUuid?: string;
   deviceName?: string;
   compatibilityMode?: string;
@@ -6971,13 +6971,13 @@ export interface VirtualDiskRawDiskMappingVer1BackingInfo extends VirtualDeviceF
   deltaGrainSize?: number;
   sharing?: string;
 }
-export interface VirtualDiskRawDiskVer2BackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualDiskRawDiskVer2BackingInfo = VirtualDeviceDeviceBackingInfo &  {
   descriptorFileName: string;
   uuid?: string;
   changeId?: string;
   sharing?: string;
 }
-export interface VirtualDiskSeSparseBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskSeSparseBackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   writeThrough?: boolean;
   uuid?: string;
@@ -6989,7 +6989,7 @@ export interface VirtualDiskSeSparseBackingInfo extends VirtualDeviceFileBacking
   grainSize?: number;
   keyId?: CryptoKeyId;
 }
-export interface VirtualDiskSparseVer1BackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskSparseVer1BackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   split?: boolean;
   writeThrough?: boolean;
@@ -6997,7 +6997,7 @@ export interface VirtualDiskSparseVer1BackingInfo extends VirtualDeviceFileBacki
   contentId?: string;
   parent?: VirtualDiskSparseVer1BackingInfo;
 }
-export interface VirtualDiskSparseVer2BackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualDiskSparseVer2BackingInfo = VirtualDeviceFileBackingInfo &  {
   diskMode: string;
   split?: boolean;
   writeThrough?: boolean;
@@ -7008,33 +7008,33 @@ export interface VirtualDiskSparseVer2BackingInfo extends VirtualDeviceFileBacki
   parent?: VirtualDiskSparseVer2BackingInfo;
   keyId?: CryptoKeyId;
 }
-export interface VirtualDiskVFlashCacheConfigInfo extends DynamicData {
+export type VirtualDiskVFlashCacheConfigInfo = DynamicData &  {
   vFlashModule?: string;
   reservationInMB?: number;
   cacheConsistencyType?: string;
   cacheMode?: string;
   blockSizeInKB?: number;
 }
-export interface VirtualDiskId extends DynamicData {
+export type VirtualDiskId = DynamicData &  {
   vm: VirtualMachine;
   diskId: number;
 }
-export interface VirtualDiskOption extends VirtualDeviceOption {
+export type VirtualDiskOption = VirtualDeviceOption &  {
   capacityInKB: LongOption;
   ioAllocationOption: StorageIOAllocationOption;
   vFlashCacheConfigOption?: VirtualDiskOptionVFlashCacheConfigOption;
 }
-export interface VirtualDiskDeltaDiskFormatsSupported extends DynamicData {
+export type VirtualDiskDeltaDiskFormatsSupported = DynamicData &  {
   datastoreType: string;
   deltaDiskFormat: ChoiceOption;
 }
-export interface VirtualDiskFlatVer1BackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskFlatVer1BackingOption = VirtualDeviceFileBackingOption &  {
   diskMode: ChoiceOption;
   split: BoolOption;
   writeThrough: BoolOption;
   growable: boolean;
 }
-export interface VirtualDiskFlatVer2BackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskFlatVer2BackingOption = VirtualDeviceFileBackingOption &  {
   diskMode: ChoiceOption;
   split: BoolOption;
   writeThrough: BoolOption;
@@ -7046,26 +7046,26 @@ export interface VirtualDiskFlatVer2BackingOption extends VirtualDeviceFileBacki
   deltaDiskFormat: ChoiceOption;
   deltaDiskFormatsSupported: VirtualDiskDeltaDiskFormatsSupported[];
 }
-export interface VirtualDiskLocalPMemBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskLocalPMemBackingOption = VirtualDeviceFileBackingOption &  {
   diskMode: ChoiceOption;
   growable: boolean;
   hotGrowable: boolean;
   uuid: boolean;
 }
-export interface VirtualDiskPartitionedRawDiskVer2BackingOption extends VirtualDiskRawDiskVer2BackingOption {
+export type VirtualDiskPartitionedRawDiskVer2BackingOption = VirtualDiskRawDiskVer2BackingOption &  {
   
 }
-export interface VirtualDiskRawDiskMappingVer1BackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualDiskRawDiskMappingVer1BackingOption = VirtualDeviceDeviceBackingOption &  {
   descriptorFileNameExtensions?: ChoiceOption;
   compatibilityMode: ChoiceOption;
   diskMode: ChoiceOption;
   uuid: boolean;
 }
-export interface VirtualDiskRawDiskVer2BackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualDiskRawDiskVer2BackingOption = VirtualDeviceDeviceBackingOption &  {
   descriptorFileNameExtensions: ChoiceOption;
   uuid: boolean;
 }
-export interface VirtualDiskSeSparseBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskSeSparseBackingOption = VirtualDeviceFileBackingOption &  {
   diskMode: ChoiceOption;
   writeThrough: BoolOption;
   growable: boolean;
@@ -7073,13 +7073,13 @@ export interface VirtualDiskSeSparseBackingOption extends VirtualDeviceFileBacki
   uuid: boolean;
   deltaDiskFormatsSupported: VirtualDiskDeltaDiskFormatsSupported[];
 }
-export interface VirtualDiskSparseVer1BackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskSparseVer1BackingOption = VirtualDeviceFileBackingOption &  {
   diskModes: ChoiceOption;
   split: BoolOption;
   writeThrough: BoolOption;
   growable: boolean;
 }
-export interface VirtualDiskSparseVer2BackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualDiskSparseVer2BackingOption = VirtualDeviceFileBackingOption &  {
   diskMode: ChoiceOption;
   split: BoolOption;
   writeThrough: BoolOption;
@@ -7087,17 +7087,17 @@ export interface VirtualDiskSparseVer2BackingOption extends VirtualDeviceFileBac
   hotGrowable: boolean;
   uuid: boolean;
 }
-export interface VirtualDiskOptionVFlashCacheConfigOption extends DynamicData {
+export type VirtualDiskOptionVFlashCacheConfigOption = DynamicData &  {
   cacheConsistencyType: ChoiceOption;
   cacheMode: ChoiceOption;
   reservationInMB: LongOption;
   blockSizeInKB: LongOption;
 }
-export interface VirtualDiskConfigSpec extends VirtualDeviceConfigSpec {
+export type VirtualDiskConfigSpec = VirtualDeviceConfigSpec &  {
   diskMoveType?: string;
   migrateCache?: boolean;
 }
-export interface VirtualEthernetCard extends VirtualDevice {
+export type VirtualEthernetCard = VirtualDevice &  {
   addressType?: string;
   macAddress?: string;
   wakeOnLanEnabled?: boolean;
@@ -7105,300 +7105,300 @@ export interface VirtualEthernetCard extends VirtualDevice {
   externalId?: string;
   uptCompatibilityEnabled?: boolean;
 }
-export interface VirtualEthernetCardDistributedVirtualPortBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualEthernetCardDistributedVirtualPortBackingInfo = VirtualDeviceBackingInfo &  {
   port: DistributedVirtualSwitchPortConnection;
 }
-export interface VirtualEthernetCardLegacyNetworkBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualEthernetCardLegacyNetworkBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualEthernetCardNetworkBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualEthernetCardNetworkBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   network?: Network;
   inPassthroughMode?: boolean;
 }
-export interface VirtualEthernetCardOpaqueNetworkBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualEthernetCardOpaqueNetworkBackingInfo = VirtualDeviceBackingInfo &  {
   opaqueNetworkId: string;
   opaqueNetworkType: string;
 }
-export interface VirtualEthernetCardResourceAllocation extends DynamicData {
+export type VirtualEthernetCardResourceAllocation = DynamicData &  {
   reservation?: number;
   share: SharesInfo;
   limit?: number;
 }
-export interface VirtualEthernetCardOption extends VirtualDeviceOption {
+export type VirtualEthernetCardOption = VirtualDeviceOption &  {
   supportedOUI: ChoiceOption;
   macType: ChoiceOption;
   wakeOnLanEnabled: BoolOption;
   vmDirectPathGen2Supported: boolean;
   uptCompatibilityEnabled?: BoolOption;
 }
-export interface VirtualEthernetCardDVPortBackingOption extends VirtualDeviceBackingOption {
+export type VirtualEthernetCardDVPortBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualEthernetCardLegacyNetworkBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualEthernetCardLegacyNetworkBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualEthernetCardNetworkBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualEthernetCardNetworkBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualEthernetCardOpaqueNetworkBackingOption extends VirtualDeviceBackingOption {
+export type VirtualEthernetCardOpaqueNetworkBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualFloppy extends VirtualDevice {
+export type VirtualFloppy = VirtualDevice &  {
   
 }
-export interface VirtualFloppyDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualFloppyDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualFloppyImageBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualFloppyImageBackingInfo = VirtualDeviceFileBackingInfo &  {
   
 }
-export interface VirtualFloppyRemoteDeviceBackingInfo extends VirtualDeviceRemoteDeviceBackingInfo {
+export type VirtualFloppyRemoteDeviceBackingInfo = VirtualDeviceRemoteDeviceBackingInfo &  {
   
 }
-export interface VirtualFloppyOption extends VirtualDeviceOption {
+export type VirtualFloppyOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualFloppyDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualFloppyDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualFloppyImageBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualFloppyImageBackingOption = VirtualDeviceFileBackingOption &  {
   
 }
-export interface VirtualFloppyRemoteDeviceBackingOption extends VirtualDeviceRemoteDeviceBackingOption {
+export type VirtualFloppyRemoteDeviceBackingOption = VirtualDeviceRemoteDeviceBackingOption &  {
   
 }
-export interface VirtualKeyboard extends VirtualDevice {
+export type VirtualKeyboard = VirtualDevice &  {
   
 }
-export interface VirtualKeyboardOption extends VirtualDeviceOption {
+export type VirtualKeyboardOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualNVDIMM extends VirtualDevice {
+export type VirtualNVDIMM = VirtualDevice &  {
   capacityInMB: number;
 }
-export interface VirtualNVDIMMBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualNVDIMMBackingInfo = VirtualDeviceFileBackingInfo &  {
   parent?: VirtualNVDIMMBackingInfo;
   changeId?: string;
 }
-export interface VirtualNVDIMMOption extends VirtualDeviceOption {
+export type VirtualNVDIMMOption = VirtualDeviceOption &  {
   capacityInMB: LongOption;
   growable: boolean;
   hotGrowable: boolean;
   granularityInMB: number;
 }
-export interface VirtualPCIPassthrough extends VirtualDevice {
+export type VirtualPCIPassthrough = VirtualDevice &  {
   
 }
-export interface VirtualPCIPassthroughAllowedDevice extends DynamicData {
+export type VirtualPCIPassthroughAllowedDevice = DynamicData &  {
   vendorId: number;
   deviceId: number;
   subVendorId?: number;
   subDeviceId?: number;
   revisionId?: number;
 }
-export interface VirtualPCIPassthroughDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualPCIPassthroughDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   id: string;
   deviceId: string;
   systemId: string;
   vendorId: number;
 }
-export interface VirtualPCIPassthroughDynamicBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualPCIPassthroughDynamicBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   allowedDevice?: VirtualPCIPassthroughAllowedDevice[];
   customLabel?: string;
   assignedId?: string;
 }
-export interface VirtualPCIPassthroughPluginBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualPCIPassthroughPluginBackingInfo = VirtualDeviceBackingInfo &  {
   
 }
-export interface VirtualPCIPassthroughVmiopBackingInfo extends VirtualPCIPassthroughPluginBackingInfo {
+export type VirtualPCIPassthroughVmiopBackingInfo = VirtualPCIPassthroughPluginBackingInfo &  {
   vgpu?: string;
 }
-export interface VirtualPCIPassthroughOption extends VirtualDeviceOption {
+export type VirtualPCIPassthroughOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualPCIPassthroughDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualPCIPassthroughDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualPCIPassthroughDynamicBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualPCIPassthroughDynamicBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualPCIPassthroughPluginBackingOption extends VirtualDeviceBackingOption {
+export type VirtualPCIPassthroughPluginBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualPCIPassthroughVmiopBackingOption extends VirtualPCIPassthroughPluginBackingOption {
+export type VirtualPCIPassthroughVmiopBackingOption = VirtualPCIPassthroughPluginBackingOption &  {
   vgpu: StringOption;
   maxInstances: number;
 }
-export interface VirtualPCNet32 extends VirtualEthernetCard {
+export type VirtualPCNet32 = VirtualEthernetCard &  {
   
 }
-export interface VirtualPCNet32Option extends VirtualEthernetCardOption {
+export type VirtualPCNet32Option = VirtualEthernetCardOption &  {
   supportsMorphing: boolean;
 }
-export interface VirtualParallelPort extends VirtualDevice {
+export type VirtualParallelPort = VirtualDevice &  {
   
 }
-export interface VirtualParallelPortDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualParallelPortDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualParallelPortFileBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualParallelPortFileBackingInfo = VirtualDeviceFileBackingInfo &  {
   
 }
-export interface VirtualParallelPortOption extends VirtualDeviceOption {
+export type VirtualParallelPortOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualParallelPortDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualParallelPortDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualParallelPortFileBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualParallelPortFileBackingOption = VirtualDeviceFileBackingOption &  {
   
 }
-export interface VirtualPointingDevice extends VirtualDevice {
+export type VirtualPointingDevice = VirtualDevice &  {
   
 }
-export interface VirtualPointingDeviceDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualPointingDeviceDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   hostPointingDevice: string;
 }
-export interface VirtualPointingDeviceOption extends VirtualDeviceOption {
+export type VirtualPointingDeviceOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualPointingDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualPointingDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   hostPointingDevice: ChoiceOption;
 }
-export interface VirtualPrecisionClock extends VirtualDevice {
+export type VirtualPrecisionClock = VirtualDevice &  {
   
 }
-export interface VirtualPrecisionClockSystemClockBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualPrecisionClockSystemClockBackingInfo = VirtualDeviceBackingInfo &  {
   protocol?: string;
 }
-export interface VirtualPrecisionClockOption extends VirtualDeviceOption {
+export type VirtualPrecisionClockOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualPrecisionClockSystemClockBackingOption extends VirtualDeviceBackingOption {
+export type VirtualPrecisionClockSystemClockBackingOption = VirtualDeviceBackingOption &  {
   protocol: ChoiceOption;
 }
-export interface VirtualSCSIPassthrough extends VirtualDevice {
+export type VirtualSCSIPassthrough = VirtualDevice &  {
   
 }
-export interface VirtualSCSIPassthroughDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualSCSIPassthroughDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualSCSIPassthroughOption extends VirtualDeviceOption {
+export type VirtualSCSIPassthroughOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualSCSIPassthroughDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualSCSIPassthroughDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualSerialPort extends VirtualDevice {
+export type VirtualSerialPort = VirtualDevice &  {
   yieldOnPoll: boolean;
 }
-export interface VirtualSerialPortDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualSerialPortDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualSerialPortFileBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualSerialPortFileBackingInfo = VirtualDeviceFileBackingInfo &  {
   
 }
-export interface VirtualSerialPortPipeBackingInfo extends VirtualDevicePipeBackingInfo {
+export type VirtualSerialPortPipeBackingInfo = VirtualDevicePipeBackingInfo &  {
   endpoint: string;
   noRxLoss?: boolean;
 }
-export interface VirtualSerialPortThinPrintBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualSerialPortThinPrintBackingInfo = VirtualDeviceBackingInfo &  {
   
 }
-export interface VirtualSerialPortURIBackingInfo extends VirtualDeviceURIBackingInfo {
+export type VirtualSerialPortURIBackingInfo = VirtualDeviceURIBackingInfo &  {
   
 }
-export interface VirtualSerialPortOption extends VirtualDeviceOption {
+export type VirtualSerialPortOption = VirtualDeviceOption &  {
   yieldOnPoll: BoolOption;
 }
-export interface VirtualSerialPortDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualSerialPortDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualSerialPortFileBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualSerialPortFileBackingOption = VirtualDeviceFileBackingOption &  {
   
 }
-export interface VirtualSerialPortPipeBackingOption extends VirtualDevicePipeBackingOption {
+export type VirtualSerialPortPipeBackingOption = VirtualDevicePipeBackingOption &  {
   endpoint: ChoiceOption;
   noRxLoss: BoolOption;
 }
-export interface VirtualSerialPortThinPrintBackingOption extends VirtualDeviceBackingOption {
+export type VirtualSerialPortThinPrintBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualSerialPortURIBackingOption extends VirtualDeviceURIBackingOption {
+export type VirtualSerialPortURIBackingOption = VirtualDeviceURIBackingOption &  {
   
 }
-export interface VirtualSoundCard extends VirtualDevice {
+export type VirtualSoundCard = VirtualDevice &  {
   
 }
-export interface VirtualSoundCardDeviceBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualSoundCardDeviceBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualSoundCardOption extends VirtualDeviceOption {
+export type VirtualSoundCardOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualSoundCardDeviceBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualSoundCardDeviceBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualSriovEthernetCard extends VirtualEthernetCard {
+export type VirtualSriovEthernetCard = VirtualEthernetCard &  {
   allowGuestOSMtuChange?: boolean;
   sriovBacking?: VirtualSriovEthernetCardSriovBackingInfo;
 }
-export interface VirtualSriovEthernetCardSriovBackingInfo extends VirtualDeviceBackingInfo {
+export type VirtualSriovEthernetCardSriovBackingInfo = VirtualDeviceBackingInfo &  {
   physicalFunctionBacking?: VirtualPCIPassthroughDeviceBackingInfo;
   virtualFunctionBacking?: VirtualPCIPassthroughDeviceBackingInfo;
   virtualFunctionIndex?: number;
 }
-export interface VirtualSriovEthernetCardOption extends VirtualEthernetCardOption {
+export type VirtualSriovEthernetCardOption = VirtualEthernetCardOption &  {
   
 }
-export interface VirtualSriovEthernetCardSriovBackingOption extends VirtualDeviceBackingOption {
+export type VirtualSriovEthernetCardSriovBackingOption = VirtualDeviceBackingOption &  {
   
 }
-export interface VirtualTPM extends VirtualDevice {
+export type VirtualTPM = VirtualDevice &  {
   endorsementKeyCertificateSigningRequest?: Buffer[];
   endorsementKeyCertificate?: Buffer[];
 }
-export interface VirtualTPMOption extends VirtualDeviceOption {
+export type VirtualTPMOption = VirtualDeviceOption &  {
   supportedFirmware?: string[];
 }
-export interface VirtualUSB extends VirtualDevice {
+export type VirtualUSB = VirtualDevice &  {
   connected: boolean;
   vendor?: number;
   product?: number;
   family?: string[];
   speed?: string[];
 }
-export interface VirtualUSBRemoteClientBackingInfo extends VirtualDeviceRemoteDeviceBackingInfo {
+export type VirtualUSBRemoteClientBackingInfo = VirtualDeviceRemoteDeviceBackingInfo &  {
   hostname: string;
 }
-export interface VirtualUSBRemoteHostBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualUSBRemoteHostBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   hostname: string;
 }
-export interface VirtualUSBUSBBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualUSBUSBBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualUSBOption extends VirtualDeviceOption {
+export type VirtualUSBOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualUSBRemoteClientBackingOption extends VirtualDeviceRemoteDeviceBackingOption {
+export type VirtualUSBRemoteClientBackingOption = VirtualDeviceRemoteDeviceBackingOption &  {
   
 }
-export interface VirtualUSBRemoteHostBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualUSBRemoteHostBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualUSBUSBBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualUSBUSBBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualMachineVMCIDevice extends VirtualDevice {
+export type VirtualMachineVMCIDevice = VirtualDevice &  {
   id?: number;
   allowUnrestrictedCommunication?: boolean;
   filterEnable?: boolean;
   filterInfo?: VirtualMachineVMCIDeviceFilterInfo;
 }
-export interface VirtualMachineVMCIDeviceFilterInfo extends DynamicData {
+export type VirtualMachineVMCIDeviceFilterInfo = DynamicData &  {
   filters?: VirtualMachineVMCIDeviceFilterSpec[];
 }
-export interface VirtualMachineVMCIDeviceFilterSpec extends DynamicData {
+export type VirtualMachineVMCIDeviceFilterSpec = DynamicData &  {
   rank: number;
   action: string;
   protocol: string;
@@ -7406,25 +7406,25 @@ export interface VirtualMachineVMCIDeviceFilterSpec extends DynamicData {
   lowerDstPortBoundary?: number;
   upperDstPortBoundary?: number;
 }
-export interface VirtualMachineVMCIDeviceOption extends VirtualDeviceOption {
+export type VirtualMachineVMCIDeviceOption = VirtualDeviceOption &  {
   allowUnrestrictedCommunication: BoolOption;
   filterSpecOption?: VirtualMachineVMCIDeviceOptionFilterSpecOption;
   filterSupported?: BoolOption;
 }
-export interface VirtualMachineVMCIDeviceOptionFilterSpecOption extends DynamicData {
+export type VirtualMachineVMCIDeviceOptionFilterSpecOption = DynamicData &  {
   action: ChoiceOption;
   protocol: ChoiceOption;
   direction: ChoiceOption;
   lowerDstPortBoundary: LongOption;
   upperDstPortBoundary: LongOption;
 }
-export interface VirtualMachineVMIROM extends VirtualDevice {
+export type VirtualMachineVMIROM = VirtualDevice &  {
   
 }
-export interface VirtualVMIROMOption extends VirtualDeviceOption {
+export type VirtualVMIROMOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualMachineVideoCard extends VirtualDevice {
+export type VirtualMachineVideoCard = VirtualDevice &  {
   videoRamSizeInKB?: number;
   numDisplays?: number;
   useAutoDetect?: boolean;
@@ -7432,7 +7432,7 @@ export interface VirtualMachineVideoCard extends VirtualDevice {
   use3dRenderer?: string;
   graphicsMemorySizeInKB?: number;
 }
-export interface VirtualVideoCardOption extends VirtualDeviceOption {
+export type VirtualVideoCardOption = VirtualDeviceOption &  {
   videoRamSizeInKB?: LongOption;
   numDisplays?: IntOption;
   useAutoDetect?: BoolOption;
@@ -7441,88 +7441,88 @@ export interface VirtualVideoCardOption extends VirtualDeviceOption {
   graphicsMemorySizeInKB?: LongOption;
   graphicsMemorySizeSupported?: BoolOption;
 }
-export interface VirtualVmxnet extends VirtualEthernetCard {
+export type VirtualVmxnet = VirtualEthernetCard &  {
   
 }
-export interface VirtualVmxnet2 extends VirtualVmxnet {
+export type VirtualVmxnet2 = VirtualVmxnet &  {
   
 }
-export interface VirtualVmxnet3 extends VirtualVmxnet {
+export type VirtualVmxnet3 = VirtualVmxnet &  {
   
 }
-export interface VirtualVmxnet3Vrdma extends VirtualVmxnet3 {
+export type VirtualVmxnet3Vrdma = VirtualVmxnet3 &  {
   deviceProtocol?: string;
 }
-export interface VirtualVmxnetOption extends VirtualEthernetCardOption {
+export type VirtualVmxnetOption = VirtualEthernetCardOption &  {
   
 }
-export interface VirtualWDT extends VirtualDevice {
+export type VirtualWDT = VirtualDevice &  {
   runOnBoot: boolean;
   running: boolean;
 }
-export interface VirtualWDTOption extends VirtualDeviceOption {
+export type VirtualWDTOption = VirtualDeviceOption &  {
   runOnBoot: BoolOption;
 }
-export interface GuestAliases extends DynamicData {
+export type GuestAliases = DynamicData &  {
   base64Cert: string;
   aliases: GuestAuthAliasInfo[];
 }
-export interface GuestAuthAliasInfo extends DynamicData {
+export type GuestAuthAliasInfo = DynamicData &  {
   subject: GuestAuthSubject;
   comment: string;
 }
-export interface GuestAuthAnySubject extends GuestAuthSubject {
+export type GuestAuthAnySubject = GuestAuthSubject &  {
   
 }
-export interface GuestAuthNamedSubject extends GuestAuthSubject {
+export type GuestAuthNamedSubject = GuestAuthSubject &  {
   name: string;
 }
-export interface GuestAuthSubject extends DynamicData {
+export type GuestAuthSubject = DynamicData &  {
   
 }
-export interface GuestMappedAliases extends DynamicData {
+export type GuestMappedAliases = DynamicData &  {
   base64Cert: string;
   username: string;
   subjects: GuestAuthSubject[];
 }
-export interface GuestFileAttributes extends DynamicData {
+export type GuestFileAttributes = DynamicData &  {
   modificationTime?: Date;
   accessTime?: Date;
   symlinkTarget?: string;
 }
-export interface GuestFileInfo extends DynamicData {
+export type GuestFileInfo = DynamicData &  {
   path: string;
   type: string;
   size: number;
   attributes: GuestFileAttributes;
 }
-export interface FileTransferInformation extends DynamicData {
+export type FileTransferInformation = DynamicData &  {
   attributes: GuestFileAttributes;
   size: number;
   url: string;
 }
-export interface GuestListFileInfo extends DynamicData {
+export type GuestListFileInfo = DynamicData &  {
   files?: GuestFileInfo[];
   remaining: number;
 }
-export interface GuestPosixFileAttributes extends GuestFileAttributes {
+export type GuestPosixFileAttributes = GuestFileAttributes &  {
   ownerId?: number;
   groupId?: number;
   permissions?: number;
 }
-export interface GuestWindowsFileAttributes extends GuestFileAttributes {
+export type GuestWindowsFileAttributes = GuestFileAttributes &  {
   hidden?: boolean;
   readOnly?: boolean;
   createTime?: Date;
 }
-export interface GuestAuthentication extends DynamicData {
+export type GuestAuthentication = DynamicData &  {
   interactiveSession: boolean;
 }
-export interface NamePasswordAuthentication extends GuestAuthentication {
+export type NamePasswordAuthentication = GuestAuthentication &  {
   username: string;
   password: string;
 }
-export interface GuestProcessInfo extends DynamicData {
+export type GuestProcessInfo = DynamicData &  {
   name: string;
   pid: number;
   owner: string;
@@ -7531,105 +7531,105 @@ export interface GuestProcessInfo extends DynamicData {
   endTime?: Date;
   exitCode?: number;
 }
-export interface GuestProgramSpec extends DynamicData {
+export type GuestProgramSpec = DynamicData &  {
   programPath: string;
   arguments: string;
   workingDirectory?: string;
   envVariables?: string[];
 }
-export interface GuestWindowsProgramSpec extends GuestProgramSpec {
+export type GuestWindowsProgramSpec = GuestProgramSpec &  {
   startMinimized: boolean;
 }
-export interface SAMLTokenAuthentication extends GuestAuthentication {
+export type SAMLTokenAuthentication = GuestAuthentication &  {
   token: string;
   username?: string;
 }
-export interface SSPIAuthentication extends GuestAuthentication {
+export type SSPIAuthentication = GuestAuthentication &  {
   sspiToken: string;
 }
-export interface TicketedSessionAuthentication extends GuestAuthentication {
+export type TicketedSessionAuthentication = GuestAuthentication &  {
   ticket: string;
 }
-export interface GuestRegKeySpec extends DynamicData {
+export type GuestRegKeySpec = DynamicData &  {
   keyName: GuestRegKeyNameSpec;
   classType: string;
   lastWritten: Date;
 }
-export interface GuestRegKeyNameSpec extends DynamicData {
+export type GuestRegKeyNameSpec = DynamicData &  {
   registryPath: string;
   wowBitness: string;
 }
-export interface GuestRegKeyRecordSpec extends DynamicData {
+export type GuestRegKeyRecordSpec = DynamicData &  {
   key: GuestRegKeySpec;
   fault?: MethodFault;
 }
-export interface GuestRegValueSpec extends DynamicData {
+export type GuestRegValueSpec = DynamicData &  {
   name: GuestRegValueNameSpec;
   data: GuestRegValueDataSpec;
 }
-export interface GuestRegValueBinarySpec extends GuestRegValueDataSpec {
+export type GuestRegValueBinarySpec = GuestRegValueDataSpec &  {
   value?: Buffer;
 }
-export interface GuestRegValueDataSpec extends DynamicData {
+export type GuestRegValueDataSpec = DynamicData &  {
   
 }
-export interface GuestRegValueDwordSpec extends GuestRegValueDataSpec {
+export type GuestRegValueDwordSpec = GuestRegValueDataSpec &  {
   value: number;
 }
-export interface GuestRegValueExpandStringSpec extends GuestRegValueDataSpec {
+export type GuestRegValueExpandStringSpec = GuestRegValueDataSpec &  {
   value?: string;
 }
-export interface GuestRegValueMultiStringSpec extends GuestRegValueDataSpec {
+export type GuestRegValueMultiStringSpec = GuestRegValueDataSpec &  {
   value?: string[];
 }
-export interface GuestRegValueNameSpec extends DynamicData {
+export type GuestRegValueNameSpec = DynamicData &  {
   keyName: GuestRegKeyNameSpec;
   name: string;
 }
-export interface GuestRegValueQwordSpec extends GuestRegValueDataSpec {
+export type GuestRegValueQwordSpec = GuestRegValueDataSpec &  {
   value: number;
 }
-export interface GuestRegValueStringSpec extends GuestRegValueDataSpec {
+export type GuestRegValueStringSpec = GuestRegValueDataSpec &  {
   value?: string;
 }
-export interface DeviceGroupId extends DynamicData {
+export type DeviceGroupId = DynamicData &  {
   id: string;
 }
-export interface FaultDomainId extends DynamicData {
+export type FaultDomainId = DynamicData &  {
   id: string;
 }
-export interface ReplicationGroupId extends DynamicData {
+export type ReplicationGroupId = DynamicData &  {
   faultDomainId: FaultDomainId;
   deviceGroupId: DeviceGroupId;
 }
-export interface ReplicationSpec extends DynamicData {
+export type ReplicationSpec = DynamicData &  {
   replicationGroupId: ReplicationGroupId;
 }
-export interface VsanClusterConfigInfo extends DynamicData {
+export type VsanClusterConfigInfo = DynamicData &  {
   enabled?: boolean;
   defaultConfig?: VsanClusterConfigInfoHostDefaultInfo;
 }
-export interface VsanClusterConfigInfoHostDefaultInfo extends DynamicData {
+export type VsanClusterConfigInfoHostDefaultInfo = DynamicData &  {
   uuid?: string;
   autoClaimStorage?: boolean;
   checksumEnabled?: boolean;
 }
-export interface VsanHostClusterStatus extends DynamicData {
+export type VsanHostClusterStatus = DynamicData &  {
   uuid?: string;
   nodeUuid?: string;
   health: string;
   nodeState: VsanHostClusterStatusState;
   memberUuid?: string[];
 }
-export interface VsanHostClusterStatusState extends DynamicData {
+export type VsanHostClusterStatusState = DynamicData &  {
   state: string;
   completion?: VsanHostClusterStatusStateCompletionEstimate;
 }
-export interface VsanHostClusterStatusStateCompletionEstimate extends DynamicData {
+export type VsanHostClusterStatusStateCompletionEstimate = DynamicData &  {
   completeTime?: Date;
   percentComplete?: number;
 }
-export interface VsanHostConfigInfo extends DynamicData {
+export type VsanHostConfigInfo = DynamicData &  {
   enabled?: boolean;
   hostSystem?: HostSystem;
   clusterInfo?: VsanHostConfigInfoClusterInfo;
@@ -7637,71 +7637,71 @@ export interface VsanHostConfigInfo extends DynamicData {
   networkInfo?: VsanHostConfigInfoNetworkInfo;
   faultDomainInfo?: VsanHostFaultDomainInfo;
 }
-export interface VsanHostConfigInfoClusterInfo extends DynamicData {
+export type VsanHostConfigInfoClusterInfo = DynamicData &  {
   uuid?: string;
   nodeUuid?: string;
 }
-export interface VsanHostFaultDomainInfo extends DynamicData {
+export type VsanHostFaultDomainInfo = DynamicData &  {
   name: string;
 }
-export interface VsanHostConfigInfoNetworkInfo extends DynamicData {
+export type VsanHostConfigInfoNetworkInfo = DynamicData &  {
   port?: VsanHostConfigInfoNetworkInfoPortConfig[];
 }
-export interface VsanHostConfigInfoNetworkInfoPortConfig extends DynamicData {
+export type VsanHostConfigInfoNetworkInfoPortConfig = DynamicData &  {
   ipConfig?: VsanHostIpConfig;
   device: string;
 }
-export interface VsanHostConfigInfoStorageInfo extends DynamicData {
+export type VsanHostConfigInfoStorageInfo = DynamicData &  {
   autoClaimStorage?: boolean;
   diskMapping?: VsanHostDiskMapping[];
   diskMapInfo?: VsanHostDiskMapInfo[];
   checksumEnabled?: boolean;
 }
-export interface VsanHostDecommissionMode extends DynamicData {
+export type VsanHostDecommissionMode = DynamicData &  {
   objectAction: string;
 }
-export interface VsanHostDiskMapInfo extends DynamicData {
+export type VsanHostDiskMapInfo = DynamicData &  {
   mapping: VsanHostDiskMapping;
   mounted: boolean;
 }
-export interface VsanHostDiskMapResult extends DynamicData {
+export type VsanHostDiskMapResult = DynamicData &  {
   mapping: VsanHostDiskMapping;
   diskResult?: VsanHostDiskResult[];
   error?: MethodFault;
 }
-export interface VsanHostDiskMapping extends DynamicData {
+export type VsanHostDiskMapping = DynamicData &  {
   ssd: HostScsiDisk;
   nonSsd: HostScsiDisk[];
 }
-export interface VsanHostDiskResult extends DynamicData {
+export type VsanHostDiskResult = DynamicData &  {
   disk: HostScsiDisk;
   state: string;
   vsanUuid?: string;
   error?: MethodFault;
   degraded?: boolean;
 }
-export interface VsanHostIpConfig extends DynamicData {
+export type VsanHostIpConfig = DynamicData &  {
   upstreamIpAddress: string;
   downstreamIpAddress: string;
 }
-export interface VsanHostMembershipInfo extends DynamicData {
+export type VsanHostMembershipInfo = DynamicData &  {
   nodeUuid: string;
   hostname: string;
 }
-export interface VsanHostVsanDiskInfo extends DynamicData {
+export type VsanHostVsanDiskInfo = DynamicData &  {
   vsanUuid: string;
   formatVersion: number;
 }
-export interface VsanHostRuntimeInfo extends DynamicData {
+export type VsanHostRuntimeInfo = DynamicData &  {
   membershipList?: VsanHostMembershipInfo[];
   diskIssues?: VsanHostRuntimeInfoDiskIssue[];
   accessGenNo?: number;
 }
-export interface VsanHostRuntimeInfoDiskIssue extends DynamicData {
+export type VsanHostRuntimeInfoDiskIssue = DynamicData &  {
   diskId: string;
   issue: string;
 }
-export interface BaseConfigInfo extends DynamicData {
+export type BaseConfigInfo = DynamicData &  {
   id: ID;
   name: string;
   createTime: Date;
@@ -7712,24 +7712,24 @@ export interface BaseConfigInfo extends DynamicData {
   backing: BaseConfigInfoBackingInfo;
   iofilter?: string[];
 }
-export interface BaseConfigInfoBackingInfo extends DynamicData {
+export type BaseConfigInfoBackingInfo = DynamicData &  {
   datastore: Datastore;
 }
-export interface BaseConfigInfoDiskFileBackingInfo extends BaseConfigInfoFileBackingInfo {
+export type BaseConfigInfoDiskFileBackingInfo = BaseConfigInfoFileBackingInfo &  {
   provisioningType: string;
 }
-export interface BaseConfigInfoFileBackingInfo extends BaseConfigInfoBackingInfo {
+export type BaseConfigInfoFileBackingInfo = BaseConfigInfoBackingInfo &  {
   filePath: string;
   backingObjectId?: string;
   parent?: BaseConfigInfoFileBackingInfo;
   deltaSizeInMB?: number;
   keyId?: CryptoKeyId;
 }
-export interface BaseConfigInfoRawDiskMappingBackingInfo extends BaseConfigInfoFileBackingInfo {
+export type BaseConfigInfoRawDiskMappingBackingInfo = BaseConfigInfoFileBackingInfo &  {
   lunUuid: string;
   compatibilityMode: string;
 }
-export interface VslmCreateSpec extends DynamicData {
+export type VslmCreateSpec = DynamicData &  {
   name: string;
   keepAfterDeleteVm?: boolean;
   backingSpec: VslmCreateSpecBackingSpec;
@@ -7738,120 +7738,120 @@ export interface VslmCreateSpec extends DynamicData {
   crypto?: CryptoSpec;
   metadata?: KeyValue[];
 }
-export interface VslmCreateSpecBackingSpec extends DynamicData {
+export type VslmCreateSpecBackingSpec = DynamicData &  {
   datastore: Datastore;
   path?: string;
 }
-export interface VslmCreateSpecDiskFileBackingSpec extends VslmCreateSpecBackingSpec {
+export type VslmCreateSpecDiskFileBackingSpec = VslmCreateSpecBackingSpec &  {
   provisioningType?: string;
 }
-export interface VslmCreateSpecRawDiskMappingBackingSpec extends VslmCreateSpecBackingSpec {
+export type VslmCreateSpecRawDiskMappingBackingSpec = VslmCreateSpecBackingSpec &  {
   lunUuid: string;
   compatibilityMode: string;
 }
-export interface DiskCryptoSpec extends DynamicData {
+export type DiskCryptoSpec = DynamicData &  {
   parent?: DiskCryptoSpec;
   crypto: CryptoSpec;
 }
-export interface ID extends DynamicData {
+export type ID = DynamicData &  {
   id: string;
 }
-export interface vslmInfrastructureObjectPolicy extends DynamicData {
+export type vslmInfrastructureObjectPolicy = DynamicData &  {
   name: string;
   backingObjectId: string;
   profileId: string;
   error?: MethodFault;
 }
-export interface vslmInfrastructureObjectPolicySpec extends DynamicData {
+export type vslmInfrastructureObjectPolicySpec = DynamicData &  {
   datastore: Datastore;
   profile?: VirtualMachineProfileSpec[];
 }
-export interface VslmMigrateSpec extends DynamicData {
+export type VslmMigrateSpec = DynamicData &  {
   backingSpec: VslmCreateSpecBackingSpec;
   profile?: VirtualMachineProfileSpec[];
   consolidate?: boolean;
   disksCrypto?: DiskCryptoSpec;
 }
-export interface VslmRelocateSpec extends VslmMigrateSpec {
+export type VslmRelocateSpec = VslmMigrateSpec &  {
   
 }
-export interface VStorageObjectStateInfo extends DynamicData {
+export type VStorageObjectStateInfo = DynamicData &  {
   tentative?: boolean;
 }
-export interface VslmTagEntry extends DynamicData {
+export type VslmTagEntry = DynamicData &  {
   tagName: string;
   parentCategoryName: string;
 }
-export interface VStorageObject extends DynamicData {
+export type VStorageObject = DynamicData &  {
   config: VStorageObjectConfigInfo;
 }
-export interface VStorageObjectConfigInfo extends BaseConfigInfo {
+export type VStorageObjectConfigInfo = BaseConfigInfo &  {
   capacityInMB: number;
   consumptionType?: string[];
   consumerId?: ID[];
 }
-export interface VStorageObjectSnapshotDetails extends DynamicData {
+export type VStorageObjectSnapshotDetails = DynamicData &  {
   path?: string;
   changedBlockTrackingId?: string;
 }
-export interface VStorageObjectSnapshotInfo extends DynamicData {
+export type VStorageObjectSnapshotInfo = DynamicData &  {
   snapshots?: VStorageObjectSnapshotInfoVStorageObjectSnapshot[];
 }
-export interface VStorageObjectSnapshotInfoVStorageObjectSnapshot extends DynamicData {
+export type VStorageObjectSnapshotInfoVStorageObjectSnapshot = DynamicData &  {
   id?: ID;
   backingObjectId?: string;
   createTime: Date;
   description: string;
 }
-export interface RetrieveVStorageObjSpec extends DynamicData {
+export type RetrieveVStorageObjSpec = DynamicData &  {
   id: ID;
   datastore: Datastore;
 }
-export interface VStorageObjectAssociations extends DynamicData {
+export type VStorageObjectAssociations = DynamicData &  {
   id: ID;
   vmDiskAssociations?: VStorageObjectAssociationsVmDiskAssociations[];
   fault?: MethodFault;
 }
-export interface VStorageObjectAssociationsVmDiskAssociations extends DynamicData {
+export type VStorageObjectAssociationsVmDiskAssociations = DynamicData &  {
   vmId: string;
   diskKey: number;
 }
-export interface EntityPrivilege extends DynamicData {
+export type EntityPrivilege = DynamicData &  {
   entity: ManagedEntity;
   privAvailability: PrivilegeAvailability[];
 }
-export interface Permission extends DynamicData {
+export type Permission = DynamicData &  {
   entity?: ManagedEntity;
   principal: string;
   group: boolean;
   roleId: number;
   propagate: boolean;
 }
-export interface AuthorizationPrivilege extends DynamicData {
+export type AuthorizationPrivilege = DynamicData &  {
   privId: string;
   onParent: boolean;
   name: string;
   privGroupName: string;
 }
-export interface PrivilegeAvailability extends DynamicData {
+export type PrivilegeAvailability = DynamicData &  {
   privId: string;
   isGranted: boolean;
 }
-export interface AuthorizationRole extends DynamicData {
+export type AuthorizationRole = DynamicData &  {
   roleId: number;
   system: boolean;
   name: string;
   info: Description;
   privilege?: string[];
 }
-export interface UserPrivilegeResult extends DynamicData {
+export type UserPrivilegeResult = DynamicData &  {
   entity: ManagedEntity;
   privileges?: string[];
 }
-export interface BoolPolicy extends InheritablePolicy {
+export type BoolPolicy = InheritablePolicy &  {
   value?: boolean;
 }
-export interface EVCMode extends ElementDescription {
+export type EVCMode = ElementDescription &  {
   guaranteedCPUFeatures?: HostCpuIdInfo[];
   featureCapability?: HostFeatureCapability[];
   featureMask?: HostFeatureMask[];
@@ -7860,53 +7860,53 @@ export interface EVCMode extends ElementDescription {
   track: string[];
   vendorTier: number;
 }
-export interface ImportSpec extends DynamicData {
+export type ImportSpec = DynamicData &  {
   entityConfig?: VAppEntityConfigInfo;
   instantiationOst?: OvfConsumerOstNode;
 }
-export interface IntExpression extends NegatableExpression {
+export type IntExpression = NegatableExpression &  {
   value?: number;
 }
-export interface IpAddress extends NegatableExpression {
+export type IpAddress = NegatableExpression &  {
   
 }
-export interface IpRange extends IpAddress {
+export type IpRange = IpAddress &  {
   addressPrefix: string;
   prefixLength?: number;
 }
-export interface LicenseAssignmentManagerLicenseAssignment extends DynamicData {
+export type LicenseAssignmentManagerLicenseAssignment = DynamicData &  {
   entityId: string;
   scope?: string;
   entityDisplayName?: string;
   assignedLicense: LicenseManagerLicenseInfo;
   properties?: KeyAnyValue[];
 }
-export interface MacAddress extends NegatableExpression {
+export type MacAddress = NegatableExpression &  {
   
 }
-export interface MacRange extends MacAddress {
+export type MacRange = MacAddress &  {
   address: string;
   mask: string;
 }
-export interface NetworkSummary extends DynamicData {
+export type NetworkSummary = DynamicData &  {
   network?: Network;
   name: string;
   accessible: boolean;
   ipPoolName: string;
   ipPoolId?: number;
 }
-export interface OpaqueNetworkCapability extends DynamicData {
+export type OpaqueNetworkCapability = DynamicData &  {
   networkReservationSupported: boolean;
 }
-export interface OpaqueNetworkSummary extends NetworkSummary {
+export type OpaqueNetworkSummary = NetworkSummary &  {
   opaqueNetworkId: string;
   opaqueNetworkType: string;
 }
-export interface PosixUserSearchResult extends UserSearchResult {
+export type PosixUserSearchResult = UserSearchResult &  {
   id: number;
   shellAccess?: boolean;
 }
-export interface ResourcePoolResourceUsage extends DynamicData {
+export type ResourcePoolResourceUsage = DynamicData &  {
   reservationUsed: number;
   reservationUsedForVm: number;
   unreservedForPool: number;
@@ -7914,20 +7914,20 @@ export interface ResourcePoolResourceUsage extends DynamicData {
   overallUsage: number;
   maxUsage: number;
 }
-export interface ResourcePoolRuntimeInfo extends DynamicData {
+export type ResourcePoolRuntimeInfo = DynamicData &  {
   memory: ResourcePoolResourceUsage;
   cpu: ResourcePoolResourceUsage;
   overallStatus: ManagedEntityStatus;
   sharesScalable?: string;
 }
-export interface ResourcePoolSummary extends DynamicData {
+export type ResourcePoolSummary = DynamicData &  {
   name: string;
   config: ResourceConfigSpec;
   runtime: ResourcePoolRuntimeInfo;
   quickStats?: ResourcePoolQuickStats;
   configuredMemoryMB?: number;
 }
-export interface ResourcePoolQuickStats extends DynamicData {
+export type ResourcePoolQuickStats = DynamicData &  {
   overallCpuUsage?: number;
   overallCpuDemand?: number;
   guestMemoryUsage?: number;
@@ -7944,13 +7944,13 @@ export interface ResourcePoolQuickStats extends DynamicData {
   consumedOverheadMemory?: number;
   compressedMemory?: number;
 }
-export interface SingleIp extends IpAddress {
+export type SingleIp = IpAddress &  {
   address: string;
 }
-export interface SingleMac extends MacAddress {
+export type SingleMac = MacAddress &  {
   address: string;
 }
-export interface TaskFilterSpec extends DynamicData {
+export type TaskFilterSpec = DynamicData &  {
   entity?: TaskFilterSpecByEntity;
   time?: TaskFilterSpecByTime;
   userName?: TaskFilterSpecByUsername;
@@ -7963,80 +7963,80 @@ export interface TaskFilterSpec extends DynamicData {
   parentTaskKey?: string[];
   rootTaskKey?: string[];
 }
-export interface TaskFilterSpecByEntity extends DynamicData {
+export type TaskFilterSpecByEntity = DynamicData &  {
   entity: ManagedEntity;
   recursion: TaskFilterSpecRecursionOption;
 }
-export interface TaskFilterSpecByTime extends DynamicData {
+export type TaskFilterSpecByTime = DynamicData &  {
   timeType: TaskFilterSpecTimeOption;
   beginTime?: Date;
   endTime?: Date;
 }
-export interface TaskFilterSpecByUsername extends DynamicData {
+export type TaskFilterSpecByUsername = DynamicData &  {
   systemUser: boolean;
   userList?: string[];
 }
-export interface VirtualAppLinkInfo extends DynamicData {
+export type VirtualAppLinkInfo = DynamicData &  {
   key: ManagedEntity;
   destroyWithParent?: boolean;
 }
-export interface VirtualAppSummary extends ResourcePoolSummary {
+export type VirtualAppSummary = ResourcePoolSummary &  {
   product?: VAppProductInfo;
   vAppState?: VirtualAppVAppState;
   suspended?: boolean;
   installBootRequired?: boolean;
   instanceUuid?: string;
 }
-export interface DeviceBackedVirtualDiskSpec extends VirtualDiskSpec {
+export type DeviceBackedVirtualDiskSpec = VirtualDiskSpec &  {
   device: string;
 }
-export interface FileBackedVirtualDiskSpec extends VirtualDiskSpec {
+export type FileBackedVirtualDiskSpec = VirtualDiskSpec &  {
   capacityKb: number;
   profile?: VirtualMachineProfileSpec[];
   crypto?: CryptoSpec;
 }
-export interface SeSparseVirtualDiskSpec extends FileBackedVirtualDiskSpec {
+export type SeSparseVirtualDiskSpec = FileBackedVirtualDiskSpec &  {
   grainSizeKb?: number;
 }
-export interface VirtualDiskSpec extends DynamicData {
+export type VirtualDiskSpec = DynamicData &  {
   diskType: string;
   adapterType: string;
 }
-export interface VirtualMachineConnection extends DynamicData {
+export type VirtualMachineConnection = DynamicData &  {
   label: string;
   client: string;
   userName: string;
 }
-export interface DiskChangeInfo extends DynamicData {
+export type DiskChangeInfo = DynamicData &  {
   startOffset: number;
   length: number;
   changedArea?: DiskChangeExtent[];
 }
-export interface DiskChangeExtent extends DynamicData {
+export type DiskChangeExtent = DynamicData &  {
   start: number;
   length: number;
 }
-export interface VirtualMachineDisplayTopology extends DynamicData {
+export type VirtualMachineDisplayTopology = DynamicData &  {
   x: number;
   y: number;
   width: number;
   height: number;
 }
-export interface VirtualMachineMksConnection extends VirtualMachineConnection {
+export type VirtualMachineMksConnection = VirtualMachineConnection &  {
   
 }
-export interface VirtualMachineMksTicket extends DynamicData {
+export type VirtualMachineMksTicket = DynamicData &  {
   ticket: string;
   cfgFile: string;
   host?: string;
   port?: number;
   sslThumbprint?: string;
 }
-export interface StorageRequirement extends DynamicData {
+export type StorageRequirement = DynamicData &  {
   datastore: Datastore;
   freeSpaceRequiredInKb: number;
 }
-export interface VirtualMachineTicket extends DynamicData {
+export type VirtualMachineTicket = DynamicData &  {
   ticket: string;
   cfgFile: string;
   host?: string;
@@ -8044,16 +8044,16 @@ export interface VirtualMachineTicket extends DynamicData {
   sslThumbprint?: string;
   url?: string;
 }
-export interface VirtualMachineWipeResult extends DynamicData {
+export type VirtualMachineWipeResult = DynamicData &  {
   diskId: number;
   shrinkableDiskSpace: number;
 }
-export interface AlarmFilterSpec extends DynamicData {
+export type AlarmFilterSpec = DynamicData &  {
   status?: ManagedEntityStatus[];
   typeEntity?: string;
   typeTrigger?: string;
 }
-export interface AlarmInfo extends AlarmSpec {
+export type AlarmInfo = AlarmSpec &  {
   key: string;
   alarm: Alarm;
   entity: ManagedEntity;
@@ -8061,7 +8061,7 @@ export interface AlarmInfo extends AlarmSpec {
   lastModifiedUser: string;
   creationEventId: number;
 }
-export interface AlarmState extends DynamicData {
+export type AlarmState = DynamicData &  {
   key: string;
   entity: ManagedEntity;
   alarm: Alarm;
@@ -8073,7 +8073,7 @@ export interface AlarmState extends DynamicData {
   eventKey?: number;
   disabled?: boolean;
 }
-export interface AlarmTriggeringAction extends AlarmAction {
+export type AlarmTriggeringAction = AlarmAction &  {
   action: Action;
   transitionSpecs?: AlarmTriggeringActionTransitionSpec[];
   green2yellow: boolean;
@@ -8081,51 +8081,51 @@ export interface AlarmTriggeringAction extends AlarmAction {
   red2yellow: boolean;
   yellow2green: boolean;
 }
-export interface AlarmTriggeringActionTransitionSpec extends DynamicData {
+export type AlarmTriggeringActionTransitionSpec = DynamicData &  {
   startState: ManagedEntityStatus;
   finalState: ManagedEntityStatus;
   repeats: boolean;
 }
-export interface EventAlarmExpression extends AlarmExpression {
+export type EventAlarmExpression = AlarmExpression &  {
   comparisons?: EventAlarmExpressionComparison[];
   eventType: string;
   eventTypeId?: string;
   objectType?: string;
   status?: ManagedEntityStatus;
 }
-export interface EventAlarmExpressionComparison extends DynamicData {
+export type EventAlarmExpressionComparison = DynamicData &  {
   attributeName: string;
   operator: string;
   value: string;
 }
-export interface ClusterDasAamHostInfo extends ClusterDasHostInfo {
+export type ClusterDasAamHostInfo = ClusterDasHostInfo &  {
   hostDasState?: ClusterDasAamNodeState[];
   primaryHosts?: string[];
 }
-export interface ClusterDasVmConfigSpec extends ArrayUpdateSpec {
+export type ClusterDasVmConfigSpec = ArrayUpdateSpec &  {
   info?: ClusterDasVmConfigInfo;
 }
-export interface ClusterDpmHostConfigSpec extends ArrayUpdateSpec {
+export type ClusterDpmHostConfigSpec = ArrayUpdateSpec &  {
   info?: ClusterDpmHostConfigInfo;
 }
-export interface ClusterDrsVmConfigSpec extends ArrayUpdateSpec {
+export type ClusterDrsVmConfigSpec = ArrayUpdateSpec &  {
   info?: ClusterDrsVmConfigInfo;
 }
-export interface ClusterFailoverHostAdmissionControlInfo extends ClusterDasAdmissionControlInfo {
+export type ClusterFailoverHostAdmissionControlInfo = ClusterDasAdmissionControlInfo &  {
   hostStatus?: ClusterFailoverHostAdmissionControlInfoHostStatus[];
 }
-export interface ClusterFailoverHostAdmissionControlInfoHostStatus extends DynamicData {
+export type ClusterFailoverHostAdmissionControlInfoHostStatus = DynamicData &  {
   host: HostSystem;
   status: ManagedEntityStatus;
 }
-export interface ClusterFixedSizeSlotPolicy extends ClusterSlotPolicy {
+export type ClusterFixedSizeSlotPolicy = ClusterSlotPolicy &  {
   cpu: number;
   memory: number;
 }
-export interface ClusterGroupSpec extends ArrayUpdateSpec {
+export type ClusterGroupSpec = ArrayUpdateSpec &  {
   info?: ClusterGroupInfo;
 }
-export interface PlacementSpec extends DynamicData {
+export type PlacementSpec = DynamicData &  {
   priority?: VirtualMachineMovePriority;
   vm?: VirtualMachine;
   configSpec?: VirtualMachineConfigSpec;
@@ -8140,7 +8140,7 @@ export interface PlacementSpec extends DynamicData {
   cloneSpec?: VirtualMachineCloneSpec;
   cloneName?: string;
 }
-export interface ClusterRuleInfo extends DynamicData {
+export type ClusterRuleInfo = DynamicData &  {
   key?: number;
   status?: ManagedEntityStatus;
   enabled?: boolean;
@@ -8150,18 +8150,18 @@ export interface ClusterRuleInfo extends DynamicData {
   inCompliance?: boolean;
   ruleUuid?: string;
 }
-export interface ClusterRuleSpec extends ArrayUpdateSpec {
+export type ClusterRuleSpec = ArrayUpdateSpec &  {
   info?: ClusterRuleInfo;
 }
-export interface ClusterVmHostRuleInfo extends ClusterRuleInfo {
+export type ClusterVmHostRuleInfo = ClusterRuleInfo &  {
   vmGroupName?: string;
   affineHostGroupName?: string;
   antiAffineHostGroupName?: string;
 }
-export interface ClusterVmOrchestrationSpec extends ArrayUpdateSpec {
+export type ClusterVmOrchestrationSpec = ArrayUpdateSpec &  {
   info?: ClusterVmOrchestrationInfo;
 }
-export interface DVPortgroupConfigInfo extends DynamicData {
+export type DVPortgroupConfigInfo = DynamicData &  {
   key: string;
   name: string;
   numPorts: number;
@@ -8183,7 +8183,7 @@ export interface DVPortgroupConfigInfo extends DynamicData {
   logicalSwitchUuid?: string;
   segmentId?: string;
 }
-export interface DVPortgroupConfigSpec extends DynamicData {
+export type DVPortgroupConfigSpec = DynamicData &  {
   configVersion?: string;
   name?: string;
   numPorts?: number;
@@ -8202,11 +8202,11 @@ export interface DVPortgroupConfigSpec extends DynamicData {
   logicalSwitchUuid?: string;
   segmentId?: string;
 }
-export interface DistributedVirtualPortgroupNsxPortgroupOperationResult extends DynamicData {
+export type DistributedVirtualPortgroupNsxPortgroupOperationResult = DynamicData &  {
   portgroups?: DistributedVirtualPortgroup[];
   problems?: DistributedVirtualPortgroupProblem[];
 }
-export interface DVPortgroupPolicy extends DynamicData {
+export type DVPortgroupPolicy = DynamicData &  {
   blockOverrideAllowed: boolean;
   shapingOverrideAllowed: boolean;
   vendorConfigOverrideAllowed: boolean;
@@ -8215,11 +8215,11 @@ export interface DVPortgroupPolicy extends DynamicData {
   networkResourcePoolOverrideAllowed?: boolean;
   trafficFilterOverrideAllowed?: boolean;
 }
-export interface DistributedVirtualPortgroupProblem extends DynamicData {
+export type DistributedVirtualPortgroupProblem = DynamicData &  {
   logicalSwitchUuid: string;
   fault: MethodFault;
 }
-export interface CryptoManagerKmipCertificateInfo extends DynamicData {
+export type CryptoManagerKmipCertificateInfo = DynamicData &  {
   subject: string;
   issuer: string;
   serialNumber: string;
@@ -8230,14 +8230,14 @@ export interface CryptoManagerKmipCertificateInfo extends DynamicData {
   secondsSinceValid?: number;
   secondsBeforeExpire?: number;
 }
-export interface CryptoManagerKmipClusterStatus extends DynamicData {
+export type CryptoManagerKmipClusterStatus = DynamicData &  {
   clusterId: KeyProviderId;
   overallStatus?: ManagedEntityStatus;
   managementType?: string;
   servers: CryptoManagerKmipServerStatus[];
   clientCertInfo?: CryptoManagerKmipCertificateInfo;
 }
-export interface CryptoManagerKmipCryptoKeyStatus extends DynamicData {
+export type CryptoManagerKmipCryptoKeyStatus = DynamicData &  {
   keyId: CryptoKeyId;
   keyAvailable?: boolean;
   reason?: string;
@@ -8245,12 +8245,12 @@ export interface CryptoManagerKmipCryptoKeyStatus extends DynamicData {
   affectedHosts?: HostSystem[];
   referencedByTags?: string[];
 }
-export interface CryptoManagerKmipServerCertInfo extends DynamicData {
+export type CryptoManagerKmipServerCertInfo = DynamicData &  {
   certificate: string;
   certInfo?: CryptoManagerKmipCertificateInfo;
   clientTrustServer?: boolean;
 }
-export interface CryptoManagerKmipServerStatus extends DynamicData {
+export type CryptoManagerKmipServerStatus = DynamicData &  {
   name: string;
   status: ManagedEntityStatus;
   connectionStatus: string;
@@ -8258,1493 +8258,1493 @@ export interface CryptoManagerKmipServerStatus extends DynamicData {
   clientTrustServer?: boolean;
   serverTrustClient?: boolean;
 }
-export interface KmipServerStatus extends DynamicData {
+export type KmipServerStatus = DynamicData &  {
   clusterId: KeyProviderId;
   name: string;
   status: ManagedEntityStatus;
   description: string;
 }
-export interface AccountCreatedEvent extends HostEvent {
+export type AccountCreatedEvent = HostEvent &  {
   spec: HostAccountSpec;
   group: boolean;
 }
-export interface AccountRemovedEvent extends HostEvent {
+export type AccountRemovedEvent = HostEvent &  {
   account: string;
   group: boolean;
 }
-export interface AccountUpdatedEvent extends HostEvent {
+export type AccountUpdatedEvent = HostEvent &  {
   spec: HostAccountSpec;
   group: boolean;
   prevDescription?: string;
 }
-export interface AdminPasswordNotChangedEvent extends HostEvent {
+export type AdminPasswordNotChangedEvent = HostEvent &  {
   
 }
-export interface AlarmEvent extends Event {
+export type AlarmEvent = Event &  {
   alarm: AlarmEventArgument;
 }
-export interface AlarmReconfiguredEvent extends AlarmEvent {
+export type AlarmReconfiguredEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   configChanges?: ChangesInfoEventArgument;
 }
-export interface AlarmRemovedEvent extends AlarmEvent {
+export type AlarmRemovedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
 }
-export interface AlarmScriptCompleteEvent extends AlarmEvent {
+export type AlarmScriptCompleteEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   script: string;
 }
-export interface AlarmScriptFailedEvent extends AlarmEvent {
+export type AlarmScriptFailedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   script: string;
   reason: MethodFault;
 }
-export interface AlarmSnmpCompletedEvent extends AlarmEvent {
+export type AlarmSnmpCompletedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
 }
-export interface AlarmSnmpFailedEvent extends AlarmEvent {
+export type AlarmSnmpFailedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   reason: MethodFault;
 }
-export interface AlarmStatusChangedEvent extends AlarmEvent {
+export type AlarmStatusChangedEvent = AlarmEvent &  {
   source: ManagedEntityEventArgument;
   entity: ManagedEntityEventArgument;
   from: string;
   to: string;
 }
-export interface AllVirtualMachinesLicensedEvent extends LicenseEvent {
+export type AllVirtualMachinesLicensedEvent = LicenseEvent &  {
   
 }
-export interface AlreadyAuthenticatedSessionEvent extends SessionEvent {
+export type AlreadyAuthenticatedSessionEvent = SessionEvent &  {
   
 }
-export interface AuthorizationEvent extends Event {
+export type AuthorizationEvent = Event &  {
   
 }
-export interface BadUsernameSessionEvent extends SessionEvent {
+export type BadUsernameSessionEvent = SessionEvent &  {
   ipAddress: string;
 }
-export interface CanceledHostOperationEvent extends HostEvent {
+export type CanceledHostOperationEvent = HostEvent &  {
   
 }
-export interface ClusterEvent extends Event {
+export type ClusterEvent = Event &  {
   
 }
-export interface ClusterOvercommittedEvent extends ClusterEvent {
+export type ClusterOvercommittedEvent = ClusterEvent &  {
   
 }
-export interface ClusterReconfiguredEvent extends ClusterEvent {
+export type ClusterReconfiguredEvent = ClusterEvent &  {
   configChanges?: ChangesInfoEventArgument;
 }
-export interface ClusterStatusChangedEvent extends ClusterEvent {
+export type ClusterStatusChangedEvent = ClusterEvent &  {
   oldStatus: string;
   newStatus: string;
 }
-export interface CustomFieldEvent extends Event {
+export type CustomFieldEvent = Event &  {
   
 }
-export interface CustomFieldValueChangedEvent extends CustomFieldEvent {
+export type CustomFieldValueChangedEvent = CustomFieldEvent &  {
   entity: ManagedEntityEventArgument;
   fieldKey: number;
   name: string;
   value: string;
   prevState?: string;
 }
-export interface CustomizationEvent extends VmEvent {
+export type CustomizationEvent = VmEvent &  {
   logLocation?: string;
 }
-export interface CustomizationFailed extends CustomizationEvent {
+export type CustomizationFailed = CustomizationEvent &  {
   reason?: string;
 }
-export interface CustomizationLinuxIdentityFailed extends CustomizationFailed {
+export type CustomizationLinuxIdentityFailed = CustomizationFailed &  {
   
 }
-export interface CustomizationNetworkSetupFailed extends CustomizationFailed {
+export type CustomizationNetworkSetupFailed = CustomizationFailed &  {
   
 }
-export interface CustomizationStartedEvent extends CustomizationEvent {
+export type CustomizationStartedEvent = CustomizationEvent &  {
   
 }
-export interface CustomizationSucceeded extends CustomizationEvent {
+export type CustomizationSucceeded = CustomizationEvent &  {
   
 }
-export interface CustomizationSysprepFailed extends CustomizationFailed {
+export type CustomizationSysprepFailed = CustomizationFailed &  {
   sysprepVersion: string;
   systemVersion: string;
 }
-export interface CustomizationUnknownFailure extends CustomizationFailed {
+export type CustomizationUnknownFailure = CustomizationFailed &  {
   
 }
-export interface DVPortgroupEvent extends Event {
+export type DVPortgroupEvent = Event &  {
   
 }
-export interface DVPortgroupReconfiguredEvent extends DVPortgroupEvent {
+export type DVPortgroupReconfiguredEvent = DVPortgroupEvent &  {
   configSpec: DVPortgroupConfigSpec;
   configChanges?: ChangesInfoEventArgument;
 }
-export interface DVPortgroupRenamedEvent extends DVPortgroupEvent {
+export type DVPortgroupRenamedEvent = DVPortgroupEvent &  {
   oldName: string;
   newName: string;
 }
-export interface DasAdmissionControlDisabledEvent extends ClusterEvent {
+export type DasAdmissionControlDisabledEvent = ClusterEvent &  {
   
 }
-export interface DasAdmissionControlEnabledEvent extends ClusterEvent {
+export type DasAdmissionControlEnabledEvent = ClusterEvent &  {
   
 }
-export interface DasAgentFoundEvent extends ClusterEvent {
+export type DasAgentFoundEvent = ClusterEvent &  {
   
 }
-export interface DasAgentUnavailableEvent extends ClusterEvent {
+export type DasAgentUnavailableEvent = ClusterEvent &  {
   
 }
-export interface DasClusterIsolatedEvent extends ClusterEvent {
+export type DasClusterIsolatedEvent = ClusterEvent &  {
   
 }
-export interface DasDisabledEvent extends ClusterEvent {
+export type DasDisabledEvent = ClusterEvent &  {
   
 }
-export interface DasEnabledEvent extends ClusterEvent {
+export type DasEnabledEvent = ClusterEvent &  {
   
 }
-export interface DasHostFailedEvent extends ClusterEvent {
+export type DasHostFailedEvent = ClusterEvent &  {
   failedHost: HostEventArgument;
 }
-export interface DasHostIsolatedEvent extends ClusterEvent {
+export type DasHostIsolatedEvent = ClusterEvent &  {
   isolatedHost: HostEventArgument;
 }
-export interface DatacenterEvent extends Event {
+export type DatacenterEvent = Event &  {
   
 }
-export interface DatacenterRenamedEvent extends DatacenterEvent {
+export type DatacenterRenamedEvent = DatacenterEvent &  {
   oldName: string;
   newName: string;
 }
-export interface DatastoreDiscoveredEvent extends HostEvent {
+export type DatastoreDiscoveredEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
 }
-export interface DatastoreEvent extends Event {
+export type DatastoreEvent = Event &  {
   datastore?: DatastoreEventArgument;
 }
-export interface DatastoreFileEvent extends DatastoreEvent {
+export type DatastoreFileEvent = DatastoreEvent &  {
   targetFile: string;
   sourceOfOperation?: string;
   succeeded?: boolean;
 }
-export interface DatastoreFileMovedEvent extends DatastoreFileEvent {
+export type DatastoreFileMovedEvent = DatastoreFileEvent &  {
   sourceDatastore: DatastoreEventArgument;
   sourceFile: string;
 }
-export interface DatastoreIORMReconfiguredEvent extends DatastoreEvent {
+export type DatastoreIORMReconfiguredEvent = DatastoreEvent &  {
   
 }
-export interface DatastorePrincipalConfigured extends HostEvent {
+export type DatastorePrincipalConfigured = HostEvent &  {
   datastorePrincipal: string;
 }
-export interface DatastoreRemovedOnHostEvent extends HostEvent {
+export type DatastoreRemovedOnHostEvent = HostEvent &  {
   datastore: DatastoreEventArgument;
 }
-export interface DatastoreRenamedEvent extends DatastoreEvent {
+export type DatastoreRenamedEvent = DatastoreEvent &  {
   oldName: string;
   newName: string;
 }
-export interface DatastoreRenamedOnHostEvent extends HostEvent {
+export type DatastoreRenamedOnHostEvent = HostEvent &  {
   oldName: string;
   newName: string;
 }
-export interface DrsDisabledEvent extends ClusterEvent {
+export type DrsDisabledEvent = ClusterEvent &  {
   
 }
-export interface DrsEnabledEvent extends ClusterEvent {
+export type DrsEnabledEvent = ClusterEvent &  {
   behavior: string;
 }
-export interface DrsInvocationFailedEvent extends ClusterEvent {
+export type DrsInvocationFailedEvent = ClusterEvent &  {
   
 }
-export interface DrsRecoveredFromFailureEvent extends ClusterEvent {
+export type DrsRecoveredFromFailureEvent = ClusterEvent &  {
   
 }
-export interface DrsResourceConfigureFailedEvent extends HostEvent {
+export type DrsResourceConfigureFailedEvent = HostEvent &  {
   reason: MethodFault;
 }
-export interface DrsResourceConfigureSyncedEvent extends HostEvent {
+export type DrsResourceConfigureSyncedEvent = HostEvent &  {
   
 }
-export interface DrsRuleComplianceEvent extends VmEvent {
+export type DrsRuleComplianceEvent = VmEvent &  {
   
 }
-export interface DrsRuleViolationEvent extends VmEvent {
+export type DrsRuleViolationEvent = VmEvent &  {
   
 }
-export interface DrsSoftRuleViolationEvent extends VmEvent {
+export type DrsSoftRuleViolationEvent = VmEvent &  {
   
 }
-export interface DrsVmMigratedEvent extends VmMigratedEvent {
+export type DrsVmMigratedEvent = VmMigratedEvent &  {
   
 }
-export interface DrsVmPoweredOnEvent extends VmPoweredOnEvent {
+export type DrsVmPoweredOnEvent = VmPoweredOnEvent &  {
   
 }
-export interface DuplicateIpDetectedEvent extends HostEvent {
+export type DuplicateIpDetectedEvent = HostEvent &  {
   duplicateIP: string;
   macAddress: string;
 }
-export interface DvpgImportEvent extends DVPortgroupEvent {
+export type DvpgImportEvent = DVPortgroupEvent &  {
   importType: string;
 }
-export interface DvpgRestoreEvent extends DVPortgroupEvent {
+export type DvpgRestoreEvent = DVPortgroupEvent &  {
   
 }
-export interface DvsEvent extends Event {
+export type DvsEvent = Event &  {
   
 }
-export interface DvsHealthStatusChangeEvent extends HostEvent {
+export type DvsHealthStatusChangeEvent = HostEvent &  {
   switchUuid: string;
   healthResult?: HostMemberHealthCheckResult;
 }
-export interface DvsHostBackInSyncEvent extends DvsEvent {
+export type DvsHostBackInSyncEvent = DvsEvent &  {
   hostBackInSync: HostEventArgument;
 }
-export interface DvsHostJoinedEvent extends DvsEvent {
+export type DvsHostJoinedEvent = DvsEvent &  {
   hostJoined: HostEventArgument;
 }
-export interface DvsHostLeftEvent extends DvsEvent {
+export type DvsHostLeftEvent = DvsEvent &  {
   hostLeft: HostEventArgument;
 }
-export interface DvsHostStatusUpdated extends DvsEvent {
+export type DvsHostStatusUpdated = DvsEvent &  {
   hostMember: HostEventArgument;
   oldStatus?: string;
   newStatus?: string;
   oldStatusDetail?: string;
   newStatusDetail?: string;
 }
-export interface DvsHostWentOutOfSyncEvent extends DvsEvent {
+export type DvsHostWentOutOfSyncEvent = DvsEvent &  {
   hostOutOfSync: DvsOutOfSyncHostArgument;
 }
-export interface DvsImportEvent extends DvsEvent {
+export type DvsImportEvent = DvsEvent &  {
   importType: string;
 }
-export interface DvsMergedEvent extends DvsEvent {
+export type DvsMergedEvent = DvsEvent &  {
   sourceDvs: DvsEventArgument;
   destinationDvs: DvsEventArgument;
 }
-export interface DvsPortBlockedEvent extends DvsEvent {
+export type DvsPortBlockedEvent = DvsEvent &  {
   portKey: string;
   statusDetail?: string;
   runtimeInfo?: DVPortStatus;
   prevBlockState?: string;
 }
-export interface DvsPortConnectedEvent extends DvsEvent {
+export type DvsPortConnectedEvent = DvsEvent &  {
   portKey: string;
   connectee?: DistributedVirtualSwitchPortConnectee;
 }
-export interface DvsPortCreatedEvent extends DvsEvent {
+export type DvsPortCreatedEvent = DvsEvent &  {
   portKey: string[];
 }
-export interface DvsPortDeletedEvent extends DvsEvent {
+export type DvsPortDeletedEvent = DvsEvent &  {
   portKey: string[];
 }
-export interface DvsPortDisconnectedEvent extends DvsEvent {
+export type DvsPortDisconnectedEvent = DvsEvent &  {
   portKey: string;
   connectee?: DistributedVirtualSwitchPortConnectee;
 }
-export interface DvsPortEnteredPassthruEvent extends DvsEvent {
+export type DvsPortEnteredPassthruEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo?: DVPortStatus;
 }
-export interface DvsPortExitedPassthruEvent extends DvsEvent {
+export type DvsPortExitedPassthruEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo?: DVPortStatus;
 }
-export interface DvsPortJoinPortgroupEvent extends DvsEvent {
+export type DvsPortJoinPortgroupEvent = DvsEvent &  {
   portKey: string;
   portgroupKey: string;
   portgroupName: string;
 }
-export interface DvsPortLeavePortgroupEvent extends DvsEvent {
+export type DvsPortLeavePortgroupEvent = DvsEvent &  {
   portKey: string;
   portgroupKey: string;
   portgroupName: string;
 }
-export interface DvsPortLinkDownEvent extends DvsEvent {
+export type DvsPortLinkDownEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo?: DVPortStatus;
 }
-export interface DvsPortLinkUpEvent extends DvsEvent {
+export type DvsPortLinkUpEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo?: DVPortStatus;
 }
-export interface DvsPortReconfiguredEvent extends DvsEvent {
+export type DvsPortReconfiguredEvent = DvsEvent &  {
   portKey: string[];
   configChanges?: ChangesInfoEventArgument[];
 }
-export interface DvsPortRuntimeChangeEvent extends DvsEvent {
+export type DvsPortRuntimeChangeEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo: DVPortStatus;
 }
-export interface DvsPortUnblockedEvent extends DvsEvent {
+export type DvsPortUnblockedEvent = DvsEvent &  {
   portKey: string;
   runtimeInfo?: DVPortStatus;
   prevBlockState?: string;
 }
-export interface DvsPortVendorSpecificStateChangeEvent extends DvsEvent {
+export type DvsPortVendorSpecificStateChangeEvent = DvsEvent &  {
   portKey: string;
 }
-export interface DvsRenamedEvent extends DvsEvent {
+export type DvsRenamedEvent = DvsEvent &  {
   oldName: string;
   newName: string;
 }
-export interface DvsRestoreEvent extends DvsEvent {
+export type DvsRestoreEvent = DvsEvent &  {
   
 }
-export interface DvsUpgradeAvailableEvent extends DvsEvent {
+export type DvsUpgradeAvailableEvent = DvsEvent &  {
   productInfo: DistributedVirtualSwitchProductSpec;
 }
-export interface DvsUpgradeInProgressEvent extends DvsEvent {
+export type DvsUpgradeInProgressEvent = DvsEvent &  {
   productInfo: DistributedVirtualSwitchProductSpec;
 }
-export interface DvsUpgradeRejectedEvent extends DvsEvent {
+export type DvsUpgradeRejectedEvent = DvsEvent &  {
   productInfo: DistributedVirtualSwitchProductSpec;
 }
-export interface DvsUpgradedEvent extends DvsEvent {
+export type DvsUpgradedEvent = DvsEvent &  {
   productInfo: DistributedVirtualSwitchProductSpec;
 }
-export interface EnteredMaintenanceModeEvent extends HostEvent {
+export type EnteredMaintenanceModeEvent = HostEvent &  {
   
 }
-export interface EnteredStandbyModeEvent extends HostEvent {
+export type EnteredStandbyModeEvent = HostEvent &  {
   
 }
-export interface EnteringMaintenanceModeEvent extends HostEvent {
+export type EnteringMaintenanceModeEvent = HostEvent &  {
   
 }
-export interface EnteringStandbyModeEvent extends HostEvent {
+export type EnteringStandbyModeEvent = HostEvent &  {
   
 }
-export interface EntityEventArgument extends EventArgument {
+export type EntityEventArgument = EventArgument &  {
   name: string;
 }
-export interface ErrorUpgradeEvent extends UpgradeEvent {
+export type ErrorUpgradeEvent = UpgradeEvent &  {
   
 }
-export interface ExitMaintenanceModeEvent extends HostEvent {
+export type ExitMaintenanceModeEvent = HostEvent &  {
   
 }
-export interface ExitStandbyModeFailedEvent extends HostEvent {
+export type ExitStandbyModeFailedEvent = HostEvent &  {
   
 }
-export interface ExitedStandbyModeEvent extends HostEvent {
+export type ExitedStandbyModeEvent = HostEvent &  {
   
 }
-export interface ExitingStandbyModeEvent extends HostEvent {
+export type ExitingStandbyModeEvent = HostEvent &  {
   
 }
-export interface ExtendedEvent extends GeneralEvent {
+export type ExtendedEvent = GeneralEvent &  {
   eventTypeId: string;
   managedObject: ManagedObject;
   data?: ExtendedEventPair[];
 }
-export interface ExtendedEventPair extends DynamicData {
+export type ExtendedEventPair = DynamicData &  {
   key: string;
   value: string;
 }
-export interface FailoverLevelRestored extends ClusterEvent {
+export type FailoverLevelRestored = ClusterEvent &  {
   
 }
-export interface FolderEventArgument extends EntityEventArgument {
+export type FolderEventArgument = EntityEventArgument &  {
   folder: Folder;
 }
-export interface GhostDvsProxySwitchDetectedEvent extends HostEvent {
+export type GhostDvsProxySwitchDetectedEvent = HostEvent &  {
   switchUuid: string[];
 }
-export interface GhostDvsProxySwitchRemovedEvent extends HostEvent {
+export type GhostDvsProxySwitchRemovedEvent = HostEvent &  {
   switchUuid: string[];
 }
-export interface GlobalMessageChangedEvent extends SessionEvent {
+export type GlobalMessageChangedEvent = SessionEvent &  {
   message: string;
   prevMessage?: string;
 }
-export interface HostAddFailedEvent extends HostEvent {
+export type HostAddFailedEvent = HostEvent &  {
   hostname: string;
 }
-export interface HostAddedEvent extends HostEvent {
+export type HostAddedEvent = HostEvent &  {
   
 }
-export interface HostAdminDisableEvent extends HostEvent {
+export type HostAdminDisableEvent = HostEvent &  {
   
 }
-export interface HostAdminEnableEvent extends HostEvent {
+export type HostAdminEnableEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedAccountFailedEvent extends HostEvent {
+export type HostCnxFailedAccountFailedEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedAlreadyManagedEvent extends HostEvent {
+export type HostCnxFailedAlreadyManagedEvent = HostEvent &  {
   serverName: string;
 }
-export interface HostCnxFailedBadCcagentEvent extends HostEvent {
+export type HostCnxFailedBadCcagentEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedBadUsernameEvent extends HostEvent {
+export type HostCnxFailedBadUsernameEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedBadVersionEvent extends HostEvent {
+export type HostCnxFailedBadVersionEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedCcagentUpgradeEvent extends HostEvent {
+export type HostCnxFailedCcagentUpgradeEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedEvent extends HostEvent {
+export type HostCnxFailedEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedNetworkErrorEvent extends HostEvent {
+export type HostCnxFailedNetworkErrorEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedNoAccessEvent extends HostEvent {
+export type HostCnxFailedNoAccessEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedNoConnectionEvent extends HostEvent {
+export type HostCnxFailedNoConnectionEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedNoLicenseEvent extends HostEvent {
+export type HostCnxFailedNoLicenseEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedNotFoundEvent extends HostEvent {
+export type HostCnxFailedNotFoundEvent = HostEvent &  {
   
 }
-export interface HostCnxFailedTimeoutEvent extends HostEvent {
+export type HostCnxFailedTimeoutEvent = HostEvent &  {
   
 }
-export interface HostComplianceCheckedEvent extends HostEvent {
+export type HostComplianceCheckedEvent = HostEvent &  {
   profile: ProfileEventArgument;
 }
-export interface HostCompliantEvent extends HostEvent {
+export type HostCompliantEvent = HostEvent &  {
   
 }
-export interface HostConfigAppliedEvent extends HostEvent {
+export type HostConfigAppliedEvent = HostEvent &  {
   
 }
-export interface HostConnectedEvent extends HostEvent {
+export type HostConnectedEvent = HostEvent &  {
   
 }
-export interface HostConnectionLostEvent extends HostEvent {
+export type HostConnectionLostEvent = HostEvent &  {
   
 }
-export interface HostDasDisabledEvent extends HostEvent {
+export type HostDasDisabledEvent = HostEvent &  {
   
 }
-export interface HostDasDisablingEvent extends HostEvent {
+export type HostDasDisablingEvent = HostEvent &  {
   
 }
-export interface HostDasEnabledEvent extends HostEvent {
+export type HostDasEnabledEvent = HostEvent &  {
   
 }
-export interface HostDasEnablingEvent extends HostEvent {
+export type HostDasEnablingEvent = HostEvent &  {
   
 }
-export interface HostDasErrorEvent extends HostEvent {
+export type HostDasErrorEvent = HostEvent &  {
   message?: string;
   reason?: string;
 }
-export interface HostDasEvent extends HostEvent {
+export type HostDasEvent = HostEvent &  {
   
 }
-export interface HostDasOkEvent extends HostEvent {
+export type HostDasOkEvent = HostEvent &  {
   
 }
-export interface HostDisconnectedEvent extends HostEvent {
+export type HostDisconnectedEvent = HostEvent &  {
   reason?: string;
 }
-export interface HostEnableAdminFailedEvent extends HostEvent {
+export type HostEnableAdminFailedEvent = HostEvent &  {
   permissions: Permission[];
 }
-export interface HostEventArgument extends EntityEventArgument {
+export type HostEventArgument = EntityEventArgument &  {
   host: HostSystem;
 }
-export interface HostExtraNetworksEvent extends HostDasEvent {
+export type HostExtraNetworksEvent = HostDasEvent &  {
   ips?: string;
 }
-export interface HostInventoryFullEvent extends LicenseEvent {
+export type HostInventoryFullEvent = LicenseEvent &  {
   capacity: number;
 }
-export interface HostIsolationIpPingFailedEvent extends HostDasEvent {
+export type HostIsolationIpPingFailedEvent = HostDasEvent &  {
   isolationIp: string;
 }
-export interface HostLicenseExpiredEvent extends LicenseEvent {
+export type HostLicenseExpiredEvent = LicenseEvent &  {
   
 }
-export interface HostLocalPortCreatedEvent extends DvsEvent {
+export type HostLocalPortCreatedEvent = DvsEvent &  {
   hostLocalPort: DVSHostLocalPortInfo;
 }
-export interface HostMissingNetworksEvent extends HostDasEvent {
+export type HostMissingNetworksEvent = HostDasEvent &  {
   ips?: string;
 }
-export interface HostMonitoringStateChangedEvent extends ClusterEvent {
+export type HostMonitoringStateChangedEvent = ClusterEvent &  {
   state: string;
   prevState?: string;
 }
-export interface HostNoAvailableNetworksEvent extends HostDasEvent {
+export type HostNoAvailableNetworksEvent = HostDasEvent &  {
   ips?: string;
 }
-export interface HostNoHAEnabledPortGroupsEvent extends HostDasEvent {
+export type HostNoHAEnabledPortGroupsEvent = HostDasEvent &  {
   
 }
-export interface HostNoRedundantManagementNetworkEvent extends HostDasEvent {
+export type HostNoRedundantManagementNetworkEvent = HostDasEvent &  {
   
 }
-export interface HostNotInClusterEvent extends HostDasEvent {
+export type HostNotInClusterEvent = HostDasEvent &  {
   
 }
-export interface HostOvercommittedEvent extends ClusterOvercommittedEvent {
+export type HostOvercommittedEvent = ClusterOvercommittedEvent &  {
   
 }
-export interface HostPrimaryAgentNotShortNameEvent extends HostDasEvent {
+export type HostPrimaryAgentNotShortNameEvent = HostDasEvent &  {
   primaryAgent: string;
 }
-export interface HostShortNameInconsistentEvent extends HostDasEvent {
+export type HostShortNameInconsistentEvent = HostDasEvent &  {
   shortName: string;
   shortName2: string;
 }
-export interface HostStatusChangedEvent extends ClusterStatusChangedEvent {
+export type HostStatusChangedEvent = ClusterStatusChangedEvent &  {
   
 }
-export interface IncorrectHostInformationEvent extends LicenseEvent {
+export type IncorrectHostInformationEvent = LicenseEvent &  {
   
 }
-export interface InfoUpgradeEvent extends UpgradeEvent {
+export type InfoUpgradeEvent = UpgradeEvent &  {
   
 }
-export interface InsufficientFailoverResourcesEvent extends ClusterEvent {
+export type InsufficientFailoverResourcesEvent = ClusterEvent &  {
   
 }
-export interface InvalidEditionEvent extends LicenseEvent {
+export type InvalidEditionEvent = LicenseEvent &  {
   feature: string;
 }
-export interface ManagedEntityEventArgument extends EntityEventArgument {
+export type ManagedEntityEventArgument = EntityEventArgument &  {
   entity: ManagedEntity;
 }
-export interface MigrationEvent extends VmEvent {
+export type MigrationEvent = VmEvent &  {
   fault: MethodFault;
 }
-export interface MigrationHostErrorEvent extends MigrationEvent {
+export type MigrationHostErrorEvent = MigrationEvent &  {
   dstHost: HostEventArgument;
 }
-export interface MigrationHostWarningEvent extends MigrationEvent {
+export type MigrationHostWarningEvent = MigrationEvent &  {
   dstHost: HostEventArgument;
 }
-export interface MigrationResourceErrorEvent extends MigrationEvent {
+export type MigrationResourceErrorEvent = MigrationEvent &  {
   dstPool: ResourcePoolEventArgument;
   dstHost: HostEventArgument;
 }
-export interface MigrationResourceWarningEvent extends MigrationEvent {
+export type MigrationResourceWarningEvent = MigrationEvent &  {
   dstPool: ResourcePoolEventArgument;
   dstHost: HostEventArgument;
 }
-export interface MigrationWarningEvent extends MigrationEvent {
+export type MigrationWarningEvent = MigrationEvent &  {
   
 }
-export interface MtuMatchEvent extends DvsHealthStatusChangeEvent {
+export type MtuMatchEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface MtuMismatchEvent extends DvsHealthStatusChangeEvent {
+export type MtuMismatchEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface NetworkEventArgument extends EntityEventArgument {
+export type NetworkEventArgument = EntityEventArgument &  {
   network: Network;
 }
-export interface NoAccessUserEvent extends SessionEvent {
+export type NoAccessUserEvent = SessionEvent &  {
   ipAddress: string;
 }
-export interface NoMaintenanceModeDrsRecommendationForVM extends VmEvent {
+export type NoMaintenanceModeDrsRecommendationForVM = VmEvent &  {
   
 }
-export interface NonVIWorkloadDetectedOnDatastoreEvent extends DatastoreEvent {
+export type NonVIWorkloadDetectedOnDatastoreEvent = DatastoreEvent &  {
   
 }
-export interface NotEnoughResourcesToStartVmEvent extends VmEvent {
+export type NotEnoughResourcesToStartVmEvent = VmEvent &  {
   reason: string;
 }
-export interface OutOfSyncDvsHost extends DvsEvent {
+export type OutOfSyncDvsHost = DvsEvent &  {
   hostOutOfSync: DvsOutOfSyncHostArgument[];
 }
-export interface PermissionEvent extends AuthorizationEvent {
+export type PermissionEvent = AuthorizationEvent &  {
   entity: ManagedEntityEventArgument;
   principal: string;
   group: boolean;
 }
-export interface PermissionRemovedEvent extends PermissionEvent {
+export type PermissionRemovedEvent = PermissionEvent &  {
   
 }
-export interface PermissionUpdatedEvent extends PermissionEvent {
+export type PermissionUpdatedEvent = PermissionEvent &  {
   role: RoleEventArgument;
   propagate: boolean;
   prevRole?: RoleEventArgument;
   prevPropagate?: boolean;
 }
-export interface ProfileAssociatedEvent extends ProfileEvent {
+export type ProfileAssociatedEvent = ProfileEvent &  {
   
 }
-export interface ProfileChangedEvent extends ProfileEvent {
+export type ProfileChangedEvent = ProfileEvent &  {
   
 }
-export interface ProfileCreatedEvent extends ProfileEvent {
+export type ProfileCreatedEvent = ProfileEvent &  {
   
 }
-export interface ProfileDissociatedEvent extends ProfileEvent {
+export type ProfileDissociatedEvent = ProfileEvent &  {
   
 }
-export interface RecoveryEvent extends DvsEvent {
+export type RecoveryEvent = DvsEvent &  {
   hostName: string;
   portKey: string;
   dvsUuid?: string;
   vnic?: string;
 }
-export interface ResourcePoolCreatedEvent extends ResourcePoolEvent {
+export type ResourcePoolCreatedEvent = ResourcePoolEvent &  {
   parent: ResourcePoolEventArgument;
 }
-export interface ResourcePoolDestroyedEvent extends ResourcePoolEvent {
+export type ResourcePoolDestroyedEvent = ResourcePoolEvent &  {
   
 }
-export interface ResourcePoolEventArgument extends EntityEventArgument {
+export type ResourcePoolEventArgument = EntityEventArgument &  {
   resourcePool: ResourcePool;
 }
-export interface RoleEvent extends AuthorizationEvent {
+export type RoleEvent = AuthorizationEvent &  {
   role: RoleEventArgument;
 }
-export interface RoleRemovedEvent extends RoleEvent {
+export type RoleRemovedEvent = RoleEvent &  {
   
 }
-export interface RoleUpdatedEvent extends RoleEvent {
+export type RoleUpdatedEvent = RoleEvent &  {
   privilegeList?: string[];
   prevRoleName?: string;
   privilegesAdded?: string[];
   privilegesRemoved?: string[];
 }
-export interface RollbackEvent extends DvsEvent {
+export type RollbackEvent = DvsEvent &  {
   hostName: string;
   methodName?: string;
 }
-export interface ScheduledTaskCompletedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskCompletedEvent = ScheduledTaskEvent &  {
   
 }
-export interface ScheduledTaskCreatedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskCreatedEvent = ScheduledTaskEvent &  {
   
 }
-export interface ScheduledTaskEmailCompletedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskEmailCompletedEvent = ScheduledTaskEvent &  {
   to: string;
 }
-export interface ScheduledTaskEmailFailedEvent extends ScheduledTaskEvent {
+export type ScheduledTaskEmailFailedEvent = ScheduledTaskEvent &  {
   to: string;
   reason: MethodFault;
 }
-export interface ScheduledTaskEventArgument extends EntityEventArgument {
+export type ScheduledTaskEventArgument = EntityEventArgument &  {
   scheduledTask: ScheduledTask;
 }
-export interface ServerStartedSessionEvent extends SessionEvent {
+export type ServerStartedSessionEvent = SessionEvent &  {
   
 }
-export interface TeamingMatchEvent extends DvsHealthStatusChangeEvent {
+export type TeamingMatchEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface TeamingMisMatchEvent extends DvsHealthStatusChangeEvent {
+export type TeamingMisMatchEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface TemplateBeingUpgradedEvent extends TemplateUpgradeEvent {
+export type TemplateBeingUpgradedEvent = TemplateUpgradeEvent &  {
   
 }
-export interface UplinkPortMtuNotSupportEvent extends DvsHealthStatusChangeEvent {
+export type UplinkPortMtuNotSupportEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface UplinkPortMtuSupportEvent extends DvsHealthStatusChangeEvent {
+export type UplinkPortMtuSupportEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface UplinkPortVlanTrunkedEvent extends DvsHealthStatusChangeEvent {
+export type UplinkPortVlanTrunkedEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface UplinkPortVlanUntrunkedEvent extends DvsHealthStatusChangeEvent {
+export type UplinkPortVlanUntrunkedEvent = DvsHealthStatusChangeEvent &  {
   
 }
-export interface VmAcquiredMksTicketEvent extends VmEvent {
+export type VmAcquiredMksTicketEvent = VmEvent &  {
   
 }
-export interface VmAcquiredTicketEvent extends VmEvent {
+export type VmAcquiredTicketEvent = VmEvent &  {
   ticketType: string;
 }
-export interface VmAutoRenameEvent extends VmEvent {
+export type VmAutoRenameEvent = VmEvent &  {
   oldName: string;
   newName: string;
 }
-export interface VmBeingCreatedEvent extends VmEvent {
+export type VmBeingCreatedEvent = VmEvent &  {
   configSpec?: VirtualMachineConfigSpec;
 }
-export interface VmBeingDeployedEvent extends VmEvent {
+export type VmBeingDeployedEvent = VmEvent &  {
   srcTemplate: VmEventArgument;
 }
-export interface VmBeingHotMigratedEvent extends VmEvent {
+export type VmBeingHotMigratedEvent = VmEvent &  {
   destHost: HostEventArgument;
   destDatacenter?: DatacenterEventArgument;
   destDatastore?: DatastoreEventArgument;
 }
-export interface VmBeingMigratedEvent extends VmEvent {
+export type VmBeingMigratedEvent = VmEvent &  {
   destHost: HostEventArgument;
   destDatacenter?: DatacenterEventArgument;
   destDatastore?: DatastoreEventArgument;
 }
-export interface VmBeingRelocatedEvent extends VmRelocateSpecEvent {
+export type VmBeingRelocatedEvent = VmRelocateSpecEvent &  {
   destHost: HostEventArgument;
   destDatacenter?: DatacenterEventArgument;
   destDatastore?: DatastoreEventArgument;
 }
-export interface VmCloneEvent extends VmEvent {
+export type VmCloneEvent = VmEvent &  {
   
 }
-export interface VmCloneFailedEvent extends VmCloneEvent {
+export type VmCloneFailedEvent = VmCloneEvent &  {
   destFolder: FolderEventArgument;
   destName: string;
   destHost: HostEventArgument;
   reason: MethodFault;
 }
-export interface VmClonedEvent extends VmCloneEvent {
+export type VmClonedEvent = VmCloneEvent &  {
   sourceVm: VmEventArgument;
 }
-export interface VmConfigMissingEvent extends VmEvent {
+export type VmConfigMissingEvent = VmEvent &  {
   
 }
-export interface VmConnectedEvent extends VmEvent {
+export type VmConnectedEvent = VmEvent &  {
   
 }
-export interface VmCreatedEvent extends VmEvent {
+export type VmCreatedEvent = VmEvent &  {
   
 }
-export interface VmDasBeingResetEvent extends VmEvent {
+export type VmDasBeingResetEvent = VmEvent &  {
   reason?: string;
 }
-export interface VmDasBeingResetWithScreenshotEvent extends VmDasBeingResetEvent {
+export type VmDasBeingResetWithScreenshotEvent = VmDasBeingResetEvent &  {
   screenshotFilePath: string;
 }
-export interface VmDasResetFailedEvent extends VmEvent {
+export type VmDasResetFailedEvent = VmEvent &  {
   
 }
-export interface VmDasUpdateErrorEvent extends VmEvent {
+export type VmDasUpdateErrorEvent = VmEvent &  {
   
 }
-export interface VmDasUpdateOkEvent extends VmEvent {
+export type VmDasUpdateOkEvent = VmEvent &  {
   
 }
-export interface VmDateRolledBackEvent extends VmEvent {
+export type VmDateRolledBackEvent = VmEvent &  {
   
 }
-export interface VmDeployFailedEvent extends VmEvent {
+export type VmDeployFailedEvent = VmEvent &  {
   destDatastore: EntityEventArgument;
   reason: MethodFault;
 }
-export interface VmDeployedEvent extends VmEvent {
+export type VmDeployedEvent = VmEvent &  {
   srcTemplate: VmEventArgument;
 }
-export interface VmDisconnectedEvent extends VmEvent {
+export type VmDisconnectedEvent = VmEvent &  {
   
 }
-export interface VmDiscoveredEvent extends VmEvent {
+export type VmDiscoveredEvent = VmEvent &  {
   
 }
-export interface VmDiskFailedEvent extends VmEvent {
+export type VmDiskFailedEvent = VmEvent &  {
   disk: string;
   reason: MethodFault;
 }
-export interface VmEmigratingEvent extends VmEvent {
+export type VmEmigratingEvent = VmEvent &  {
   
 }
-export interface VmEndRecordingEvent extends VmEvent {
+export type VmEndRecordingEvent = VmEvent &  {
   
 }
-export interface VmEndReplayingEvent extends VmEvent {
+export type VmEndReplayingEvent = VmEvent &  {
   
 }
-export interface VmEventArgument extends EntityEventArgument {
+export type VmEventArgument = EntityEventArgument &  {
   vm: VirtualMachine;
 }
-export interface VmFaultToleranceStateChangedEvent extends VmEvent {
+export type VmFaultToleranceStateChangedEvent = VmEvent &  {
   oldState: VirtualMachineFaultToleranceState;
   newState: VirtualMachineFaultToleranceState;
 }
-export interface VmHealthMonitoringStateChangedEvent extends ClusterEvent {
+export type VmHealthMonitoringStateChangedEvent = ClusterEvent &  {
   state: string;
   prevState?: string;
 }
-export interface VmPowerOffOnIsolationEvent extends VmPoweredOffEvent {
+export type VmPowerOffOnIsolationEvent = VmPoweredOffEvent &  {
   isolatedHost: HostEventArgument;
 }
-export interface VmRelocateFailedEvent extends VmRelocateSpecEvent {
+export type VmRelocateFailedEvent = VmRelocateSpecEvent &  {
   destHost: HostEventArgument;
   reason: MethodFault;
   destDatacenter?: DatacenterEventArgument;
   destDatastore?: DatastoreEventArgument;
 }
-export interface VmVnicPoolReservationViolationClearEvent extends DvsEvent {
+export type VmVnicPoolReservationViolationClearEvent = DvsEvent &  {
   vmVnicResourcePoolKey: string;
   vmVnicResourcePoolName?: string;
 }
-export interface VmVnicPoolReservationViolationRaiseEvent extends DvsEvent {
+export type VmVnicPoolReservationViolationRaiseEvent = DvsEvent &  {
   vmVnicResourcePoolKey: string;
   vmVnicResourcePoolName?: string;
 }
-export interface ActiveDirectoryFault extends VimFault {
+export type ActiveDirectoryFault = VimFault &  {
   errorCode?: number;
 }
-export interface AlreadyExists extends VimFault {
+export type AlreadyExists = VimFault &  {
   name?: string;
 }
-export interface AlreadyUpgraded extends VimFault {
+export type AlreadyUpgraded = VimFault &  {
   
 }
-export interface AnswerFileUpdateFailed extends VimFault {
+export type AnswerFileUpdateFailed = VimFault &  {
   failure: AnswerFileUpdateFailure[];
 }
-export interface AnswerFileUpdateFailure extends DynamicData {
+export type AnswerFileUpdateFailure = DynamicData &  {
   userInputPath: ProfilePropertyPath;
   errMsg: LocalizableMessage;
 }
-export interface AuthMinimumAdminPermission extends VimFault {
+export type AuthMinimumAdminPermission = VimFault &  {
   
 }
-export interface CannotAccessLocalSource extends VimFault {
+export type CannotAccessLocalSource = VimFault &  {
   
 }
-export interface CannotAccessVmComponent extends VmConfigFault {
+export type CannotAccessVmComponent = VmConfigFault &  {
   
 }
-export interface CannotAccessVmConfig extends CannotAccessVmComponent {
+export type CannotAccessVmConfig = CannotAccessVmComponent &  {
   reason: MethodFault;
 }
-export interface CannotAccessVmDevice extends CannotAccessVmComponent {
+export type CannotAccessVmDevice = CannotAccessVmComponent &  {
   device: string;
   backing: string;
   connected: boolean;
 }
-export interface CannotAccessVmDisk extends CannotAccessVmDevice {
+export type CannotAccessVmDisk = CannotAccessVmDevice &  {
   fault: MethodFault;
 }
-export interface CannotChangeDrsBehaviorForFtSecondary extends VmFaultToleranceIssue {
+export type CannotChangeDrsBehaviorForFtSecondary = VmFaultToleranceIssue &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface CannotChangeHaSettingsForFtSecondary extends VmFaultToleranceIssue {
+export type CannotChangeHaSettingsForFtSecondary = VmFaultToleranceIssue &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface CannotChangeVsanClusterUuid extends VsanFault {
+export type CannotChangeVsanClusterUuid = VsanFault &  {
   
 }
-export interface CannotChangeVsanNodeUuid extends VsanFault {
+export type CannotChangeVsanNodeUuid = VsanFault &  {
   
 }
-export interface CannotComputeFTCompatibleHosts extends VmFaultToleranceIssue {
+export type CannotComputeFTCompatibleHosts = VmFaultToleranceIssue &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface CannotDisableSnapshot extends VmConfigFault {
+export type CannotDisableSnapshot = VmConfigFault &  {
   
 }
-export interface CannotDisconnectHostWithFaultToleranceVm extends VimFault {
+export type CannotDisconnectHostWithFaultToleranceVm = VimFault &  {
   hostName: string;
 }
-export interface CannotEnableVmcpForCluster extends VimFault {
+export type CannotEnableVmcpForCluster = VimFault &  {
   host?: HostSystem;
   hostName?: string;
   reason?: string;
 }
-export interface CannotMoveFaultToleranceVm extends VimFault {
+export type CannotMoveFaultToleranceVm = VimFault &  {
   moveType: string;
   vmName: string;
 }
-export interface CannotMoveHostWithFaultToleranceVm extends VimFault {
+export type CannotMoveHostWithFaultToleranceVm = VimFault &  {
   
 }
-export interface CannotMoveVsanEnabledHost extends VsanFault {
+export type CannotMoveVsanEnabledHost = VsanFault &  {
   
 }
-export interface CannotPlaceWithoutPrerequisiteMoves extends VimFault {
+export type CannotPlaceWithoutPrerequisiteMoves = VimFault &  {
   
 }
-export interface CannotReconfigureVsanWhenHaEnabled extends VsanFault {
+export type CannotReconfigureVsanWhenHaEnabled = VsanFault &  {
   
 }
-export interface CannotUseNetwork extends VmConfigFault {
+export type CannotUseNetwork = VmConfigFault &  {
   device: string;
   backing: string;
   connected: boolean;
   reason: string;
   network?: Network;
 }
-export interface ConcurrentAccess extends VimFault {
+export type ConcurrentAccess = VimFault &  {
   
 }
-export interface CpuHotPlugNotSupported extends VmConfigFault {
+export type CpuHotPlugNotSupported = VmConfigFault &  {
   
 }
-export interface CustomizationFault extends VimFault {
+export type CustomizationFault = VimFault &  {
   
 }
-export interface CustomizationPending extends CustomizationFault {
+export type CustomizationPending = CustomizationFault &  {
   
 }
-export interface DasConfigFault extends VimFault {
+export type DasConfigFault = VimFault &  {
   reason?: string;
   output?: string;
   event?: Event[];
 }
-export interface DeltaDiskFormatNotSupported extends VmConfigFault {
+export type DeltaDiskFormatNotSupported = VmConfigFault &  {
   datastore?: Datastore[];
   deltaDiskFormat: string;
 }
-export interface DestinationVsanDisabled extends CannotMoveVsanEnabledHost {
+export type DestinationVsanDisabled = CannotMoveVsanEnabledHost &  {
   destinationCluster: string;
 }
-export interface DomainNotFound extends ActiveDirectoryFault {
+export type DomainNotFound = ActiveDirectoryFault &  {
   domainName: string;
 }
-export interface DrsDisabledOnVm extends VimFault {
+export type DrsDisabledOnVm = VimFault &  {
   
 }
-export interface DuplicateName extends VimFault {
+export type DuplicateName = VimFault &  {
   name: string;
   object: ManagedObject;
 }
-export interface DuplicateVsanNetworkInterface extends VsanFault {
+export type DuplicateVsanNetworkInterface = VsanFault &  {
   device: string;
 }
-export interface DvsFault extends VimFault {
+export type DvsFault = VimFault &  {
   
 }
-export interface DvsNotAuthorized extends DvsFault {
+export type DvsNotAuthorized = DvsFault &  {
   sessionExtensionKey?: string;
   dvsExtensionKey?: string;
 }
-export interface DvsOperationBulkFault extends DvsFault {
+export type DvsOperationBulkFault = DvsFault &  {
   hostFault: DvsOperationBulkFaultFaultOnHost[];
 }
-export interface DvsOperationBulkFaultFaultOnHost extends DynamicData {
+export type DvsOperationBulkFaultFaultOnHost = DynamicData &  {
   host: HostSystem;
   fault: MethodFault;
 }
-export interface DvsScopeViolated extends DvsFault {
+export type DvsScopeViolated = DvsFault &  {
   scope: ManagedEntity[];
   entity: ManagedEntity;
 }
-export interface EVCConfigFault extends VimFault {
+export type EVCConfigFault = VimFault &  {
   faults?: MethodFault[];
 }
-export interface EVCModeIllegalByVendor extends EVCConfigFault {
+export type EVCModeIllegalByVendor = EVCConfigFault &  {
   clusterCPUVendor: string;
   modeCPUVendor: string;
 }
-export interface EVCModeUnsupportedByHosts extends EVCConfigFault {
+export type EVCModeUnsupportedByHosts = EVCConfigFault &  {
   evcMode?: string;
   host?: HostSystem[];
   hostName?: string[];
 }
-export interface EVCUnsupportedByHostHardware extends EVCConfigFault {
+export type EVCUnsupportedByHostHardware = EVCConfigFault &  {
   host: HostSystem[];
   hostName: string[];
 }
-export interface EVCUnsupportedByHostSoftware extends EVCConfigFault {
+export type EVCUnsupportedByHostSoftware = EVCConfigFault &  {
   host: HostSystem[];
   hostName: string[];
 }
-export interface EightHostLimitViolated extends VmConfigFault {
+export type EightHostLimitViolated = VmConfigFault &  {
   
 }
-export interface ExpiredAddonLicense extends ExpiredFeatureLicense {
+export type ExpiredAddonLicense = ExpiredFeatureLicense &  {
   
 }
-export interface ExpiredEditionLicense extends ExpiredFeatureLicense {
+export type ExpiredEditionLicense = ExpiredFeatureLicense &  {
   
 }
-export interface ExtendedFault extends VimFault {
+export type ExtendedFault = VimFault &  {
   faultTypeId: string;
   data?: KeyValue[];
 }
-export interface FaultToleranceCannotEditMem extends VmConfigFault {
+export type FaultToleranceCannotEditMem = VmConfigFault &  {
   vmName: string;
   vm: VirtualMachine;
 }
-export interface FaultToleranceNotLicensed extends VmFaultToleranceIssue {
+export type FaultToleranceNotLicensed = VmFaultToleranceIssue &  {
   hostName?: string;
 }
-export interface FaultTolerancePrimaryPowerOnNotAttempted extends VmFaultToleranceIssue {
+export type FaultTolerancePrimaryPowerOnNotAttempted = VmFaultToleranceIssue &  {
   secondaryVm: VirtualMachine;
   primaryVm: VirtualMachine;
 }
-export interface FaultToleranceVmNotDasProtected extends VimFault {
+export type FaultToleranceVmNotDasProtected = VimFault &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface FcoeFault extends VimFault {
+export type FcoeFault = VimFault &  {
   
 }
-export interface FcoeFaultPnicHasNoPortSet extends FcoeFault {
+export type FcoeFaultPnicHasNoPortSet = FcoeFault &  {
   nicDevice: string;
 }
-export interface FileFault extends VimFault {
+export type FileFault = VimFault &  {
   file: string;
 }
-export interface FileLocked extends FileFault {
+export type FileLocked = FileFault &  {
   
 }
-export interface FileNameTooLong extends FileFault {
+export type FileNameTooLong = FileFault &  {
   
 }
-export interface FileNotFound extends FileFault {
+export type FileNotFound = FileFault &  {
   
 }
-export interface FileNotWritable extends FileFault {
+export type FileNotWritable = FileFault &  {
   
 }
-export interface FileTooLarge extends FileFault {
+export type FileTooLarge = FileFault &  {
   datastore: string;
   fileSize: number;
   maxFileSize?: number;
 }
-export interface FtIssuesOnHost extends VmFaultToleranceIssue {
+export type FtIssuesOnHost = VmFaultToleranceIssue &  {
   host: HostSystem;
   hostName: string;
   errors?: MethodFault[];
 }
-export interface GenericDrsFault extends VimFault {
+export type GenericDrsFault = VimFault &  {
   hostFaults?: MethodFault[];
 }
-export interface GenericVmConfigFault extends VmConfigFault {
+export type GenericVmConfigFault = VmConfigFault &  {
   reason: string;
 }
-export interface GuestOperationsFault extends VimFault {
+export type GuestOperationsFault = VimFault &  {
   
 }
-export interface GuestOperationsUnavailable extends GuestOperationsFault {
+export type GuestOperationsUnavailable = GuestOperationsFault &  {
   
 }
-export interface GuestPermissionDenied extends GuestOperationsFault {
+export type GuestPermissionDenied = GuestOperationsFault &  {
   
 }
-export interface GuestProcessNotFound extends GuestOperationsFault {
+export type GuestProcessNotFound = GuestOperationsFault &  {
   pid: number;
 }
-export interface GuestRegistryFault extends GuestOperationsFault {
+export type GuestRegistryFault = GuestOperationsFault &  {
   windowsSystemErrorCode: number;
 }
-export interface GuestRegistryKeyFault extends GuestRegistryFault {
+export type GuestRegistryKeyFault = GuestRegistryFault &  {
   keyName: string;
 }
-export interface GuestRegistryKeyHasSubkeys extends GuestRegistryKeyFault {
+export type GuestRegistryKeyHasSubkeys = GuestRegistryKeyFault &  {
   
 }
-export interface GuestRegistryKeyInvalid extends GuestRegistryKeyFault {
+export type GuestRegistryKeyInvalid = GuestRegistryKeyFault &  {
   
 }
-export interface GuestRegistryKeyParentVolatile extends GuestRegistryKeyFault {
+export type GuestRegistryKeyParentVolatile = GuestRegistryKeyFault &  {
   
 }
-export interface GuestRegistryValueFault extends GuestRegistryFault {
+export type GuestRegistryValueFault = GuestRegistryFault &  {
   keyName: string;
   valueName: string;
 }
-export interface GuestRegistryValueNotFound extends GuestRegistryValueFault {
+export type GuestRegistryValueNotFound = GuestRegistryValueFault &  {
   
 }
-export interface HeterogenousHostsBlockingEVC extends EVCConfigFault {
+export type HeterogenousHostsBlockingEVC = EVCConfigFault &  {
   
 }
-export interface HostConfigFault extends VimFault {
+export type HostConfigFault = VimFault &  {
   
 }
-export interface HostConnectFault extends VimFault {
+export type HostConnectFault = VimFault &  {
   
 }
-export interface HostHasComponentFailure extends VimFault {
+export type HostHasComponentFailure = VimFault &  {
   hostName: string;
   componentType: string;
   componentName: string;
 }
-export interface HostInDomain extends HostConfigFault {
+export type HostInDomain = HostConfigFault &  {
   
 }
-export interface HostIncompatibleForFaultTolerance extends VmFaultToleranceIssue {
+export type HostIncompatibleForFaultTolerance = VmFaultToleranceIssue &  {
   hostName?: string;
   reason?: string;
 }
-export interface HostIncompatibleForRecordReplay extends VimFault {
+export type HostIncompatibleForRecordReplay = VimFault &  {
   hostName?: string;
   reason?: string;
 }
-export interface HostPowerOpFailed extends VimFault {
+export type HostPowerOpFailed = VimFault &  {
   
 }
-export interface HostSpecificationOperationFailed extends VimFault {
+export type HostSpecificationOperationFailed = VimFault &  {
   host: HostSystem;
 }
-export interface HttpFault extends VimFault {
+export type HttpFault = VimFault &  {
   statusCode: number;
   statusMessage: string;
 }
-export interface IORMNotSupportedHostOnDatastore extends VimFault {
+export type IORMNotSupportedHostOnDatastore = VimFault &  {
   datastore: Datastore;
   datastoreName: string;
   host?: HostSystem[];
 }
-export interface ImportHostAddFailure extends DvsFault {
+export type ImportHostAddFailure = DvsFault &  {
   hostIp: string[];
 }
-export interface ImportOperationBulkFault extends DvsFault {
+export type ImportOperationBulkFault = DvsFault &  {
   importFaults: ImportOperationBulkFaultFaultOnImport[];
 }
-export interface ImportOperationBulkFaultFaultOnImport extends DynamicData {
+export type ImportOperationBulkFaultFaultOnImport = DynamicData &  {
   entityType?: string;
   key?: string;
   fault: MethodFault;
 }
-export interface InaccessibleVFlashSource extends VimFault {
+export type InaccessibleVFlashSource = VimFault &  {
   hostName: string;
 }
-export interface IncompatibleHostForFtSecondary extends VmFaultToleranceIssue {
+export type IncompatibleHostForFtSecondary = VmFaultToleranceIssue &  {
   host: HostSystem;
   error?: MethodFault[];
 }
-export interface IncorrectFileType extends FileFault {
+export type IncorrectFileType = FileFault &  {
   
 }
-export interface InsufficientResourcesFault extends VimFault {
+export type InsufficientResourcesFault = VimFault &  {
   
 }
-export interface InsufficientStandbyResource extends InsufficientResourcesFault {
+export type InsufficientStandbyResource = InsufficientResourcesFault &  {
   
 }
-export interface InsufficientStorageIops extends VimFault {
+export type InsufficientStorageIops = VimFault &  {
   unreservedIops: number;
   requestedIops: number;
   datastoreName: string;
 }
-export interface InsufficientStorageSpace extends InsufficientResourcesFault {
+export type InsufficientStorageSpace = InsufficientResourcesFault &  {
   
 }
-export interface InsufficientVFlashResourcesFault extends InsufficientResourcesFault {
+export type InsufficientVFlashResourcesFault = InsufficientResourcesFault &  {
   freeSpaceInMB?: number;
   freeSpace: number;
   requestedSpaceInMB?: number;
   requestedSpace: number;
 }
-export interface InvalidAffinitySettingFault extends VimFault {
+export type InvalidAffinitySettingFault = VimFault &  {
   
 }
-export interface InvalidBmcRole extends VimFault {
+export type InvalidBmcRole = VimFault &  {
   
 }
-export interface InvalidCAMServer extends ActiveDirectoryFault {
+export type InvalidCAMServer = ActiveDirectoryFault &  {
   camServer: string;
 }
-export interface InvalidDatastore extends VimFault {
+export type InvalidDatastore = VimFault &  {
   datastore?: Datastore;
   name?: string;
 }
-export interface InvalidDatastorePath extends InvalidDatastore {
+export type InvalidDatastorePath = InvalidDatastore &  {
   datastorePath: string;
 }
-export interface InvalidEvent extends VimFault {
+export type InvalidEvent = VimFault &  {
   
 }
-export interface InvalidFolder extends VimFault {
+export type InvalidFolder = VimFault &  {
   target: ManagedEntity;
 }
-export interface InvalidFormat extends VmConfigFault {
+export type InvalidFormat = VmConfigFault &  {
   
 }
-export interface InvalidGuestLogin extends GuestOperationsFault {
+export type InvalidGuestLogin = GuestOperationsFault &  {
   
 }
-export interface InvalidHostName extends HostConfigFault {
+export type InvalidHostName = HostConfigFault &  {
   
 }
-export interface InvalidIpfixConfig extends DvsFault {
+export type InvalidIpfixConfig = DvsFault &  {
   property?: string;
 }
-export interface InvalidIpmiLoginInfo extends VimFault {
+export type InvalidIpmiLoginInfo = VimFault &  {
   
 }
-export interface InvalidIpmiMacAddress extends VimFault {
+export type InvalidIpmiMacAddress = VimFault &  {
   userProvidedMacAddress: string;
   observedMacAddress: string;
 }
-export interface InvalidLicense extends VimFault {
+export type InvalidLicense = VimFault &  {
   licenseContent: string;
 }
-export interface InvalidLocale extends VimFault {
+export type InvalidLocale = VimFault &  {
   
 }
-export interface InvalidLogin extends VimFault {
+export type InvalidLogin = VimFault &  {
   
 }
-export interface InvalidName extends VimFault {
+export type InvalidName = VimFault &  {
   name: string;
   entity?: ManagedEntity;
 }
-export interface InvalidOperationOnSecondaryVm extends VmFaultToleranceIssue {
+export type InvalidOperationOnSecondaryVm = VmFaultToleranceIssue &  {
   instanceUuid: string;
 }
-export interface InvalidPrivilege extends VimFault {
+export type InvalidPrivilege = VimFault &  {
   privilege: string;
 }
-export interface InvalidResourcePoolStructureFault extends InsufficientResourcesFault {
+export type InvalidResourcePoolStructureFault = InsufficientResourcesFault &  {
   
 }
-export interface InvalidSnapshotFormat extends InvalidFormat {
+export type InvalidSnapshotFormat = InvalidFormat &  {
   
 }
-export interface InvalidState extends VimFault {
+export type InvalidState = VimFault &  {
   
 }
-export interface InvalidVmConfig extends VmConfigFault {
+export type InvalidVmConfig = VmConfigFault &  {
   property?: string;
 }
-export interface InvalidVmState extends InvalidState {
+export type InvalidVmState = InvalidState &  {
   vm: VirtualMachine;
 }
-export interface IpHostnameGeneratorError extends CustomizationFault {
+export type IpHostnameGeneratorError = CustomizationFault &  {
   
 }
-export interface IscsiFault extends VimFault {
+export type IscsiFault = VimFault &  {
   
 }
-export interface IscsiFaultInvalidVnic extends IscsiFault {
+export type IscsiFaultInvalidVnic = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultPnicInUse extends IscsiFault {
+export type IscsiFaultPnicInUse = IscsiFault &  {
   pnicDevice: string;
 }
-export interface IscsiFaultVnicAlreadyBound extends IscsiFault {
+export type IscsiFaultVnicAlreadyBound = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicHasActivePaths extends IscsiFault {
+export type IscsiFaultVnicHasActivePaths = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicHasMultipleUplinks extends IscsiFault {
+export type IscsiFaultVnicHasMultipleUplinks = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicHasNoUplinks extends IscsiFault {
+export type IscsiFaultVnicHasNoUplinks = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicHasWrongUplink extends IscsiFault {
+export type IscsiFaultVnicHasWrongUplink = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicInUse extends IscsiFault {
+export type IscsiFaultVnicInUse = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicIsLastPath extends IscsiFault {
+export type IscsiFaultVnicIsLastPath = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicNotBound extends IscsiFault {
+export type IscsiFaultVnicNotBound = IscsiFault &  {
   vnicDevice: string;
 }
-export interface IscsiFaultVnicNotFound extends IscsiFault {
+export type IscsiFaultVnicNotFound = IscsiFault &  {
   vnicDevice: string;
 }
-export interface KeyNotFound extends VimFault {
+export type KeyNotFound = VimFault &  {
   key: string;
 }
-export interface LargeRDMNotSupportedOnDatastore extends VmConfigFault {
+export type LargeRDMNotSupportedOnDatastore = VmConfigFault &  {
   device: string;
   datastore: Datastore;
   datastoreName: string;
 }
-export interface LicenseEntityNotFound extends VimFault {
+export type LicenseEntityNotFound = VimFault &  {
   entityId: string;
 }
-export interface LicenseServerUnavailable extends VimFault {
+export type LicenseServerUnavailable = VimFault &  {
   licenseServer: string;
 }
-export interface LimitExceeded extends VimFault {
+export type LimitExceeded = VimFault &  {
   property?: string;
   limit?: number;
 }
-export interface LinuxVolumeNotClean extends CustomizationFault {
+export type LinuxVolumeNotClean = CustomizationFault &  {
   
 }
-export interface LogBundlingFailed extends VimFault {
+export type LogBundlingFailed = VimFault &  {
   
 }
-export interface MemoryHotPlugNotSupported extends VmConfigFault {
+export type MemoryHotPlugNotSupported = VmConfigFault &  {
   
 }
-export interface MigrationFault extends VimFault {
+export type MigrationFault = VimFault &  {
   
 }
-export interface MigrationFeatureNotSupported extends MigrationFault {
+export type MigrationFeatureNotSupported = MigrationFault &  {
   atSourceHost: boolean;
   failedHostName: string;
   failedHost: HostSystem;
 }
-export interface MigrationNotReady extends MigrationFault {
+export type MigrationNotReady = MigrationFault &  {
   reason: string;
 }
-export interface MismatchedBundle extends VimFault {
+export type MismatchedBundle = VimFault &  {
   bundleUuid: string;
   hostUuid: string;
   bundleBuildNumber: number;
   hostBuildNumber: number;
 }
-export interface MismatchedNetworkPolicies extends MigrationFault {
+export type MismatchedNetworkPolicies = MigrationFault &  {
   device: string;
   backing: string;
   connected: boolean;
 }
-export interface MismatchedVMotionNetworkNames extends MigrationFault {
+export type MismatchedVMotionNetworkNames = MigrationFault &  {
   sourceNetwork: string;
   destNetwork: string;
 }
-export interface MissingBmcSupport extends VimFault {
+export type MissingBmcSupport = VimFault &  {
   
 }
-export interface MissingLinuxCustResources extends CustomizationFault {
+export type MissingLinuxCustResources = CustomizationFault &  {
   
 }
-export interface MissingWindowsCustResources extends CustomizationFault {
+export type MissingWindowsCustResources = CustomizationFault &  {
   
 }
-export interface MksConnectionLimitReached extends InvalidState {
+export type MksConnectionLimitReached = InvalidState &  {
   connectionLimit: number;
 }
-export interface MountError extends CustomizationFault {
+export type MountError = CustomizationFault &  {
   vm: VirtualMachine;
   diskIndex: number;
 }
-export interface MultipleCertificatesVerifyFault extends HostConnectFault {
+export type MultipleCertificatesVerifyFault = HostConnectFault &  {
   thumbprintData: MultipleCertificatesVerifyFaultThumbprintData[];
 }
-export interface MultipleCertificatesVerifyFaultThumbprintData extends DynamicData {
+export type MultipleCertificatesVerifyFaultThumbprintData = DynamicData &  {
   port: number;
   thumbprint: string;
 }
-export interface NamespaceFull extends VimFault {
+export type NamespaceFull = VimFault &  {
   name: string;
   currentMaxSize: number;
   requiredSize?: number;
 }
-export interface NamespaceLimitReached extends VimFault {
+export type NamespaceLimitReached = VimFault &  {
   limit?: number;
 }
-export interface NamespaceWriteProtected extends VimFault {
+export type NamespaceWriteProtected = VimFault &  {
   name: string;
 }
-export interface NasConfigFault extends HostConfigFault {
+export type NasConfigFault = HostConfigFault &  {
   name: string;
 }
-export interface NasConnectionLimitReached extends NasConfigFault {
+export type NasConnectionLimitReached = NasConfigFault &  {
   remoteHost: string;
   remotePath: string;
 }
-export interface NasSessionCredentialConflict extends NasConfigFault {
+export type NasSessionCredentialConflict = NasConfigFault &  {
   remoteHost: string;
   remotePath: string;
   userName: string;
 }
-export interface NasVolumeNotMounted extends NasConfigFault {
+export type NasVolumeNotMounted = NasConfigFault &  {
   remoteHost: string;
   remotePath: string;
 }
-export interface NetworkCopyFault extends FileFault {
+export type NetworkCopyFault = FileFault &  {
   
 }
-export interface NetworkDisruptedAndConfigRolledBack extends VimFault {
+export type NetworkDisruptedAndConfigRolledBack = VimFault &  {
   host: string;
 }
-export interface NetworkInaccessible extends NasConfigFault {
+export type NetworkInaccessible = NasConfigFault &  {
   
 }
-export interface NetworksMayNotBeTheSame extends MigrationFault {
+export type NetworksMayNotBeTheSame = MigrationFault &  {
   name?: string;
 }
-export interface NicSettingMismatch extends CustomizationFault {
+export type NicSettingMismatch = CustomizationFault &  {
   numberOfNicsInSpec: number;
   numberOfNicsInVM: number;
 }
-export interface NoActiveHostInCluster extends InvalidState {
+export type NoActiveHostInCluster = InvalidState &  {
   computeResource: ComputeResource;
 }
-export interface NoClientCertificate extends VimFault {
+export type NoClientCertificate = VimFault &  {
   
 }
-export interface NoCompatibleDatastore extends VimFault {
+export type NoCompatibleDatastore = VimFault &  {
   
 }
-export interface NoCompatibleHardAffinityHost extends VmConfigFault {
+export type NoCompatibleHardAffinityHost = VmConfigFault &  {
   vmName: string;
 }
-export interface NoCompatibleHost extends VimFault {
+export type NoCompatibleHost = VimFault &  {
   host?: HostSystem[];
   error?: MethodFault[];
 }
-export interface NoCompatibleHostWithAccessToDevice extends NoCompatibleHost {
+export type NoCompatibleHostWithAccessToDevice = NoCompatibleHost &  {
   
 }
-export interface NoCompatibleSoftAffinityHost extends VmConfigFault {
+export type NoCompatibleSoftAffinityHost = VmConfigFault &  {
   vmName: string;
 }
-export interface NoConnectedDatastore extends VimFault {
+export type NoConnectedDatastore = VimFault &  {
   
 }
-export interface NoDiskFound extends VimFault {
+export type NoDiskFound = VimFault &  {
   
 }
-export interface NoDiskSpace extends FileFault {
+export type NoDiskSpace = FileFault &  {
   datastore: string;
 }
-export interface NoDisksToCustomize extends CustomizationFault {
+export type NoDisksToCustomize = CustomizationFault &  {
   
 }
-export interface NoGateway extends HostConfigFault {
+export type NoGateway = HostConfigFault &  {
   
 }
-export interface NoGuestHeartbeat extends MigrationFault {
+export type NoGuestHeartbeat = MigrationFault &  {
   
 }
-export interface NoHost extends HostConnectFault {
+export type NoHost = HostConnectFault &  {
   name?: string;
 }
-export interface NoHostSuitableForFtSecondary extends VmFaultToleranceIssue {
+export type NoHostSuitableForFtSecondary = VmFaultToleranceIssue &  {
   vm: VirtualMachine;
   vmName: string;
 }
-export interface NoPeerHostFound extends HostPowerOpFailed {
+export type NoPeerHostFound = HostPowerOpFailed &  {
   
 }
-export interface NoPermissionOnAD extends ActiveDirectoryFault {
+export type NoPermissionOnAD = ActiveDirectoryFault &  {
   
 }
-export interface NoPermissionOnHost extends HostConnectFault {
+export type NoPermissionOnHost = HostConnectFault &  {
   
 }
-export interface NoPermissionOnNasVolume extends NasConfigFault {
+export type NoPermissionOnNasVolume = NasConfigFault &  {
   userName?: string;
 }
-export interface NoSubjectName extends VimFault {
+export type NoSubjectName = VimFault &  {
   
 }
-export interface NoVirtualNic extends HostConfigFault {
+export type NoVirtualNic = HostConfigFault &  {
   
 }
-export interface NonADUserRequired extends ActiveDirectoryFault {
+export type NonADUserRequired = ActiveDirectoryFault &  {
   
 }
-export interface NonHomeRDMVMotionNotSupported extends MigrationFeatureNotSupported {
+export type NonHomeRDMVMotionNotSupported = MigrationFeatureNotSupported &  {
   device: string;
 }
-export interface NotADirectory extends FileFault {
+export type NotADirectory = FileFault &  {
   
 }
-export interface NotAFile extends FileFault {
+export type NotAFile = FileFault &  {
   
 }
-export interface NotFound extends VimFault {
+export type NotFound = VimFault &  {
   
 }
-export interface NotSupportedDeviceForFT extends VmFaultToleranceIssue {
+export type NotSupportedDeviceForFT = VmFaultToleranceIssue &  {
   host: HostSystem;
   hostName?: string;
   vm: VirtualMachine;
@@ -9752,685 +9752,685 @@ export interface NotSupportedDeviceForFT extends VmFaultToleranceIssue {
   deviceType: string;
   deviceLabel?: string;
 }
-export interface NotSupportedHost extends HostConnectFault {
+export type NotSupportedHost = HostConnectFault &  {
   productName?: string;
   productVersion?: string;
 }
-export interface NotSupportedHostForChecksum extends VimFault {
+export type NotSupportedHostForChecksum = VimFault &  {
   
 }
-export interface NotSupportedHostForVFlash extends NotSupportedHost {
+export type NotSupportedHostForVFlash = NotSupportedHost &  {
   hostName: string;
 }
-export interface NotSupportedHostForVmcp extends NotSupportedHost {
+export type NotSupportedHostForVmcp = NotSupportedHost &  {
   hostName: string;
 }
-export interface NotSupportedHostForVmemFile extends NotSupportedHost {
+export type NotSupportedHostForVmemFile = NotSupportedHost &  {
   hostName: string;
 }
-export interface NotSupportedHostForVsan extends NotSupportedHost {
+export type NotSupportedHostForVsan = NotSupportedHost &  {
   hostName: string;
 }
-export interface NotSupportedHostInCluster extends NotSupportedHost {
+export type NotSupportedHostInCluster = NotSupportedHost &  {
   
 }
-export interface NotSupportedHostInDvs extends NotSupportedHost {
+export type NotSupportedHostInDvs = NotSupportedHost &  {
   switchProductSpec: DistributedVirtualSwitchProductSpec;
 }
-export interface NotSupportedHostInHACluster extends NotSupportedHost {
+export type NotSupportedHostInHACluster = NotSupportedHost &  {
   hostName: string;
   build: string;
 }
-export interface NumVirtualCpusExceedsLimit extends InsufficientResourcesFault {
+export type NumVirtualCpusExceedsLimit = InsufficientResourcesFault &  {
   maxSupportedVcpus: number;
 }
-export interface NumVirtualCpusIncompatible extends VmConfigFault {
+export type NumVirtualCpusIncompatible = VmConfigFault &  {
   reason: string;
   numCpu: number;
 }
-export interface OperationDisabledByGuest extends GuestOperationsFault {
+export type OperationDisabledByGuest = GuestOperationsFault &  {
   
 }
-export interface OperationNotSupportedByGuest extends GuestOperationsFault {
+export type OperationNotSupportedByGuest = GuestOperationsFault &  {
   
 }
-export interface OutOfBounds extends VimFault {
+export type OutOfBounds = VimFault &  {
   argumentName: string;
 }
-export interface OvfConsumerPowerOnFault extends InvalidState {
+export type OvfConsumerPowerOnFault = InvalidState &  {
   extensionKey: string;
   extensionName: string;
   description: string;
 }
-export interface OvfConsumerValidationFault extends VmConfigFault {
+export type OvfConsumerValidationFault = VmConfigFault &  {
   extensionKey: string;
   extensionName: string;
   message: string;
 }
-export interface OvfFault extends VimFault {
+export type OvfFault = VimFault &  {
   
 }
-export interface OvfImport extends OvfFault {
+export type OvfImport = OvfFault &  {
   
 }
-export interface OvfImportFailed extends OvfImport {
+export type OvfImportFailed = OvfImport &  {
   
 }
-export interface OvfInvalidPackage extends OvfFault {
+export type OvfInvalidPackage = OvfFault &  {
   lineNumber: number;
 }
-export interface OvfMappedOsId extends OvfImport {
+export type OvfMappedOsId = OvfImport &  {
   ovfId: number;
   ovfDescription: string;
   targetDescription: string;
 }
-export interface OvfMissingHardware extends OvfImport {
+export type OvfMissingHardware = OvfImport &  {
   name: string;
   resourceType: number;
 }
-export interface OvfNetworkMappingNotSupported extends OvfImport {
+export type OvfNetworkMappingNotSupported = OvfImport &  {
   
 }
-export interface OvfProperty extends OvfInvalidPackage {
+export type OvfProperty = OvfInvalidPackage &  {
   type: string;
   value: string;
 }
-export interface OvfPropertyNetwork extends OvfProperty {
+export type OvfPropertyNetwork = OvfProperty &  {
   
 }
-export interface OvfPropertyQualifier extends OvfProperty {
+export type OvfPropertyQualifier = OvfProperty &  {
   qualifier: string;
 }
-export interface OvfPropertyQualifierDuplicate extends OvfProperty {
+export type OvfPropertyQualifierDuplicate = OvfProperty &  {
   qualifier: string;
 }
-export interface OvfPropertyQualifierIgnored extends OvfProperty {
+export type OvfPropertyQualifierIgnored = OvfProperty &  {
   qualifier: string;
 }
-export interface OvfPropertyType extends OvfProperty {
+export type OvfPropertyType = OvfProperty &  {
   
 }
-export interface OvfPropertyValue extends OvfProperty {
+export type OvfPropertyValue = OvfProperty &  {
   
 }
-export interface OvfSystemFault extends OvfFault {
+export type OvfSystemFault = OvfFault &  {
   
 }
-export interface OvfToXmlUnsupportedElement extends OvfSystemFault {
+export type OvfToXmlUnsupportedElement = OvfSystemFault &  {
   name?: string;
 }
-export interface OvfUnknownDevice extends OvfSystemFault {
+export type OvfUnknownDevice = OvfSystemFault &  {
   device?: VirtualDevice;
   vmName: string;
 }
-export interface OvfUnknownEntity extends OvfSystemFault {
+export type OvfUnknownEntity = OvfSystemFault &  {
   lineNumber: number;
 }
-export interface OvfUnsupportedDeviceBackingInfo extends OvfSystemFault {
+export type OvfUnsupportedDeviceBackingInfo = OvfSystemFault &  {
   elementName?: string;
   instanceId?: string;
   deviceName: string;
   backingName?: string;
 }
-export interface OvfUnsupportedDeviceBackingOption extends OvfSystemFault {
+export type OvfUnsupportedDeviceBackingOption = OvfSystemFault &  {
   elementName?: string;
   instanceId?: string;
   deviceName: string;
   backingName?: string;
 }
-export interface OvfUnsupportedDiskProvisioning extends OvfImport {
+export type OvfUnsupportedDiskProvisioning = OvfImport &  {
   diskProvisioning: string;
   supportedDiskProvisioning: string;
 }
-export interface OvfUnsupportedPackage extends OvfFault {
+export type OvfUnsupportedPackage = OvfFault &  {
   lineNumber?: number;
 }
-export interface OvfUnsupportedSubType extends OvfUnsupportedPackage {
+export type OvfUnsupportedSubType = OvfUnsupportedPackage &  {
   elementName: string;
   instanceId: string;
   deviceType: number;
   deviceSubType: string;
 }
-export interface OvfUnsupportedType extends OvfUnsupportedPackage {
+export type OvfUnsupportedType = OvfUnsupportedPackage &  {
   name: string;
   instanceId: string;
   deviceType: number;
 }
-export interface OvfWrongNamespace extends OvfInvalidPackage {
+export type OvfWrongNamespace = OvfInvalidPackage &  {
   namespaceName: string;
 }
-export interface OvfXmlFormat extends OvfInvalidPackage {
+export type OvfXmlFormat = OvfInvalidPackage &  {
   description: string;
 }
-export interface PasswordExpired extends InvalidLogin {
+export type PasswordExpired = InvalidLogin &  {
   
 }
-export interface PatchBinariesNotFound extends VimFault {
+export type PatchBinariesNotFound = VimFault &  {
   patchID: string;
   binary?: string[];
 }
-export interface PatchMetadataInvalid extends VimFault {
+export type PatchMetadataInvalid = VimFault &  {
   patchID: string;
   metaData?: string[];
 }
-export interface PatchMetadataNotFound extends PatchMetadataInvalid {
+export type PatchMetadataNotFound = PatchMetadataInvalid &  {
   
 }
-export interface PatchNotApplicable extends VimFault {
+export type PatchNotApplicable = VimFault &  {
   patchID: string;
 }
-export interface PatchSuperseded extends PatchNotApplicable {
+export type PatchSuperseded = PatchNotApplicable &  {
   supersede?: string[];
 }
-export interface PlatformConfigFault extends HostConfigFault {
+export type PlatformConfigFault = HostConfigFault &  {
   text: string;
 }
-export interface PowerOnFtSecondaryFailed extends VmFaultToleranceIssue {
+export type PowerOnFtSecondaryFailed = VmFaultToleranceIssue &  {
   vm: VirtualMachine;
   vmName: string;
   hostSelectionBy: FtIssuesOnHostHostSelectionType;
   hostErrors?: MethodFault[];
   rootCause: MethodFault;
 }
-export interface ProfileUpdateFailed extends VimFault {
+export type ProfileUpdateFailed = VimFault &  {
   failure: ProfileUpdateFailedUpdateFailure[];
   warnings?: ProfileUpdateFailedUpdateFailure[];
 }
-export interface ProfileUpdateFailedUpdateFailure extends DynamicData {
+export type ProfileUpdateFailedUpdateFailure = DynamicData &  {
   profilePath: ProfilePropertyPath;
   errMsg: LocalizableMessage;
 }
-export interface QuarantineModeFault extends VmConfigFault {
+export type QuarantineModeFault = VmConfigFault &  {
   vmName: string;
   faultType: string;
 }
-export interface QuestionPending extends InvalidState {
+export type QuestionPending = InvalidState &  {
   text: string;
 }
-export interface RDMConversionNotSupported extends MigrationFault {
+export type RDMConversionNotSupported = MigrationFault &  {
   device: string;
 }
-export interface RDMNotPreserved extends MigrationFault {
+export type RDMNotPreserved = MigrationFault &  {
   device: string;
 }
-export interface RDMNotSupportedOnDatastore extends VmConfigFault {
+export type RDMNotSupportedOnDatastore = VmConfigFault &  {
   device: string;
   datastore: Datastore;
   datastoreName: string;
 }
-export interface RDMPointsToInaccessibleDisk extends CannotAccessVmDisk {
+export type RDMPointsToInaccessibleDisk = CannotAccessVmDisk &  {
   
 }
-export interface ReadHostResourcePoolTreeFailed extends HostConnectFault {
+export type ReadHostResourcePoolTreeFailed = HostConnectFault &  {
   
 }
-export interface ReadOnlyDisksWithLegacyDestination extends MigrationFault {
+export type ReadOnlyDisksWithLegacyDestination = MigrationFault &  {
   roDiskCount: number;
   timeoutDanger: boolean;
 }
-export interface RebootRequired extends VimFault {
+export type RebootRequired = VimFault &  {
   patch?: string;
 }
-export interface RecordReplayDisabled extends VimFault {
+export type RecordReplayDisabled = VimFault &  {
   
 }
-export interface RemoveFailed extends VimFault {
+export type RemoveFailed = VimFault &  {
   
 }
-export interface ReplicationFault extends VimFault {
+export type ReplicationFault = VimFault &  {
   
 }
-export interface ReplicationIncompatibleWithFT extends ReplicationFault {
+export type ReplicationIncompatibleWithFT = ReplicationFault &  {
   
 }
-export interface ReplicationInvalidOptions extends ReplicationFault {
+export type ReplicationInvalidOptions = ReplicationFault &  {
   options: string;
   entity?: ManagedEntity;
 }
-export interface ReplicationNotSupportedOnHost extends ReplicationFault {
+export type ReplicationNotSupportedOnHost = ReplicationFault &  {
   
 }
-export interface ReplicationVmFault extends ReplicationFault {
+export type ReplicationVmFault = ReplicationFault &  {
   reason: string;
   state?: string;
   instanceId?: string;
   vm: VirtualMachine;
 }
-export interface ReplicationVmInProgressFault extends ReplicationVmFault {
+export type ReplicationVmInProgressFault = ReplicationVmFault &  {
   requestedActivity: string;
   inProgressActivity: string;
 }
-export interface ResourceInUse extends VimFault {
+export type ResourceInUse = VimFault &  {
   type?: string;
   name?: string;
 }
-export interface ResourceNotAvailable extends VimFault {
+export type ResourceNotAvailable = VimFault &  {
   containerType?: string;
   containerName?: string;
   type?: string;
 }
-export interface RollbackFailure extends DvsFault {
+export type RollbackFailure = DvsFault &  {
   entityName: string;
   entityType: string;
 }
-export interface RuleViolation extends VmConfigFault {
+export type RuleViolation = VmConfigFault &  {
   host?: HostSystem;
   rule: ClusterRuleInfo;
 }
-export interface SSLDisabledFault extends HostConnectFault {
+export type SSLDisabledFault = HostConnectFault &  {
   
 }
-export interface SSLVerifyFault extends HostConnectFault {
+export type SSLVerifyFault = HostConnectFault &  {
   selfSigned: boolean;
   thumbprint: string;
 }
-export interface SSPIChallenge extends VimFault {
+export type SSPIChallenge = VimFault &  {
   base64Token: string;
 }
-export interface SecondaryVmAlreadyDisabled extends VmFaultToleranceIssue {
+export type SecondaryVmAlreadyDisabled = VmFaultToleranceIssue &  {
   instanceUuid: string;
 }
-export interface SecondaryVmAlreadyEnabled extends VmFaultToleranceIssue {
+export type SecondaryVmAlreadyEnabled = VmFaultToleranceIssue &  {
   instanceUuid: string;
 }
-export interface SecondaryVmAlreadyRegistered extends VmFaultToleranceIssue {
+export type SecondaryVmAlreadyRegistered = VmFaultToleranceIssue &  {
   instanceUuid: string;
 }
-export interface SecondaryVmNotRegistered extends VmFaultToleranceIssue {
+export type SecondaryVmNotRegistered = VmFaultToleranceIssue &  {
   instanceUuid: string;
 }
-export interface ShrinkDiskFault extends VimFault {
+export type ShrinkDiskFault = VimFault &  {
   diskId?: number;
 }
-export interface SnapshotCopyNotSupported extends MigrationFault {
+export type SnapshotCopyNotSupported = MigrationFault &  {
   
 }
-export interface SnapshotFault extends VimFault {
+export type SnapshotFault = VimFault &  {
   
 }
-export interface SnapshotIncompatibleDeviceInVm extends SnapshotFault {
+export type SnapshotIncompatibleDeviceInVm = SnapshotFault &  {
   fault: MethodFault;
 }
-export interface SnapshotLocked extends SnapshotFault {
+export type SnapshotLocked = SnapshotFault &  {
   
 }
-export interface SnapshotMoveFromNonHomeNotSupported extends SnapshotCopyNotSupported {
+export type SnapshotMoveFromNonHomeNotSupported = SnapshotCopyNotSupported &  {
   
 }
-export interface SnapshotMoveNotSupported extends SnapshotCopyNotSupported {
+export type SnapshotMoveNotSupported = SnapshotCopyNotSupported &  {
   
 }
-export interface SnapshotMoveToNonHomeNotSupported extends SnapshotCopyNotSupported {
+export type SnapshotMoveToNonHomeNotSupported = SnapshotCopyNotSupported &  {
   
 }
-export interface SnapshotNoChange extends SnapshotFault {
+export type SnapshotNoChange = SnapshotFault &  {
   
 }
-export interface SnapshotRevertIssue extends MigrationFault {
+export type SnapshotRevertIssue = MigrationFault &  {
   snapshotName?: string;
   event?: Event[];
   errors: boolean;
 }
-export interface SoftRuleVioCorrectionDisallowed extends VmConfigFault {
+export type SoftRuleVioCorrectionDisallowed = VmConfigFault &  {
   vmName: string;
 }
-export interface SoftRuleVioCorrectionImpact extends VmConfigFault {
+export type SoftRuleVioCorrectionImpact = VmConfigFault &  {
   vmName: string;
 }
-export interface SsdDiskNotAvailable extends VimFault {
+export type SsdDiskNotAvailable = VimFault &  {
   devicePath: string;
 }
-export interface StorageDrsCannotMoveDiskInMultiWriterMode extends VimFault {
+export type StorageDrsCannotMoveDiskInMultiWriterMode = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveFTVm extends VimFault {
+export type StorageDrsCannotMoveFTVm = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveIndependentDisk extends VimFault {
+export type StorageDrsCannotMoveIndependentDisk = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveManuallyPlacedSwapFile extends VimFault {
+export type StorageDrsCannotMoveManuallyPlacedSwapFile = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveManuallyPlacedVm extends VimFault {
+export type StorageDrsCannotMoveManuallyPlacedVm = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveSharedDisk extends VimFault {
+export type StorageDrsCannotMoveSharedDisk = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveTemplate extends VimFault {
+export type StorageDrsCannotMoveTemplate = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveVmInUserFolder extends VimFault {
+export type StorageDrsCannotMoveVmInUserFolder = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveVmWithMountedCDROM extends VimFault {
+export type StorageDrsCannotMoveVmWithMountedCDROM = VimFault &  {
   
 }
-export interface StorageDrsCannotMoveVmWithNoFilesInLayout extends VimFault {
+export type StorageDrsCannotMoveVmWithNoFilesInLayout = VimFault &  {
   
 }
-export interface StorageDrsDatacentersCannotShareDatastore extends VimFault {
+export type StorageDrsDatacentersCannotShareDatastore = VimFault &  {
   
 }
-export interface StorageDrsDisabledOnVm extends VimFault {
+export type StorageDrsDisabledOnVm = VimFault &  {
   
 }
-export interface StorageDrsHbrDiskNotMovable extends VimFault {
+export type StorageDrsHbrDiskNotMovable = VimFault &  {
   nonMovableDiskIds: string;
 }
-export interface StorageDrsHmsMoveInProgress extends VimFault {
+export type StorageDrsHmsMoveInProgress = VimFault &  {
   
 }
-export interface StorageDrsHmsUnreachable extends VimFault {
+export type StorageDrsHmsUnreachable = VimFault &  {
   
 }
-export interface StorageDrsIolbDisabledInternally extends VimFault {
+export type StorageDrsIolbDisabledInternally = VimFault &  {
   
 }
-export interface StorageDrsRelocateDisabled extends VimFault {
+export type StorageDrsRelocateDisabled = VimFault &  {
   
 }
-export interface StorageDrsStaleHmsCollection extends VimFault {
+export type StorageDrsStaleHmsCollection = VimFault &  {
   
 }
-export interface StorageDrsUnableToMoveFiles extends VimFault {
+export type StorageDrsUnableToMoveFiles = VimFault &  {
   
 }
-export interface StorageVMotionNotSupported extends MigrationFeatureNotSupported {
+export type StorageVMotionNotSupported = MigrationFeatureNotSupported &  {
   
 }
-export interface SuspendedRelocateNotSupported extends MigrationFault {
+export type SuspendedRelocateNotSupported = MigrationFault &  {
   
 }
-export interface SwapDatastoreUnset extends VimFault {
+export type SwapDatastoreUnset = VimFault &  {
   
 }
-export interface SwapPlacementOverrideNotSupported extends InvalidVmConfig {
+export type SwapPlacementOverrideNotSupported = InvalidVmConfig &  {
   
 }
-export interface SwitchIpUnset extends DvsFault {
+export type SwitchIpUnset = DvsFault &  {
   
 }
-export interface SwitchNotInUpgradeMode extends DvsFault {
+export type SwitchNotInUpgradeMode = DvsFault &  {
   
 }
-export interface TaskInProgress extends VimFault {
+export type TaskInProgress = VimFault &  {
   task: Task;
 }
-export interface Timedout extends VimFault {
+export type Timedout = VimFault &  {
   
 }
-export interface TooManyConcurrentNativeClones extends FileFault {
+export type TooManyConcurrentNativeClones = FileFault &  {
   
 }
-export interface TooManyConsecutiveOverrides extends VimFault {
+export type TooManyConsecutiveOverrides = VimFault &  {
   
 }
-export interface TooManyDevices extends InvalidVmConfig {
+export type TooManyDevices = InvalidVmConfig &  {
   
 }
-export interface TooManyDisksOnLegacyHost extends MigrationFault {
+export type TooManyDisksOnLegacyHost = MigrationFault &  {
   diskCount: number;
   timeoutDanger: boolean;
 }
-export interface TooManyGuestLogons extends GuestOperationsFault {
+export type TooManyGuestLogons = GuestOperationsFault &  {
   
 }
-export interface TooManyHosts extends HostConnectFault {
+export type TooManyHosts = HostConnectFault &  {
   
 }
-export interface TooManyNativeCloneLevels extends FileFault {
+export type TooManyNativeCloneLevels = FileFault &  {
   
 }
-export interface TooManyNativeClonesOnFile extends FileFault {
+export type TooManyNativeClonesOnFile = FileFault &  {
   
 }
-export interface TooManySnapshotLevels extends SnapshotFault {
+export type TooManySnapshotLevels = SnapshotFault &  {
   
 }
-export interface ToolsAlreadyUpgraded extends VmToolsUpgradeFault {
+export type ToolsAlreadyUpgraded = VmToolsUpgradeFault &  {
   
 }
-export interface ToolsAutoUpgradeNotSupported extends VmToolsUpgradeFault {
+export type ToolsAutoUpgradeNotSupported = VmToolsUpgradeFault &  {
   
 }
-export interface ToolsImageCopyFailed extends VmToolsUpgradeFault {
+export type ToolsImageCopyFailed = VmToolsUpgradeFault &  {
   
 }
-export interface ToolsImageNotAvailable extends VmToolsUpgradeFault {
+export type ToolsImageNotAvailable = VmToolsUpgradeFault &  {
   
 }
-export interface ToolsImageSignatureCheckFailed extends VmToolsUpgradeFault {
+export type ToolsImageSignatureCheckFailed = VmToolsUpgradeFault &  {
   
 }
-export interface ToolsInstallationInProgress extends MigrationFault {
+export type ToolsInstallationInProgress = MigrationFault &  {
   
 }
-export interface ToolsUnavailable extends VimFault {
+export type ToolsUnavailable = VimFault &  {
   
 }
-export interface ToolsUpgradeCancelled extends VmToolsUpgradeFault {
+export type ToolsUpgradeCancelled = VmToolsUpgradeFault &  {
   
 }
-export interface UncommittedUndoableDisk extends MigrationFault {
+export type UncommittedUndoableDisk = MigrationFault &  {
   
 }
-export interface UncustomizableGuest extends CustomizationFault {
+export type UncustomizableGuest = CustomizationFault &  {
   uncustomizableGuestOS: string;
 }
-export interface UnexpectedCustomizationFault extends CustomizationFault {
+export type UnexpectedCustomizationFault = CustomizationFault &  {
   
 }
-export interface UnrecognizedHost extends VimFault {
+export type UnrecognizedHost = VimFault &  {
   hostName: string;
 }
-export interface UnsharedSwapVMotionNotSupported extends MigrationFeatureNotSupported {
+export type UnsharedSwapVMotionNotSupported = MigrationFeatureNotSupported &  {
   
 }
-export interface UnsupportedDatastore extends VmConfigFault {
+export type UnsupportedDatastore = VmConfigFault &  {
   datastore?: Datastore;
 }
-export interface UnsupportedGuest extends InvalidVmConfig {
+export type UnsupportedGuest = InvalidVmConfig &  {
   unsupportedGuestOS: string;
 }
-export interface UnsupportedVimApiVersion extends VimFault {
+export type UnsupportedVimApiVersion = VimFault &  {
   version?: string;
 }
-export interface UnsupportedVmxLocation extends VmConfigFault {
+export type UnsupportedVmxLocation = VmConfigFault &  {
   
 }
-export interface UserNotFound extends VimFault {
+export type UserNotFound = VimFault &  {
   principal: string;
   unresolved: boolean;
 }
-export interface VAppConfigFault extends VimFault {
+export type VAppConfigFault = VimFault &  {
   
 }
-export interface VAppNotRunning extends VmConfigFault {
+export type VAppNotRunning = VmConfigFault &  {
   
 }
-export interface VAppPropertyFault extends VmConfigFault {
+export type VAppPropertyFault = VmConfigFault &  {
   id: string;
   category: string;
   label: string;
   type: string;
   value: string;
 }
-export interface VAppTaskInProgress extends TaskInProgress {
+export type VAppTaskInProgress = TaskInProgress &  {
   
 }
-export interface VFlashCacheHotConfigNotSupported extends VmConfigFault {
+export type VFlashCacheHotConfigNotSupported = VmConfigFault &  {
   
 }
-export interface VFlashModuleNotSupported extends VmConfigFault {
+export type VFlashModuleNotSupported = VmConfigFault &  {
   vmName: string;
   moduleName: string;
   reason: string;
   hostName: string;
 }
-export interface VFlashModuleVersionIncompatible extends VimFault {
+export type VFlashModuleVersionIncompatible = VimFault &  {
   moduleName: string;
   vmRequestModuleVersion: string;
   hostMinSupportedVerson: string;
   hostModuleVersion: string;
 }
-export interface VMotionAcrossNetworkNotSupported extends MigrationFeatureNotSupported {
+export type VMotionAcrossNetworkNotSupported = MigrationFeatureNotSupported &  {
   
 }
-export interface VMotionInterfaceIssue extends MigrationFault {
+export type VMotionInterfaceIssue = MigrationFault &  {
   atSourceHost: boolean;
   failedHost: string;
   failedHostEntity?: HostSystem;
 }
-export interface VMotionLinkCapacityLow extends VMotionInterfaceIssue {
+export type VMotionLinkCapacityLow = VMotionInterfaceIssue &  {
   network: string;
 }
-export interface VMotionLinkDown extends VMotionInterfaceIssue {
+export type VMotionLinkDown = VMotionInterfaceIssue &  {
   network: string;
 }
-export interface VMotionNotConfigured extends VMotionInterfaceIssue {
+export type VMotionNotConfigured = VMotionInterfaceIssue &  {
   
 }
-export interface VMotionNotLicensed extends VMotionInterfaceIssue {
+export type VMotionNotLicensed = VMotionInterfaceIssue &  {
   
 }
-export interface VMotionNotSupported extends VMotionInterfaceIssue {
+export type VMotionNotSupported = VMotionInterfaceIssue &  {
   
 }
-export interface VMotionProtocolIncompatible extends MigrationFault {
+export type VMotionProtocolIncompatible = MigrationFault &  {
   
 }
-export interface VirtualHardwareCompatibilityIssue extends VmConfigFault {
+export type VirtualHardwareCompatibilityIssue = VmConfigFault &  {
   
 }
-export interface VirtualHardwareVersionNotSupported extends VirtualHardwareCompatibilityIssue {
+export type VirtualHardwareVersionNotSupported = VirtualHardwareCompatibilityIssue &  {
   hostName: string;
   host: HostSystem;
 }
-export interface VmAlreadyExistsInDatacenter extends InvalidFolder {
+export type VmAlreadyExistsInDatacenter = InvalidFolder &  {
   host: HostSystem;
   hostname: string;
   vm: VirtualMachine[];
 }
-export interface VmFaultToleranceConfigIssue extends VmFaultToleranceIssue {
+export type VmFaultToleranceConfigIssue = VmFaultToleranceIssue &  {
   reason?: string;
   entityName?: string;
   entity?: ManagedEntity;
 }
-export interface VmFaultToleranceConfigIssueWrapper extends VmFaultToleranceIssue {
+export type VmFaultToleranceConfigIssueWrapper = VmFaultToleranceIssue &  {
   entityName?: string;
   entity?: ManagedEntity;
   error?: MethodFault;
 }
-export interface VmFaultToleranceInvalidFileBacking extends VmFaultToleranceIssue {
+export type VmFaultToleranceInvalidFileBacking = VmFaultToleranceIssue &  {
   backingType?: string;
   backingFilename?: string;
 }
-export interface VmFaultToleranceTooManyFtVcpusOnHost extends InsufficientResourcesFault {
+export type VmFaultToleranceTooManyFtVcpusOnHost = InsufficientResourcesFault &  {
   hostName?: string;
   maxNumFtVcpus: number;
 }
-export interface VmFaultToleranceTooManyVMsOnHost extends InsufficientResourcesFault {
+export type VmFaultToleranceTooManyVMsOnHost = InsufficientResourcesFault &  {
   hostName?: string;
   maxNumFtVms: number;
 }
-export interface VmPowerOnDisabled extends InvalidState {
+export type VmPowerOnDisabled = InvalidState &  {
   
 }
-export interface VmSmpFaultToleranceTooManyVMsOnHost extends InsufficientResourcesFault {
+export type VmSmpFaultToleranceTooManyVMsOnHost = InsufficientResourcesFault &  {
   hostName?: string;
   maxNumSmpFtVms: number;
 }
-export interface VmWwnConflict extends InvalidVmConfig {
+export type VmWwnConflict = InvalidVmConfig &  {
   vm?: VirtualMachine;
   host?: HostSystem;
   name?: string;
   wwn?: number;
 }
-export interface VmfsMountFault extends HostConfigFault {
+export type VmfsMountFault = HostConfigFault &  {
   uuid: string;
 }
-export interface VmotionInterfaceNotEnabled extends HostPowerOpFailed {
+export type VmotionInterfaceNotEnabled = HostPowerOpFailed &  {
   
 }
-export interface VolumeEditorError extends CustomizationFault {
+export type VolumeEditorError = CustomizationFault &  {
   
 }
-export interface VsanClusterUuidMismatch extends CannotMoveVsanEnabledHost {
+export type VsanClusterUuidMismatch = CannotMoveVsanEnabledHost &  {
   hostClusterUuid: string;
   destinationClusterUuid: string;
 }
-export interface VsanDiskFault extends VsanFault {
+export type VsanDiskFault = VsanFault &  {
   device?: string;
 }
-export interface VsanIncompatibleDiskMapping extends VsanDiskFault {
+export type VsanIncompatibleDiskMapping = VsanDiskFault &  {
   
 }
-export interface VspanDestPortConflict extends DvsFault {
+export type VspanDestPortConflict = DvsFault &  {
   vspanSessionKey1: string;
   vspanSessionKey2: string;
   portKey: string;
 }
-export interface VspanPortConflict extends DvsFault {
+export type VspanPortConflict = DvsFault &  {
   vspanSessionKey1: string;
   vspanSessionKey2: string;
   portKey: string;
 }
-export interface VspanPortMoveFault extends DvsFault {
+export type VspanPortMoveFault = DvsFault &  {
   srcPortgroupName: string;
   destPortgroupName: string;
   portKey: string;
 }
-export interface VspanPortPromiscChangeFault extends DvsFault {
+export type VspanPortPromiscChangeFault = DvsFault &  {
   portKey: string;
 }
-export interface VspanPortgroupPromiscChangeFault extends DvsFault {
+export type VspanPortgroupPromiscChangeFault = DvsFault &  {
   portgroupName: string;
 }
-export interface VspanPortgroupTypeChangeFault extends DvsFault {
+export type VspanPortgroupTypeChangeFault = DvsFault &  {
   portgroupName: string;
 }
-export interface VspanPromiscuousPortNotSupported extends DvsFault {
+export type VspanPromiscuousPortNotSupported = DvsFault &  {
   vspanSessionKey: string;
   portKey: string;
 }
-export interface VspanSameSessionPortConflict extends DvsFault {
+export type VspanSameSessionPortConflict = DvsFault &  {
   vspanSessionKey: string;
   portKey: string;
 }
-export interface WakeOnLanNotSupported extends VirtualHardwareCompatibilityIssue {
+export type WakeOnLanNotSupported = VirtualHardwareCompatibilityIssue &  {
   
 }
-export interface WakeOnLanNotSupportedByVmotionNIC extends HostPowerOpFailed {
+export type WakeOnLanNotSupportedByVmotionNIC = HostPowerOpFailed &  {
   
 }
-export interface WillLoseHAProtection extends MigrationFault {
+export type WillLoseHAProtection = MigrationFault &  {
   resolution: string;
 }
-export interface WillModifyConfigCpuRequirements extends MigrationFault {
+export type WillModifyConfigCpuRequirements = MigrationFault &  {
   
 }
-export interface WillResetSnapshotDirectory extends MigrationFault {
+export type WillResetSnapshotDirectory = MigrationFault &  {
   
 }
-export interface HostActiveDirectoryInfo extends HostDirectoryStoreInfo {
+export type HostActiveDirectoryInfo = HostDirectoryStoreInfo &  {
   joinedDomain?: string;
   trustedDomain?: string[];
   domainMembershipStatus?: string;
   smartCardAuthenticationEnabled?: boolean;
 }
-export interface HostBlockAdapterTargetTransport extends HostTargetTransport {
+export type HostBlockAdapterTargetTransport = HostTargetTransport &  {
   
 }
-export interface HostBlockHba extends HostHostBusAdapter {
+export type HostBlockHba = HostHostBusAdapter &  {
   
 }
-export interface HostBootDeviceInfo extends DynamicData {
+export type HostBootDeviceInfo = DynamicData &  {
   bootDevices?: HostBootDevice[];
   currentBootDeviceKey?: string;
 }
-export interface HostConfigSpec extends DynamicData {
+export type HostConfigSpec = DynamicData &  {
   nasDatastore?: HostNasVolumeConfig[];
   network?: HostNetworkConfig;
   nicTypeSelection?: HostVirtualNicManagerNicTypeSelection[];
@@ -10451,7 +10451,7 @@ export interface HostConfigSpec extends DynamicData {
   graphicsConfig?: HostGraphicsConfig;
   assignableHardwareConfig?: HostAssignableHardwareConfig;
 }
-export interface HostConnectSpec extends DynamicData {
+export type HostConnectSpec = DynamicData &  {
   hostName?: string;
   port?: number;
   sslThumbprint?: string;
@@ -10465,56 +10465,56 @@ export interface HostConnectSpec extends DynamicData {
   lockdownMode?: HostLockdownMode;
   hostGateway?: HostGatewaySpec;
 }
-export interface HostDatastoreSystemCapabilities extends DynamicData {
+export type HostDatastoreSystemCapabilities = DynamicData &  {
   nfsMountCreationRequired: boolean;
   nfsMountCreationSupported: boolean;
   localDatastoreSupported: boolean;
   vmfsExtentExpansionSupported: boolean;
 }
-export interface HostDatastoreSystemDatastoreResult extends DynamicData {
+export type HostDatastoreSystemDatastoreResult = DynamicData &  {
   key: Datastore;
   fault?: MethodFault;
 }
-export interface HostDatastoreSystemVvolDatastoreSpec extends DynamicData {
+export type HostDatastoreSystemVvolDatastoreSpec = DynamicData &  {
   name: string;
   scId: string;
 }
-export interface HostDateTimeInfo extends DynamicData {
+export type HostDateTimeInfo = DynamicData &  {
   timeZone: HostDateTimeSystemTimeZone;
   systemClockProtocol?: string;
   ntpConfig?: HostNtpConfig;
 }
-export interface HostFibreChannelHba extends HostHostBusAdapter {
+export type HostFibreChannelHba = HostHostBusAdapter &  {
   portWorldWideName: number;
   nodeWorldWideName: number;
   portType: FibreChannelPortType;
   speed: number;
 }
-export interface HostFibreChannelOverEthernetHba extends HostFibreChannelHba {
+export type HostFibreChannelOverEthernetHba = HostFibreChannelHba &  {
   underlyingNic: string;
   linkInfo: HostFibreChannelOverEthernetHbaLinkInfo;
   isSoftwareFcoe: boolean;
   markedForRemoval: boolean;
 }
-export interface HostFibreChannelOverEthernetHbaLinkInfo extends DynamicData {
+export type HostFibreChannelOverEthernetHbaLinkInfo = DynamicData &  {
   vnportMac: string;
   fcfMac: string;
   vlanId: number;
 }
-export interface HostFibreChannelTargetTransport extends HostTargetTransport {
+export type HostFibreChannelTargetTransport = HostTargetTransport &  {
   portWorldWideName: number;
   nodeWorldWideName: number;
 }
-export interface HostFirewallConfig extends DynamicData {
+export type HostFirewallConfig = DynamicData &  {
   rule?: HostFirewallConfigRuleSetConfig[];
   defaultBlockingPolicy: HostFirewallDefaultPolicy;
 }
-export interface HostFirewallConfigRuleSetConfig extends DynamicData {
+export type HostFirewallConfigRuleSetConfig = DynamicData &  {
   rulesetId: string;
   enabled: boolean;
   allowedHosts?: HostFirewallRulesetIpList;
 }
-export interface HostInternetScsiHba extends HostHostBusAdapter {
+export type HostInternetScsiHba = HostHostBusAdapter &  {
   isSoftwareBased: boolean;
   canBeDisabled?: boolean;
   networkBindingSupport?: HostInternetScsiHbaNetworkBindingSupportType;
@@ -10535,7 +10535,7 @@ export interface HostInternetScsiHba extends HostHostBusAdapter {
   maxSpeedMb?: number;
   currentSpeedMb?: number;
 }
-export interface HostInternetScsiHbaAuthenticationCapabilities extends DynamicData {
+export type HostInternetScsiHbaAuthenticationCapabilities = DynamicData &  {
   chapAuthSettable: boolean;
   krb5AuthSettable: boolean;
   srpAuthSettable: boolean;
@@ -10544,7 +10544,7 @@ export interface HostInternetScsiHbaAuthenticationCapabilities extends DynamicDa
   targetChapSettable?: boolean;
   targetMutualChapSettable?: boolean;
 }
-export interface HostInternetScsiHbaAuthenticationProperties extends DynamicData {
+export type HostInternetScsiHbaAuthenticationProperties = DynamicData &  {
   chapAuthEnabled: boolean;
   chapName?: string;
   chapSecret?: string;
@@ -10555,25 +10555,25 @@ export interface HostInternetScsiHbaAuthenticationProperties extends DynamicData
   mutualChapAuthenticationType?: string;
   mutualChapInherited?: boolean;
 }
-export interface HostInternetScsiHbaDigestCapabilities extends DynamicData {
+export type HostInternetScsiHbaDigestCapabilities = DynamicData &  {
   headerDigestSettable?: boolean;
   dataDigestSettable?: boolean;
   targetHeaderDigestSettable?: boolean;
   targetDataDigestSettable?: boolean;
 }
-export interface HostInternetScsiHbaDigestProperties extends DynamicData {
+export type HostInternetScsiHbaDigestProperties = DynamicData &  {
   headerDigestType?: string;
   headerDigestInherited?: boolean;
   dataDigestType?: string;
   dataDigestInherited?: boolean;
 }
-export interface HostInternetScsiHbaDiscoveryCapabilities extends DynamicData {
+export type HostInternetScsiHbaDiscoveryCapabilities = DynamicData &  {
   iSnsDiscoverySettable: boolean;
   slpDiscoverySettable: boolean;
   staticTargetDiscoverySettable: boolean;
   sendTargetsDiscoverySettable: boolean;
 }
-export interface HostInternetScsiHbaDiscoveryProperties extends DynamicData {
+export type HostInternetScsiHbaDiscoveryProperties = DynamicData &  {
   iSnsDiscoveryEnabled: boolean;
   iSnsDiscoveryMethod?: string;
   iSnsHost?: string;
@@ -10583,7 +10583,7 @@ export interface HostInternetScsiHbaDiscoveryProperties extends DynamicData {
   staticTargetDiscoveryEnabled: boolean;
   sendTargetsDiscoveryEnabled: boolean;
 }
-export interface HostInternetScsiHbaIPCapabilities extends DynamicData {
+export type HostInternetScsiHbaIPCapabilities = DynamicData &  {
   addressSettable: boolean;
   ipConfigurationMethodSettable: boolean;
   subnetMaskSettable: boolean;
@@ -10605,7 +10605,7 @@ export interface HostInternetScsiHbaIPCapabilities extends DynamicData {
   ipv6DefaultGatewaySettable?: boolean;
   ipv6MaxStaticAddressesSupported?: number;
 }
-export interface HostInternetScsiHbaIPProperties extends DynamicData {
+export type HostInternetScsiHbaIPProperties = DynamicData &  {
   mac?: string;
   address?: string;
   dhcpConfigurationEnabled: boolean;
@@ -10623,23 +10623,23 @@ export interface HostInternetScsiHbaIPProperties extends DynamicData {
   ipv6Enabled?: boolean;
   ipv6properties?: HostInternetScsiHbaIPv6Properties;
 }
-export interface HostInternetScsiHbaIPv6Properties extends DynamicData {
+export type HostInternetScsiHbaIPv6Properties = DynamicData &  {
   iscsiIpv6Address?: HostInternetScsiHbaIscsiIpv6Address[];
   ipv6DhcpConfigurationEnabled?: boolean;
   ipv6LinkLocalAutoConfigurationEnabled?: boolean;
   ipv6RouterAdvertisementConfigurationEnabled?: boolean;
   ipv6DefaultGateway?: string;
 }
-export interface HostInternetScsiHbaIscsiIpv6Address extends DynamicData {
+export type HostInternetScsiHbaIscsiIpv6Address = DynamicData &  {
   address: string;
   prefixLength: number;
   origin: string;
   operation?: string;
 }
-export interface HostInternetScsiHbaParamValue extends OptionValue {
+export type HostInternetScsiHbaParamValue = OptionValue &  {
   isInherited?: boolean;
 }
-export interface HostInternetScsiHbaSendTarget extends DynamicData {
+export type HostInternetScsiHbaSendTarget = DynamicData &  {
   address: string;
   port?: number;
   authenticationProperties?: HostInternetScsiHbaAuthenticationProperties;
@@ -10648,7 +10648,7 @@ export interface HostInternetScsiHbaSendTarget extends DynamicData {
   advancedOptions?: HostInternetScsiHbaParamValue[];
   parent?: string;
 }
-export interface HostInternetScsiHbaStaticTarget extends DynamicData {
+export type HostInternetScsiHbaStaticTarget = DynamicData &  {
   address: string;
   port?: number;
   iScsiName: string;
@@ -10659,16 +10659,16 @@ export interface HostInternetScsiHbaStaticTarget extends DynamicData {
   advancedOptions?: HostInternetScsiHbaParamValue[];
   parent?: string;
 }
-export interface HostInternetScsiHbaTargetSet extends DynamicData {
+export type HostInternetScsiHbaTargetSet = DynamicData &  {
   staticTargets?: HostInternetScsiHbaStaticTarget[];
   sendTargets?: HostInternetScsiHbaSendTarget[];
 }
-export interface HostInternetScsiTargetTransport extends HostTargetTransport {
+export type HostInternetScsiTargetTransport = HostTargetTransport &  {
   iScsiName: string;
   iScsiAlias: string;
   address?: string[];
 }
-export interface HostNetworkConfig extends DynamicData {
+export type HostNetworkConfig = DynamicData &  {
   vswitch?: HostVirtualSwitchConfig[];
   proxySwitch?: HostProxySwitchConfig[];
   portgroup?: HostPortGroupConfig[];
@@ -10684,40 +10684,40 @@ export interface HostNetworkConfig extends DynamicData {
   ipV6Enabled?: boolean;
   netStackSpec?: HostNetworkConfigNetStackSpec[];
 }
-export interface HostNetworkConfigNetStackSpec extends DynamicData {
+export type HostNetworkConfigNetStackSpec = DynamicData &  {
   netStackInstance: HostNetStackInstance;
   operation?: string;
 }
-export interface HostNetworkConfigResult extends DynamicData {
+export type HostNetworkConfigResult = DynamicData &  {
   vnicDevice?: string[];
   consoleVnicDevice?: string[];
 }
-export interface HostNvmeConnectSpec extends HostNvmeSpec {
+export type HostNvmeConnectSpec = HostNvmeSpec &  {
   subnqn: string;
   controllerId?: number;
   adminQueueSize?: number;
   keepAliveTimeout?: number;
 }
-export interface HostNvmeDiscoverSpec extends HostNvmeSpec {
+export type HostNvmeDiscoverSpec = HostNvmeSpec &  {
   autoConnect?: boolean;
 }
-export interface HostNvmeOpaqueTransportParameters extends HostNvmeTransportParameters {
+export type HostNvmeOpaqueTransportParameters = HostNvmeTransportParameters &  {
   trtype: string;
   traddr: string;
   adrfam: string;
   trsvcid: string;
   tsas: Buffer;
 }
-export interface HostNvmeOverFibreChannelParameters extends HostNvmeTransportParameters {
+export type HostNvmeOverFibreChannelParameters = HostNvmeTransportParameters &  {
   nodeWorldWideName: number;
   portWorldWideName: number;
 }
-export interface HostNvmeOverRdmaParameters extends HostNvmeTransportParameters {
+export type HostNvmeOverRdmaParameters = HostNvmeTransportParameters &  {
   address: string;
   addressFamily?: string;
   portNumber?: number;
 }
-export interface HostOpaqueNetworkInfo extends DynamicData {
+export type HostOpaqueNetworkInfo = DynamicData &  {
   opaqueNetworkId: string;
   opaqueNetworkName: string;
   opaqueNetworkType: string;
@@ -10725,16 +10725,16 @@ export interface HostOpaqueNetworkInfo extends DynamicData {
   capability?: OpaqueNetworkCapability;
   extraConfig?: OptionValue[];
 }
-export interface HostParallelScsiTargetTransport extends HostTargetTransport {
+export type HostParallelScsiTargetTransport = HostTargetTransport &  {
   
 }
-export interface HostPcieTargetTransport extends HostTargetTransport {
+export type HostPcieTargetTransport = HostTargetTransport &  {
   
 }
-export interface HostRdmaTargetTransport extends HostTargetTransport {
+export type HostRdmaTargetTransport = HostTargetTransport &  {
   
 }
-export interface HostScsiDisk extends ScsiLun {
+export type HostScsiDisk = ScsiLun &  {
   capacity: HostDiskDimensionsLba;
   devicePath: string;
   ssd?: boolean;
@@ -10744,19 +10744,19 @@ export interface HostScsiDisk extends ScsiLun {
   vsanDiskInfo?: VsanHostVsanDiskInfo;
   scsiDiskType?: string;
 }
-export interface HostScsiDiskPartition extends DynamicData {
+export type HostScsiDiskPartition = DynamicData &  {
   diskName: string;
   partition: number;
 }
-export interface HostSecuritySpec extends DynamicData {
+export type HostSecuritySpec = DynamicData &  {
   adminPassword?: string;
   removePermission?: Permission[];
   addPermission?: Permission[];
 }
-export interface HostSerialAttachedTargetTransport extends HostTargetTransport {
+export type HostSerialAttachedTargetTransport = HostTargetTransport &  {
   
 }
-export interface HostListSummary extends DynamicData {
+export type HostListSummary = DynamicData &  {
   host?: HostSystem;
   hardware?: HostHardwareSummary;
   runtime?: HostRuntimeInfo;
@@ -10773,7 +10773,7 @@ export interface HostListSummary extends DynamicData {
   tpmAttestation?: HostTpmAttestationInfo;
   trustAuthorityAttestationInfos?: HostTrustAuthorityAttestationInfo[];
 }
-export interface HostConfigSummary extends DynamicData {
+export type HostConfigSummary = DynamicData &  {
   name: string;
   port: number;
   sslThumbprint?: string;
@@ -10784,11 +10784,11 @@ export interface HostConfigSummary extends DynamicData {
   agentVmDatastore?: Datastore;
   agentVmNetwork?: Network;
 }
-export interface HostListSummaryGatewaySummary extends DynamicData {
+export type HostListSummaryGatewaySummary = DynamicData &  {
   gatewayType: string;
   gatewayId: string;
 }
-export interface HostHardwareSummary extends DynamicData {
+export type HostHardwareSummary = DynamicData &  {
   vendor: string;
   model: string;
   uuid: string;
@@ -10802,7 +10802,7 @@ export interface HostHardwareSummary extends DynamicData {
   numNics: number;
   numHBAs: number;
 }
-export interface HostListSummaryQuickStats extends DynamicData {
+export type HostListSummaryQuickStats = DynamicData &  {
   overallCpuUsage?: number;
   overallMemoryUsage?: number;
   distributedCpuFairness?: number;
@@ -10810,13 +10810,13 @@ export interface HostListSummaryQuickStats extends DynamicData {
   availablePMemCapacity?: number;
   uptime?: number;
 }
-export interface HostTpmBootSecurityOptionEventDetails extends HostTpmEventDetails {
+export type HostTpmBootSecurityOptionEventDetails = HostTpmEventDetails &  {
   bootSecurityOption: string;
 }
-export interface HostTpmCommandEventDetails extends HostTpmEventDetails {
+export type HostTpmCommandEventDetails = HostTpmEventDetails &  {
   commandLine: string;
 }
-export interface HostUnresolvedVmfsExtent extends DynamicData {
+export type HostUnresolvedVmfsExtent = DynamicData &  {
   device: HostScsiDiskPartition;
   devicePath: string;
   vmfsUuid: string;
@@ -10826,12 +10826,12 @@ export interface HostUnresolvedVmfsExtent extends DynamicData {
   endBlock: number;
   reason: string;
 }
-export interface HostVFlashManagerVFlashCacheConfigInfo extends DynamicData {
+export type HostVFlashManagerVFlashCacheConfigInfo = DynamicData &  {
   vFlashModuleConfigOption?: HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption[];
   defaultVFlashModule?: string;
   swapCacheReservationInGB?: number;
 }
-export interface HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption extends DynamicData {
+export type HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption = DynamicData &  {
   vFlashModule: string;
   vFlashModuleVersion: string;
   minSupportedModuleVersion: string;
@@ -10841,53 +10841,53 @@ export interface HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption 
   reservationInMBOption: LongOption;
   maxDiskSizeInKB: number;
 }
-export interface HostVFlashManagerVFlashCacheConfigSpec extends DynamicData {
+export type HostVFlashManagerVFlashCacheConfigSpec = DynamicData &  {
   defaultVFlashModule: string;
   swapCacheReservationInGB: number;
 }
-export interface HostVFlashManagerVFlashConfigInfo extends DynamicData {
+export type HostVFlashManagerVFlashConfigInfo = DynamicData &  {
   vFlashResourceConfigInfo?: HostVFlashManagerVFlashResourceConfigInfo;
   vFlashCacheConfigInfo?: HostVFlashManagerVFlashCacheConfigInfo;
 }
-export interface HostVFlashManagerVFlashResourceConfigInfo extends DynamicData {
+export type HostVFlashManagerVFlashResourceConfigInfo = DynamicData &  {
   vffs?: HostVffsVolume;
   capacity: number;
 }
-export interface HostVFlashManagerVFlashResourceConfigSpec extends DynamicData {
+export type HostVFlashManagerVFlashResourceConfigSpec = DynamicData &  {
   vffsUuid: string;
 }
-export interface HostVFlashManagerVFlashResourceRunTimeInfo extends DynamicData {
+export type HostVFlashManagerVFlashResourceRunTimeInfo = DynamicData &  {
   usage: number;
   capacity: number;
   accessible: boolean;
   capacityForVmCache: number;
   freeForVmCache: number;
 }
-export interface HostVMotionInfo extends DynamicData {
+export type HostVMotionInfo = DynamicData &  {
   netConfig?: HostVMotionNetConfig;
   ipConfig?: HostIpConfig;
 }
-export interface HostVffsVolume extends HostFileSystemVolume {
+export type HostVffsVolume = HostFileSystemVolume &  {
   majorVersion: number;
   version: string;
   uuid: string;
   extent: HostScsiDiskPartition[];
 }
-export interface HostVffsSpec extends DynamicData {
+export type HostVffsSpec = DynamicData &  {
   devicePath: string;
   partition?: HostDiskPartitionSpec;
   majorVersion: number;
   volumeName: string;
 }
-export interface VmfsDatastoreExpandSpec extends VmfsDatastoreSpec {
+export type VmfsDatastoreExpandSpec = VmfsDatastoreSpec &  {
   partition: HostDiskPartitionSpec;
   extent: HostScsiDiskPartition;
 }
-export interface VmfsDatastoreExtendSpec extends VmfsDatastoreSpec {
+export type VmfsDatastoreExtendSpec = VmfsDatastoreSpec &  {
   partition: HostDiskPartitionSpec;
   extent: HostScsiDiskPartition[];
 }
-export interface HostVmfsVolume extends HostFileSystemVolume {
+export type HostVmfsVolume = HostFileSystemVolume &  {
   blockSizeMb: number;
   blockSize?: number;
   unmapGranularity?: number;
@@ -10904,7 +10904,7 @@ export interface HostVmfsVolume extends HostFileSystemVolume {
   local?: boolean;
   scsiDiskType?: string;
 }
-export interface VmfsConfigOption extends DynamicData {
+export type VmfsConfigOption = DynamicData &  {
   blockSizeOption: number;
   unmapGranularityOption?: number[];
   unmapBandwidthFixedValue?: LongOption;
@@ -10912,7 +10912,7 @@ export interface VmfsConfigOption extends DynamicData {
   unmapBandwidthDynamicMax?: LongOption;
   unmapBandwidthIncrement?: number;
 }
-export interface HostVmfsSpec extends DynamicData {
+export type HostVmfsSpec = DynamicData &  {
   extent: HostScsiDiskPartition;
   blockSizeMb?: number;
   majorVersion: number;
@@ -10922,55 +10922,55 @@ export interface HostVmfsSpec extends DynamicData {
   unmapPriority?: string;
   unmapBandwidthSpec?: VmfsUnmapBandwidthSpec;
 }
-export interface VmfsUnmapBandwidthSpec extends DynamicData {
+export type VmfsUnmapBandwidthSpec = DynamicData &  {
   policy: string;
   fixedValue: number;
   dynamicMin: number;
   dynamicMax: number;
 }
-export interface BoolOption extends OptionType {
+export type BoolOption = OptionType &  {
   supported: boolean;
   defaultValue: boolean;
 }
-export interface ChoiceOption extends OptionType {
+export type ChoiceOption = OptionType &  {
   choiceInfo: ElementDescription[];
   defaultIndex?: number;
 }
-export interface FloatOption extends OptionType {
+export type FloatOption = OptionType &  {
   min: number;
   max: number;
   defaultValue: number;
 }
-export interface IntOption extends OptionType {
+export type IntOption = OptionType &  {
   min: number;
   max: number;
   defaultValue: number;
 }
-export interface LongOption extends OptionType {
+export type LongOption = OptionType &  {
   min: number;
   max: number;
   defaultValue: number;
 }
-export interface ProfileCompositeExpression extends ProfileExpression {
+export type ProfileCompositeExpression = ProfileExpression &  {
   operator: string;
   expressionName: string[];
 }
-export interface CompositePolicyOption extends PolicyOption {
+export type CompositePolicyOption = PolicyOption &  {
   option?: PolicyOption[];
 }
-export interface ProfileCompositePolicyOptionMetadata extends ProfilePolicyOptionMetadata {
+export type ProfileCompositePolicyOptionMetadata = ProfilePolicyOptionMetadata &  {
   option: string[];
 }
-export interface DvsHostVNicProfile extends DvsVNicProfile {
+export type DvsHostVNicProfile = DvsVNicProfile &  {
   
 }
-export interface DvsServiceConsoleVNicProfile extends DvsVNicProfile {
+export type DvsServiceConsoleVNicProfile = DvsVNicProfile &  {
   
 }
-export interface HostPortGroupProfile extends PortGroupProfile {
+export type HostPortGroupProfile = PortGroupProfile &  {
   ipConfig: IpAddressProfile;
 }
-export interface HostProfileCompleteConfigSpec extends HostProfileConfigSpec {
+export type HostProfileCompleteConfigSpec = HostProfileConfigSpec &  {
   applyProfile?: HostApplyProfile;
   customComplyProfile?: ComplianceProfile;
   disabledExpressionListChanged: boolean;
@@ -10979,7 +10979,7 @@ export interface HostProfileCompleteConfigSpec extends HostProfileConfigSpec {
   validating?: boolean;
   hostConfig?: HostProfileConfigInfo;
 }
-export interface HostProfileConfigInfo extends ProfileConfigInfo {
+export type HostProfileConfigInfo = ProfileConfigInfo &  {
   applyProfile?: HostApplyProfile;
   defaultComplyProfile?: ComplianceProfile;
   defaultComplyLocator?: ComplianceLocator[];
@@ -10987,18 +10987,18 @@ export interface HostProfileConfigInfo extends ProfileConfigInfo {
   disabledExpressionList?: string[];
   description?: ProfileDescription;
 }
-export interface HostProfileConfigSpec extends ProfileCreateSpec {
+export type HostProfileConfigSpec = ProfileCreateSpec &  {
   
 }
-export interface HostProfileHostBasedConfigSpec extends HostProfileConfigSpec {
+export type HostProfileHostBasedConfigSpec = HostProfileConfigSpec &  {
   host: HostSystem;
   useHostProfileEngine?: boolean;
 }
-export interface HostProfileSerializedHostProfileSpec extends ProfileSerializedCreateSpec {
+export type HostProfileSerializedHostProfileSpec = ProfileSerializedCreateSpec &  {
   validatorHost?: HostSystem;
   validating?: boolean;
 }
-export interface HostProfileValidationFailureInfo extends DynamicData {
+export type HostProfileValidationFailureInfo = DynamicData &  {
   name: string;
   annotation: string;
   updateType: string;
@@ -11007,28 +11007,28 @@ export interface HostProfileValidationFailureInfo extends DynamicData {
   failures?: ProfileUpdateFailedUpdateFailure[];
   faults?: MethodFault[];
 }
-export interface NetStackInstanceProfile extends ApplyProfile {
+export type NetStackInstanceProfile = ApplyProfile &  {
   key: string;
   dnsConfig: NetworkProfileDnsConfigProfile;
   ipRouteConfig: IpRouteProfile;
 }
-export interface AnswerFileCreateSpec extends DynamicData {
+export type AnswerFileCreateSpec = DynamicData &  {
   validating?: boolean;
 }
-export interface AnswerFileOptionsCreateSpec extends AnswerFileCreateSpec {
+export type AnswerFileOptionsCreateSpec = AnswerFileCreateSpec &  {
   userInput?: ProfileDeferredPolicyOptionParameter[];
 }
-export interface AnswerFileSerializedCreateSpec extends AnswerFileCreateSpec {
+export type AnswerFileSerializedCreateSpec = AnswerFileCreateSpec &  {
   answerFileConfigString: string;
 }
-export interface ApplyHostProfileConfigurationResult extends DynamicData {
+export type ApplyHostProfileConfigurationResult = DynamicData &  {
   startTime: Date;
   completeTime: Date;
   host: HostSystem;
   status: string;
   errors?: MethodFault[];
 }
-export interface ApplyHostProfileConfigurationSpec extends ProfileExecuteResult {
+export type ApplyHostProfileConfigurationSpec = ProfileExecuteResult &  {
   host: HostSystem;
   taskListRequirement?: string[];
   taskDescription?: LocalizableMessage[];
@@ -11036,20 +11036,20 @@ export interface ApplyHostProfileConfigurationSpec extends ProfileExecuteResult 
   rebootHost?: boolean;
   faultData?: MethodFault;
 }
-export interface HostProfileManagerCompositionResult extends DynamicData {
+export type HostProfileManagerCompositionResult = DynamicData &  {
   errors?: LocalizableMessage[];
   results?: HostProfileManagerCompositionResultResultElement[];
 }
-export interface HostProfileManagerCompositionResultResultElement extends DynamicData {
+export type HostProfileManagerCompositionResultResultElement = DynamicData &  {
   target: Profile;
   status: string;
   errors?: LocalizableMessage[];
 }
-export interface HostProfileManagerCompositionValidationResult extends DynamicData {
+export type HostProfileManagerCompositionValidationResult = DynamicData &  {
   results?: HostProfileManagerCompositionValidationResultResultElement[];
   errors?: LocalizableMessage[];
 }
-export interface HostProfileManagerCompositionValidationResultResultElement extends DynamicData {
+export type HostProfileManagerCompositionValidationResultResultElement = DynamicData &  {
   target: Profile;
   status: string;
   errors?: LocalizableMessage[];
@@ -11061,32 +11061,32 @@ export interface HostProfileManagerCompositionValidationResultResultElement exte
   toBeEnabled?: HostApplyProfile;
   toBeReenableCC?: HostApplyProfile;
 }
-export interface HostProfileManagerConfigTaskList extends DynamicData {
+export type HostProfileManagerConfigTaskList = DynamicData &  {
   configSpec?: HostConfigSpec;
   taskDescription?: LocalizableMessage[];
   taskListRequirement?: string[];
 }
-export interface HostProfilesEntityCustomizations extends DynamicData {
+export type HostProfilesEntityCustomizations = DynamicData &  {
   
 }
-export interface HostProfileManagerHostToConfigSpecMap extends DynamicData {
+export type HostProfileManagerHostToConfigSpecMap = DynamicData &  {
   host: HostSystem;
   configSpec: AnswerFileCreateSpec;
 }
-export interface StructuredCustomizations extends HostProfilesEntityCustomizations {
+export type StructuredCustomizations = HostProfilesEntityCustomizations &  {
   entity: ManagedEntity;
   customizations?: AnswerFile;
 }
-export interface AfterStartupTaskScheduler extends TaskScheduler {
+export type AfterStartupTaskScheduler = TaskScheduler &  {
   minute: number;
 }
-export interface OnceTaskScheduler extends TaskScheduler {
+export type OnceTaskScheduler = TaskScheduler &  {
   runAt?: Date;
 }
-export interface RecurrentTaskScheduler extends TaskScheduler {
+export type RecurrentTaskScheduler = TaskScheduler &  {
   interval: number;
 }
-export interface ScheduledTaskInfo extends ScheduledTaskSpec {
+export type ScheduledTaskInfo = ScheduledTaskSpec &  {
   scheduledTask: ScheduledTask;
   entity: ManagedEntity;
   lastModifiedTime: Date;
@@ -11100,23 +11100,23 @@ export interface ScheduledTaskInfo extends ScheduledTaskSpec {
   activeTask?: Task;
   taskObject: ManagedObject;
 }
-export interface StorageDrsPodSelectionSpec extends DynamicData {
+export type StorageDrsPodSelectionSpec = DynamicData &  {
   initialVmConfig?: VmPodConfigForPlacement[];
   storagePod?: StoragePod;
 }
-export interface PodDiskLocator extends DynamicData {
+export type PodDiskLocator = DynamicData &  {
   diskId: number;
   diskMoveType?: string;
   diskBackingInfo?: VirtualDeviceBackingInfo;
   profile?: VirtualMachineProfileSpec[];
 }
-export interface VmPodConfigForPlacement extends DynamicData {
+export type VmPodConfigForPlacement = DynamicData &  {
   storagePod: StoragePod;
   disk?: PodDiskLocator[];
   vmConfig?: StorageDrsVmConfigInfo;
   interVmRule?: ClusterRuleInfo[];
 }
-export interface StoragePlacementSpec extends DynamicData {
+export type StoragePlacementSpec = DynamicData &  {
   type: string;
   priority?: VirtualMachineMovePriority;
   vm?: VirtualMachine;
@@ -11131,35 +11131,35 @@ export interface StoragePlacementSpec extends DynamicData {
   disallowPrerequisiteMoves?: boolean;
   resourceLeaseDurationSec?: number;
 }
-export interface VirtualDiskAntiAffinityRuleSpec extends ClusterRuleInfo {
+export type VirtualDiskAntiAffinityRuleSpec = ClusterRuleInfo &  {
   diskId: number[];
 }
-export interface VirtualDiskRuleSpec extends ClusterRuleInfo {
+export type VirtualDiskRuleSpec = ClusterRuleInfo &  {
   diskRuleType: string;
   diskId?: number[];
 }
-export interface VAppConfigInfo extends VmConfigInfo {
+export type VAppConfigInfo = VmConfigInfo &  {
   entityConfig?: VAppEntityConfigInfo[];
   annotation: string;
   instanceUuid?: string;
   managedBy?: ManagedByInfo;
 }
-export interface VAppConfigSpec extends VmConfigSpec {
+export type VAppConfigSpec = VmConfigSpec &  {
   entityConfig?: VAppEntityConfigInfo[];
   annotation?: string;
   instanceUuid?: string;
   managedBy?: ManagedByInfo;
 }
-export interface VirtualAppImportSpec extends ImportSpec {
+export type VirtualAppImportSpec = ImportSpec &  {
   name: string;
   vAppConfigSpec: VAppConfigSpec;
   resourcePoolSpec: ResourceConfigSpec;
   child?: ImportSpec[];
 }
-export interface VirtualMachineCdromInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineCdromInfo = VirtualMachineTargetInfo &  {
   description?: string;
 }
-export interface ConfigTarget extends DynamicData {
+export type ConfigTarget = DynamicData &  {
   numCpus: number;
   numCpuCores: number;
   numNumaNodes: number;
@@ -11194,61 +11194,61 @@ export interface ConfigTarget extends DynamicData {
   precisionClockInfo?: VirtualMachinePrecisionClockInfo[];
   sevSupported?: boolean;
 }
-export interface VirtualMachineDefaultProfileSpec extends VirtualMachineProfileSpec {
+export type VirtualMachineDefaultProfileSpec = VirtualMachineProfileSpec &  {
   
 }
-export interface VirtualMachineDefinedProfileSpec extends VirtualMachineProfileSpec {
+export type VirtualMachineDefinedProfileSpec = VirtualMachineProfileSpec &  {
   profileId: string;
   replicationSpec?: ReplicationSpec;
   profileData?: VirtualMachineProfileRawData;
   profileParams?: KeyValue[];
 }
-export interface VirtualMachineDiskDeviceInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineDiskDeviceInfo = VirtualMachineTargetInfo &  {
   capacity?: number;
   vm?: VirtualMachine[];
 }
-export interface VirtualMachineDynamicPassthroughInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineDynamicPassthroughInfo = VirtualMachineTargetInfo &  {
   vendorName: string;
   deviceName: string;
   customLabel?: string;
   vendorId: number;
   deviceId: number;
 }
-export interface VirtualMachineEmptyProfileSpec extends VirtualMachineProfileSpec {
+export type VirtualMachineEmptyProfileSpec = VirtualMachineProfileSpec &  {
   
 }
-export interface VirtualMachineFloppyInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineFloppyInfo = VirtualMachineTargetInfo &  {
   
 }
-export interface VirtualMachineIdeDiskDeviceInfo extends VirtualMachineDiskDeviceInfo {
+export type VirtualMachineIdeDiskDeviceInfo = VirtualMachineDiskDeviceInfo &  {
   partitionTable?: VirtualMachineIdeDiskDevicePartitionInfo[];
 }
-export interface VirtualMachineIdeDiskDevicePartitionInfo extends DynamicData {
+export type VirtualMachineIdeDiskDevicePartitionInfo = DynamicData &  {
   id: number;
   capacity: number;
 }
-export interface VirtualMachineNetworkInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineNetworkInfo = VirtualMachineTargetInfo &  {
   network: NetworkSummary;
   vswitch?: string;
 }
-export interface OpaqueNetworkTargetInfo extends VirtualMachineTargetInfo {
+export type OpaqueNetworkTargetInfo = VirtualMachineTargetInfo &  {
   network: OpaqueNetworkSummary;
   networkReservationSupported?: boolean;
 }
-export interface VirtualMachineParallelInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineParallelInfo = VirtualMachineTargetInfo &  {
   
 }
-export interface VirtualMachinePciPassthroughInfo extends VirtualMachineTargetInfo {
+export type VirtualMachinePciPassthroughInfo = VirtualMachineTargetInfo &  {
   pciDevice: HostPciDevice;
   systemId: string;
 }
-export interface VirtualMachinePciSharedGpuPassthroughInfo extends VirtualMachineTargetInfo {
+export type VirtualMachinePciSharedGpuPassthroughInfo = VirtualMachineTargetInfo &  {
   vgpu: string;
 }
-export interface VirtualMachinePrecisionClockInfo extends VirtualMachineTargetInfo {
+export type VirtualMachinePrecisionClockInfo = VirtualMachineTargetInfo &  {
   systemClockProtocol?: string;
 }
-export interface VirtualMachineRelocateSpec extends DynamicData {
+export type VirtualMachineRelocateSpec = DynamicData &  {
   service?: ServiceLocator;
   folder?: Folder;
   datastore?: Datastore;
@@ -11261,7 +11261,7 @@ export interface VirtualMachineRelocateSpec extends DynamicData {
   profile?: VirtualMachineProfileSpec[];
   cryptoSpec?: CryptoSpec;
 }
-export interface VirtualMachineRelocateSpecDiskLocator extends DynamicData {
+export type VirtualMachineRelocateSpecDiskLocator = DynamicData &  {
   diskId: number;
   datastore: Datastore;
   diskMoveType?: string;
@@ -11269,11 +11269,11 @@ export interface VirtualMachineRelocateSpecDiskLocator extends DynamicData {
   profile?: VirtualMachineProfileSpec[];
   backing?: VirtualMachineRelocateSpecDiskLocatorBackingSpec;
 }
-export interface VirtualMachineRelocateSpecDiskLocatorBackingSpec extends DynamicData {
+export type VirtualMachineRelocateSpecDiskLocatorBackingSpec = DynamicData &  {
   parent?: VirtualMachineRelocateSpecDiskLocatorBackingSpec;
   crypto?: CryptoSpec;
 }
-export interface VirtualMachineRuntimeInfo extends DynamicData {
+export type VirtualMachineRuntimeInfo = DynamicData &  {
   device?: VirtualMachineDeviceRuntimeInfo[];
   host?: HostSystem;
   connectionState: VirtualMachineConnectionState;
@@ -11305,28 +11305,28 @@ export interface VirtualMachineRuntimeInfo extends DynamicData {
   instantCloneFrozen?: boolean;
   cryptoState?: string;
 }
-export interface VirtualMachineRuntimeInfoDasProtectionState extends DynamicData {
+export type VirtualMachineRuntimeInfoDasProtectionState = DynamicData &  {
   dasProtected: boolean;
 }
-export interface VirtualMachineScsiDiskDeviceInfo extends VirtualMachineDiskDeviceInfo {
+export type VirtualMachineScsiDiskDeviceInfo = VirtualMachineDiskDeviceInfo &  {
   disk?: HostScsiDisk;
   transportHint?: string;
   lunNumber?: number;
 }
-export interface VirtualMachineScsiPassthroughInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineScsiPassthroughInfo = VirtualMachineTargetInfo &  {
   scsiClass: string;
   vendor: string;
   physicalUnitNumber: number;
 }
-export interface VirtualMachineSerialInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineSerialInfo = VirtualMachineTargetInfo &  {
   
 }
-export interface VirtualMachineSgxTargetInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineSgxTargetInfo = VirtualMachineTargetInfo &  {
   maxEpcSize: number;
   flcModes?: string[];
   lePubKeyHashes?: string[];
 }
-export interface VirtualMachineSnapshotTree extends DynamicData {
+export type VirtualMachineSnapshotTree = DynamicData &  {
   snapshot: VirtualMachineSnapshot;
   vm: VirtualMachine;
   name: string;
@@ -11339,15 +11339,15 @@ export interface VirtualMachineSnapshotTree extends DynamicData {
   childSnapshotList?: VirtualMachineSnapshotTree[];
   replaySupported?: boolean;
 }
-export interface VirtualMachineSoundInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineSoundInfo = VirtualMachineTargetInfo &  {
   
 }
-export interface VirtualMachineSriovInfo extends VirtualMachinePciPassthroughInfo {
+export type VirtualMachineSriovInfo = VirtualMachinePciPassthroughInfo &  {
   virtualFunction: boolean;
   pnic?: string;
   devicePool?: VirtualMachineSriovDevicePoolInfo;
 }
-export interface VirtualMachineSummary extends DynamicData {
+export type VirtualMachineSummary = DynamicData &  {
   vm?: VirtualMachine;
   runtime: VirtualMachineRuntimeInfo;
   guest?: VirtualMachineGuestSummary;
@@ -11357,7 +11357,7 @@ export interface VirtualMachineSummary extends DynamicData {
   overallStatus: ManagedEntityStatus;
   customValue?: CustomFieldValue[];
 }
-export interface VirtualMachineConfigSummary extends DynamicData {
+export type VirtualMachineConfigSummary = DynamicData &  {
   name: string;
   template: boolean;
   vmPathName: string;
@@ -11380,7 +11380,7 @@ export interface VirtualMachineConfigSummary extends DynamicData {
   numVmiopBackings?: number;
   hwVersion?: string;
 }
-export interface VirtualMachineGuestSummary extends DynamicData {
+export type VirtualMachineGuestSummary = DynamicData &  {
   guestId?: string;
   guestFullName?: string;
   toolsStatus?: VirtualMachineToolsStatus;
@@ -11391,7 +11391,7 @@ export interface VirtualMachineGuestSummary extends DynamicData {
   ipAddress?: string;
   hwVersion?: string;
 }
-export interface VirtualMachineQuickStats extends DynamicData {
+export type VirtualMachineQuickStats = DynamicData &  {
   overallCpuUsage?: number;
   overallCpuDemand?: number;
   overallCpuReadiness?: number;
@@ -11415,141 +11415,141 @@ export interface VirtualMachineQuickStats extends DynamicData {
   uptimeSeconds?: number;
   ssdSwappedMemory?: number;
 }
-export interface VirtualMachineStorageSummary extends DynamicData {
+export type VirtualMachineStorageSummary = DynamicData &  {
   committed: number;
   uncommitted: number;
   unshared: number;
   timestamp: Date;
 }
-export interface VirtualMachineVFlashModuleInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineVFlashModuleInfo = VirtualMachineTargetInfo &  {
   vFlashModule: HostVFlashManagerVFlashCacheConfigInfoVFlashModuleConfigOption;
 }
-export interface VirtualMachineImportSpec extends ImportSpec {
+export type VirtualMachineImportSpec = ImportSpec &  {
   configSpec: VirtualMachineConfigSpec;
   resPoolEntity?: ResourcePool;
 }
-export interface CustomizationAutoIpV6Generator extends CustomizationIpV6Generator {
+export type CustomizationAutoIpV6Generator = CustomizationIpV6Generator &  {
   
 }
-export interface CustomizationCustomIpGenerator extends CustomizationIpGenerator {
+export type CustomizationCustomIpGenerator = CustomizationIpGenerator &  {
   argument?: string;
 }
-export interface CustomizationCustomIpV6Generator extends CustomizationIpV6Generator {
+export type CustomizationCustomIpV6Generator = CustomizationIpV6Generator &  {
   argument?: string;
 }
-export interface CustomizationCustomName extends CustomizationName {
+export type CustomizationCustomName = CustomizationName &  {
   argument?: string;
 }
-export interface CustomizationDhcpIpGenerator extends CustomizationIpGenerator {
+export type CustomizationDhcpIpGenerator = CustomizationIpGenerator &  {
   
 }
-export interface CustomizationDhcpIpV6Generator extends CustomizationIpV6Generator {
+export type CustomizationDhcpIpV6Generator = CustomizationIpV6Generator &  {
   
 }
-export interface CustomizationFixedIp extends CustomizationIpGenerator {
+export type CustomizationFixedIp = CustomizationIpGenerator &  {
   ipAddress: string;
 }
-export interface CustomizationFixedIpV6 extends CustomizationIpV6Generator {
+export type CustomizationFixedIpV6 = CustomizationIpV6Generator &  {
   ipAddress: string;
   subnetMask: number;
 }
-export interface CustomizationFixedName extends CustomizationName {
+export type CustomizationFixedName = CustomizationName &  {
   name: string;
 }
-export interface CustomizationLinuxOptions extends CustomizationOptions {
+export type CustomizationLinuxOptions = CustomizationOptions &  {
   
 }
-export interface VirtualCdrom extends VirtualDevice {
+export type VirtualCdrom = VirtualDevice &  {
   
 }
-export interface VirtualCdromAtapiBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualCdromAtapiBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   
 }
-export interface VirtualCdromIsoBackingInfo extends VirtualDeviceFileBackingInfo {
+export type VirtualCdromIsoBackingInfo = VirtualDeviceFileBackingInfo &  {
   
 }
-export interface VirtualCdromPassthroughBackingInfo extends VirtualDeviceDeviceBackingInfo {
+export type VirtualCdromPassthroughBackingInfo = VirtualDeviceDeviceBackingInfo &  {
   exclusive: boolean;
 }
-export interface VirtualCdromRemoteAtapiBackingInfo extends VirtualDeviceRemoteDeviceBackingInfo {
+export type VirtualCdromRemoteAtapiBackingInfo = VirtualDeviceRemoteDeviceBackingInfo &  {
   
 }
-export interface VirtualCdromRemotePassthroughBackingInfo extends VirtualDeviceRemoteDeviceBackingInfo {
+export type VirtualCdromRemotePassthroughBackingInfo = VirtualDeviceRemoteDeviceBackingInfo &  {
   exclusive: boolean;
 }
-export interface VirtualCdromOption extends VirtualDeviceOption {
+export type VirtualCdromOption = VirtualDeviceOption &  {
   
 }
-export interface VirtualCdromAtapiBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualCdromAtapiBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualCdromIsoBackingOption extends VirtualDeviceFileBackingOption {
+export type VirtualCdromIsoBackingOption = VirtualDeviceFileBackingOption &  {
   
 }
-export interface VirtualCdromPassthroughBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualCdromPassthroughBackingOption = VirtualDeviceDeviceBackingOption &  {
   exclusive: BoolOption;
 }
-export interface VirtualCdromRemoteAtapiBackingOption extends VirtualDeviceDeviceBackingOption {
+export type VirtualCdromRemoteAtapiBackingOption = VirtualDeviceDeviceBackingOption &  {
   
 }
-export interface VirtualCdromRemotePassthroughBackingOption extends VirtualDeviceRemoteDeviceBackingOption {
+export type VirtualCdromRemotePassthroughBackingOption = VirtualDeviceRemoteDeviceBackingOption &  {
   exclusive: BoolOption;
 }
-export interface VirtualController extends VirtualDevice {
+export type VirtualController = VirtualDevice &  {
   busNumber: number;
   device?: number[];
 }
-export interface VirtualControllerOption extends VirtualDeviceOption {
+export type VirtualControllerOption = VirtualDeviceOption &  {
   devices: IntOption;
   supportedDevice?: string[];
 }
-export interface VirtualE1000 extends VirtualEthernetCard {
+export type VirtualE1000 = VirtualEthernetCard &  {
   
 }
-export interface VirtualE1000Option extends VirtualEthernetCardOption {
+export type VirtualE1000Option = VirtualEthernetCardOption &  {
   
 }
-export interface VirtualE1000e extends VirtualEthernetCard {
+export type VirtualE1000e = VirtualEthernetCard &  {
   
 }
-export interface VirtualE1000eOption extends VirtualEthernetCardOption {
+export type VirtualE1000eOption = VirtualEthernetCardOption &  {
   
 }
-export interface VirtualEnsoniq1371 extends VirtualSoundCard {
+export type VirtualEnsoniq1371 = VirtualSoundCard &  {
   
 }
-export interface VirtualEnsoniq1371Option extends VirtualSoundCardOption {
+export type VirtualEnsoniq1371Option = VirtualSoundCardOption &  {
   
 }
-export interface VirtualHdAudioCard extends VirtualSoundCard {
+export type VirtualHdAudioCard = VirtualSoundCard &  {
   
 }
-export interface VirtualHdAudioCardOption extends VirtualSoundCardOption {
+export type VirtualHdAudioCardOption = VirtualSoundCardOption &  {
   
 }
-export interface VirtualIDEController extends VirtualController {
+export type VirtualIDEController = VirtualController &  {
   
 }
-export interface VirtualIDEControllerOption extends VirtualControllerOption {
+export type VirtualIDEControllerOption = VirtualControllerOption &  {
   numIDEDisks: IntOption;
   numIDECdroms: IntOption;
 }
-export interface VirtualNVDIMMController extends VirtualController {
+export type VirtualNVDIMMController = VirtualController &  {
   
 }
-export interface VirtualNVDIMMControllerOption extends VirtualControllerOption {
+export type VirtualNVDIMMControllerOption = VirtualControllerOption &  {
   numNVDIMMControllers: IntOption;
 }
-export interface VirtualNVMEController extends VirtualController {
+export type VirtualNVMEController = VirtualController &  {
   
 }
-export interface VirtualNVMEControllerOption extends VirtualControllerOption {
+export type VirtualNVMEControllerOption = VirtualControllerOption &  {
   numNVMEDisks: IntOption;
 }
-export interface VirtualPCIController extends VirtualController {
+export type VirtualPCIController = VirtualController &  {
   
 }
-export interface VirtualPCIControllerOption extends VirtualControllerOption {
+export type VirtualPCIControllerOption = VirtualControllerOption &  {
   numSCSIControllers: IntOption;
   numEthernetCards: IntOption;
   numVideoCards: IntOption;
@@ -11564,26 +11564,26 @@ export interface VirtualPCIControllerOption extends VirtualControllerOption {
   numNVMEControllers?: IntOption;
   numVmxnet3VrdmaEthernetCards?: IntOption;
 }
-export interface VirtualPS2Controller extends VirtualController {
+export type VirtualPS2Controller = VirtualController &  {
   
 }
-export interface VirtualPS2ControllerOption extends VirtualControllerOption {
+export type VirtualPS2ControllerOption = VirtualControllerOption &  {
   numKeyboards: IntOption;
   numPointingDevices: IntOption;
 }
-export interface VirtualSATAController extends VirtualController {
+export type VirtualSATAController = VirtualController &  {
   
 }
-export interface VirtualSATAControllerOption extends VirtualControllerOption {
+export type VirtualSATAControllerOption = VirtualControllerOption &  {
   numSATADisks: IntOption;
   numSATACdroms: IntOption;
 }
-export interface VirtualSCSIController extends VirtualController {
+export type VirtualSCSIController = VirtualController &  {
   hotAddRemove?: boolean;
   sharedBus: VirtualSCSISharing;
   scsiCtlrUnitNumber?: number;
 }
-export interface VirtualSCSIControllerOption extends VirtualControllerOption {
+export type VirtualSCSIControllerOption = VirtualControllerOption &  {
   numSCSIDisks: IntOption;
   numSCSICdroms: IntOption;
   numSCSIPassthrough: IntOption;
@@ -11592,69 +11592,69 @@ export interface VirtualSCSIControllerOption extends VirtualControllerOption {
   hotAddRemove: BoolOption;
   scsiCtlrUnitNumber: number;
 }
-export interface VirtualSIOController extends VirtualController {
+export type VirtualSIOController = VirtualController &  {
   
 }
-export interface VirtualSIOControllerOption extends VirtualControllerOption {
+export type VirtualSIOControllerOption = VirtualControllerOption &  {
   numFloppyDrives: IntOption;
   numSerialPorts: IntOption;
   numParallelPorts: IntOption;
 }
-export interface VirtualSoundBlaster16 extends VirtualSoundCard {
+export type VirtualSoundBlaster16 = VirtualSoundCard &  {
   
 }
-export interface VirtualSoundBlaster16Option extends VirtualSoundCardOption {
+export type VirtualSoundBlaster16Option = VirtualSoundCardOption &  {
   
 }
-export interface VirtualUSBController extends VirtualController {
+export type VirtualUSBController = VirtualController &  {
   autoConnectDevices?: boolean;
   ehciEnabled?: boolean;
 }
-export interface VirtualUSBControllerPciBusSlotInfo extends VirtualDevicePciBusSlotInfo {
+export type VirtualUSBControllerPciBusSlotInfo = VirtualDevicePciBusSlotInfo &  {
   ehciPciSlotNumber?: number;
 }
-export interface VirtualUSBControllerOption extends VirtualControllerOption {
+export type VirtualUSBControllerOption = VirtualControllerOption &  {
   autoConnectDevices: BoolOption;
   ehciSupported: BoolOption;
   supportedSpeeds: string[];
 }
-export interface VirtualUSBXHCIController extends VirtualController {
+export type VirtualUSBXHCIController = VirtualController &  {
   autoConnectDevices?: boolean;
 }
-export interface VirtualUSBXHCIControllerOption extends VirtualControllerOption {
+export type VirtualUSBXHCIControllerOption = VirtualControllerOption &  {
   autoConnectDevices: BoolOption;
   supportedSpeeds: string[];
 }
-export interface VirtualVmxnet2Option extends VirtualVmxnetOption {
+export type VirtualVmxnet2Option = VirtualVmxnetOption &  {
   
 }
-export interface VirtualVmxnet3Option extends VirtualVmxnetOption {
+export type VirtualVmxnet3Option = VirtualVmxnetOption &  {
   
 }
-export interface VirtualVmxnet3VrdmaOption extends VirtualVmxnet3Option {
+export type VirtualVmxnet3VrdmaOption = VirtualVmxnet3Option &  {
   deviceProtocol?: ChoiceOption;
 }
-export interface VslmCloneSpec extends VslmMigrateSpec {
+export type VslmCloneSpec = VslmMigrateSpec &  {
   name: string;
   keepAfterDeleteVm?: boolean;
   metadata?: KeyValue[];
 }
-export interface ComputeResourceConfigInfo extends DynamicData {
+export type ComputeResourceConfigInfo = DynamicData &  {
   vmSwapPlacement: string;
   spbmEnabled?: boolean;
   defaultHardwareVersionKey?: string;
 }
-export interface ComputeResourceConfigSpec extends DynamicData {
+export type ComputeResourceConfigSpec = DynamicData &  {
   vmSwapPlacement?: string;
   spbmEnabled?: boolean;
   defaultHardwareVersionKey?: string;
   desiredSoftwareSpec?: DesiredSoftwareSpec;
 }
-export interface ComputeResourceHostSPBMLicenseInfo extends DynamicData {
+export type ComputeResourceHostSPBMLicenseInfo = DynamicData &  {
   host: HostSystem;
   licenseState: ComputeResourceHostSPBMLicenseInfoHostSPBMLicenseState;
 }
-export interface ComputeResourceSummary extends DynamicData {
+export type ComputeResourceSummary = DynamicData &  {
   totalCpu: number;
   totalMemory: number;
   numCpuCores: number;
@@ -11665,7 +11665,7 @@ export interface ComputeResourceSummary extends DynamicData {
   numEffectiveHosts: number;
   overallStatus: ManagedEntityStatus;
 }
-export interface DatacenterBasicConnectInfo extends DynamicData {
+export type DatacenterBasicConnectInfo = DynamicData &  {
   hostname?: string;
   error?: MethodFault;
   serverIp?: string;
@@ -11675,13 +11675,13 @@ export interface DatacenterBasicConnectInfo extends DynamicData {
   hardwareVendor?: string;
   hardwareModel?: string;
 }
-export interface DatacenterConfigInfo extends DynamicData {
+export type DatacenterConfigInfo = DynamicData &  {
   defaultHardwareVersionKey?: string;
 }
-export interface DatacenterConfigSpec extends DynamicData {
+export type DatacenterConfigSpec = DynamicData &  {
   defaultHardwareVersionKey?: string;
 }
-export interface DatastoreCapability extends DynamicData {
+export type DatastoreCapability = DynamicData &  {
   directoryHierarchySupported: boolean;
   rawDiskMappingsSupported: boolean;
   perFileThinProvisioningSupported: boolean;
@@ -11695,11 +11695,11 @@ export interface DatastoreCapability extends DynamicData {
   vmdkExpandSupported?: boolean;
   clusteredVmdkSupported?: boolean;
 }
-export interface DatastoreHostMount extends DynamicData {
+export type DatastoreHostMount = DynamicData &  {
   key: HostSystem;
   mountInfo: HostMountInfo;
 }
-export interface DatastoreInfo extends DynamicData {
+export type DatastoreInfo = DynamicData &  {
   name: string;
   url: string;
   freeSpace: number;
@@ -11710,11 +11710,11 @@ export interface DatastoreInfo extends DynamicData {
   containerId?: string;
   aliasOf?: string;
 }
-export interface DatastoreMountPathDatastorePair extends DynamicData {
+export type DatastoreMountPathDatastorePair = DynamicData &  {
   oldMountPath: string;
   datastore: Datastore;
 }
-export interface DatastoreSummary extends DynamicData {
+export type DatastoreSummary = DynamicData &  {
   datastore?: Datastore;
   name: string;
   url: string;
@@ -11726,22 +11726,22 @@ export interface DatastoreSummary extends DynamicData {
   type: string;
   maintenanceMode?: string;
 }
-export interface DatastoreVVolContainerFailoverPair extends DynamicData {
+export type DatastoreVVolContainerFailoverPair = DynamicData &  {
   srcContainer?: string;
   tgtContainer: string;
   vvolMapping?: KeyValue[];
 }
-export interface DVSBackupRestoreCapability extends DynamicData {
+export type DVSBackupRestoreCapability = DynamicData &  {
   backupRestoreSupported: boolean;
 }
-export interface DVSCapability extends DynamicData {
+export type DVSCapability = DynamicData &  {
   dvsOperationSupported?: boolean;
   dvPortGroupOperationSupported?: boolean;
   dvPortOperationSupported?: boolean;
   compatibleHostComponentProductInfo?: DistributedVirtualSwitchHostProductSpec[];
   featuresSupported?: DVSFeatureCapability;
 }
-export interface DVSConfigInfo extends DynamicData {
+export type DVSConfigInfo = DynamicData &  {
   uuid: string;
   name: string;
   numStandalonePorts: number;
@@ -11770,7 +11770,7 @@ export interface DVSConfigInfo extends DynamicData {
   vmVnicNetworkResourcePool?: DVSVmVnicNetworkResourcePool[];
   pnicCapacityRatioForReservation?: number;
 }
-export interface DVSConfigSpec extends DynamicData {
+export type DVSConfigSpec = DynamicData &  {
   configVersion?: string;
   name?: string;
   numStandalonePorts?: number;
@@ -11790,16 +11790,16 @@ export interface DVSConfigSpec extends DynamicData {
   netResourcePoolTrafficResourceConfig?: DvsHostInfrastructureTrafficResource[];
   networkResourceControlVersion?: string;
 }
-export interface DVSContactInfo extends DynamicData {
+export type DVSContactInfo = DynamicData &  {
   name?: string;
   contact?: string;
 }
-export interface DVSCreateSpec extends DynamicData {
+export type DVSCreateSpec = DynamicData &  {
   configSpec: DVSConfigSpec;
   productInfo?: DistributedVirtualSwitchProductSpec;
   capability?: DVSCapability;
 }
-export interface DVSFeatureCapability extends DynamicData {
+export type DVSFeatureCapability = DynamicData &  {
   networkResourceManagementSupported: boolean;
   vmDirectPathGen2Supported: boolean;
   nicTeamingPolicy?: string[];
@@ -11811,27 +11811,27 @@ export interface DVSFeatureCapability extends DynamicData {
   networkFilterSupported?: boolean;
   macLearningSupported?: boolean;
 }
-export interface DVSHealthCheckConfig extends DynamicData {
+export type DVSHealthCheckConfig = DynamicData &  {
   enable?: boolean;
   interval?: number;
 }
-export interface DVSHealthCheckCapability extends DynamicData {
+export type DVSHealthCheckCapability = DynamicData &  {
   
 }
-export interface DvsHostInfrastructureTrafficResource extends DynamicData {
+export type DvsHostInfrastructureTrafficResource = DynamicData &  {
   key: string;
   description?: string;
   allocationInfo: DvsHostInfrastructureTrafficResourceAllocation;
 }
-export interface DvsHostInfrastructureTrafficResourceAllocation extends DynamicData {
+export type DvsHostInfrastructureTrafficResourceAllocation = DynamicData &  {
   limit?: number;
   shares?: SharesInfo;
   reservation?: number;
 }
-export interface DVSNameArrayUplinkPortPolicy extends DVSUplinkPortPolicy {
+export type DVSNameArrayUplinkPortPolicy = DVSUplinkPortPolicy &  {
   uplinkPortName: string[];
 }
-export interface DVSNetworkResourceManagementCapability extends DynamicData {
+export type DVSNetworkResourceManagementCapability = DynamicData &  {
   networkResourceManagementSupported: boolean;
   networkResourcePoolHighShareValue: number;
   qosSupported: boolean;
@@ -11839,21 +11839,21 @@ export interface DVSNetworkResourceManagementCapability extends DynamicData {
   networkResourceControlVersion3Supported?: boolean;
   userDefinedInfraTrafficPoolSupported?: boolean;
 }
-export interface DvsResourceRuntimeInfo extends DynamicData {
+export type DvsResourceRuntimeInfo = DynamicData &  {
   capacity?: number;
   usage?: number;
   available?: number;
   allocatedResource?: DvsVnicAllocatedResource[];
   vmVnicNetworkResourcePoolRuntime?: DvsVmVnicNetworkResourcePoolRuntimeInfo[];
 }
-export interface DVSRollbackCapability extends DynamicData {
+export type DVSRollbackCapability = DynamicData &  {
   rollbackSupported: boolean;
 }
-export interface DVSRuntimeInfo extends DynamicData {
+export type DVSRuntimeInfo = DynamicData &  {
   hostMemberRuntime?: HostMemberRuntimeInfo[];
   resourceRuntimeInfo?: DvsResourceRuntimeInfo;
 }
-export interface DVSSummary extends DynamicData {
+export type DVSSummary = DynamicData &  {
   name: string;
   uuid: string;
   numPorts: number;
@@ -11866,78 +11866,78 @@ export interface DVSSummary extends DynamicData {
   contact?: DVSContactInfo;
   numHosts?: number;
 }
-export interface DVSPolicy extends DynamicData {
+export type DVSPolicy = DynamicData &  {
   autoPreInstallAllowed?: boolean;
   autoUpgradeAllowed?: boolean;
   partialUpgradeAllowed?: boolean;
 }
-export interface DVSUplinkPortPolicy extends DynamicData {
+export type DVSUplinkPortPolicy = DynamicData &  {
   
 }
-export interface FolderBatchAddHostsToClusterResult extends DynamicData {
+export type FolderBatchAddHostsToClusterResult = DynamicData &  {
   hostsAddedToCluster?: HostSystem[];
   hostsFailedInventoryAdd?: FolderFailedHostResult[];
   hostsFailedMoveToCluster?: FolderFailedHostResult[];
 }
-export interface FolderBatchAddStandaloneHostsResult extends DynamicData {
+export type FolderBatchAddStandaloneHostsResult = DynamicData &  {
   addedHosts?: HostSystem[];
   hostsFailedInventoryAdd?: FolderFailedHostResult[];
 }
-export interface FolderFailedHostResult extends DynamicData {
+export type FolderFailedHostResult = DynamicData &  {
   hostName?: string;
   host?: HostSystem;
   context: LocalizableMessage;
   fault: MethodFault;
 }
-export interface FolderNewHostSpec extends DynamicData {
+export type FolderNewHostSpec = DynamicData &  {
   hostCnxSpec: HostConnectSpec;
   esxLicense?: string;
 }
-export interface HealthUpdate extends DynamicData {
+export type HealthUpdate = DynamicData &  {
   entity: ManagedEntity;
   healthUpdateInfoId: string;
   id: string;
   status: ManagedEntityStatus;
   remediation: string;
 }
-export interface HostSystemComplianceCheckState extends DynamicData {
+export type HostSystemComplianceCheckState = DynamicData &  {
   state: string;
   checkTime: Date;
 }
-export interface HostSystemReconnectSpec extends DynamicData {
+export type HostSystemReconnectSpec = DynamicData &  {
   syncState?: boolean;
 }
-export interface HostSystemRemediationState extends DynamicData {
+export type HostSystemRemediationState = DynamicData &  {
   state: string;
   operationTime: Date;
 }
-export interface HostVMotionCompatibility extends DynamicData {
+export type HostVMotionCompatibility = DynamicData &  {
   host: HostSystem;
   compatibility?: string[];
 }
-export interface ProductComponentInfo extends DynamicData {
+export type ProductComponentInfo = DynamicData &  {
   id: string;
   name: string;
   version: string;
   release: number;
 }
-export interface StoragePodSummary extends DynamicData {
+export type StoragePodSummary = DynamicData &  {
   name: string;
   capacity: number;
   freeSpace: number;
 }
-export interface VasaProviderContainerSpec extends DynamicData {
+export type VasaProviderContainerSpec = DynamicData &  {
   vasaProviderInfo?: VimVasaProviderInfo[];
   scId: string;
   deleted: boolean;
 }
-export interface ClusterAffinityRuleSpec extends ClusterRuleInfo {
+export type ClusterAffinityRuleSpec = ClusterRuleInfo &  {
   vm: VirtualMachine[];
 }
-export interface ClusterAntiAffinityRuleSpec extends ClusterRuleInfo {
+export type ClusterAntiAffinityRuleSpec = ClusterRuleInfo &  {
   vm: VirtualMachine[];
 }
-export interface ClusterConfigInfoEx extends ComputeResourceConfigInfo {
+export type ClusterConfigInfoEx = ComputeResourceConfigInfo &  {
   dasConfig: ClusterDasConfigInfo;
   dasVmConfig?: ClusterDasVmConfigInfo[];
   drsConfig: ClusterDrsConfigInfo;
@@ -11954,7 +11954,7 @@ export interface ClusterConfigInfoEx extends ComputeResourceConfigInfo {
   proactiveDrsConfig?: ClusterProactiveDrsConfigInfo;
   cryptoConfig?: ClusterCryptoConfigInfo;
 }
-export interface ClusterConfigSpecEx extends ComputeResourceConfigSpec {
+export type ClusterConfigSpecEx = ComputeResourceConfigSpec &  {
   dasConfig?: ClusterDasConfigInfo;
   dasVmConfigSpec?: ClusterDasVmConfigSpec[];
   drsConfig?: ClusterDrsConfigInfo;
@@ -11972,44 +11972,44 @@ export interface ClusterConfigSpecEx extends ComputeResourceConfigSpec {
   inHciWorkflow?: boolean;
   cryptoConfig?: ClusterCryptoConfigInfo;
 }
-export interface ClusterDependencyRuleInfo extends ClusterRuleInfo {
+export type ClusterDependencyRuleInfo = ClusterRuleInfo &  {
   vmGroup: string;
   dependsOnVmGroup: string;
 }
-export interface DistributedVirtualSwitchManagerCompatibilityResult extends DynamicData {
+export type DistributedVirtualSwitchManagerCompatibilityResult = DynamicData &  {
   host: HostSystem;
   error?: MethodFault[];
 }
-export interface DVSManagerDvsConfigTarget extends DynamicData {
+export type DVSManagerDvsConfigTarget = DynamicData &  {
   distributedVirtualPortgroup?: DistributedVirtualPortgroupInfo[];
   distributedVirtualSwitch?: DistributedVirtualSwitchInfo[];
 }
-export interface DistributedVirtualSwitchManagerDvsProductSpec extends DynamicData {
+export type DistributedVirtualSwitchManagerDvsProductSpec = DynamicData &  {
   newSwitchProductSpec?: DistributedVirtualSwitchProductSpec;
   distributedVirtualSwitch?: DistributedVirtualSwitch;
 }
-export interface DistributedVirtualSwitchManagerHostArrayFilter extends DistributedVirtualSwitchManagerHostDvsFilterSpec {
+export type DistributedVirtualSwitchManagerHostArrayFilter = DistributedVirtualSwitchManagerHostDvsFilterSpec &  {
   host: HostSystem[];
 }
-export interface DistributedVirtualSwitchManagerHostContainer extends DynamicData {
+export type DistributedVirtualSwitchManagerHostContainer = DynamicData &  {
   container: ManagedEntity;
   recursive: boolean;
 }
-export interface DistributedVirtualSwitchManagerHostContainerFilter extends DistributedVirtualSwitchManagerHostDvsFilterSpec {
+export type DistributedVirtualSwitchManagerHostContainerFilter = DistributedVirtualSwitchManagerHostDvsFilterSpec &  {
   hostContainer: DistributedVirtualSwitchManagerHostContainer;
 }
-export interface DistributedVirtualSwitchManagerHostDvsFilterSpec extends DynamicData {
+export type DistributedVirtualSwitchManagerHostDvsFilterSpec = DynamicData &  {
   inclusive: boolean;
 }
-export interface DistributedVirtualSwitchManagerHostDvsMembershipFilter extends DistributedVirtualSwitchManagerHostDvsFilterSpec {
+export type DistributedVirtualSwitchManagerHostDvsMembershipFilter = DistributedVirtualSwitchManagerHostDvsFilterSpec &  {
   distributedVirtualSwitch: DistributedVirtualSwitch;
 }
-export interface DistributedVirtualSwitchManagerImportResult extends DynamicData {
+export type DistributedVirtualSwitchManagerImportResult = DynamicData &  {
   distributedVirtualSwitch?: DistributedVirtualSwitch[];
   distributedVirtualPortgroup?: DistributedVirtualPortgroup[];
   importFault?: ImportOperationBulkFaultFaultOnImport[];
 }
-export interface VMwareDVSConfigInfo extends DVSConfigInfo {
+export type VMwareDVSConfigInfo = DVSConfigInfo &  {
   vspanSession?: VMwareVspanSession[];
   pvlanConfig?: VMwareDVSPvlanMapEntry[];
   maxMtu: number;
@@ -12019,7 +12019,7 @@ export interface VMwareDVSConfigInfo extends DVSConfigInfo {
   lacpApiVersion?: string;
   multicastFilteringMode?: string;
 }
-export interface VMwareDVSConfigSpec extends DVSConfigSpec {
+export type VMwareDVSConfigSpec = DVSConfigSpec &  {
   pvlanConfigSpec?: VMwareDVSPvlanConfigSpec[];
   vspanConfigSpec?: VMwareDVSVspanConfigSpec[];
   maxMtu?: number;
@@ -12028,7 +12028,7 @@ export interface VMwareDVSConfigSpec extends DVSConfigSpec {
   lacpApiVersion?: string;
   multicastFilteringMode?: string;
 }
-export interface DVSFailureCriteria extends InheritablePolicy {
+export type DVSFailureCriteria = InheritablePolicy &  {
   checkSpeed?: StringPolicy;
   speed?: IntPolicy;
   checkDuplex?: BoolPolicy;
@@ -12037,7 +12037,7 @@ export interface DVSFailureCriteria extends InheritablePolicy {
   percentage?: IntPolicy;
   checkBeacon?: BoolPolicy;
 }
-export interface VMwareDVSFeatureCapability extends DVSFeatureCapability {
+export type VMwareDVSFeatureCapability = DVSFeatureCapability &  {
   vspanSupported?: boolean;
   lldpSupported?: boolean;
   ipfixSupported?: boolean;
@@ -12047,7 +12047,7 @@ export interface VMwareDVSFeatureCapability extends DVSFeatureCapability {
   lacpCapability?: VMwareDvsLacpCapability;
   nsxSupported?: boolean;
 }
-export interface VMwareIpfixConfig extends DynamicData {
+export type VMwareIpfixConfig = DynamicData &  {
   collectorIpAddress?: string;
   collectorPort?: number;
   observationDomainId?: number;
@@ -12056,16 +12056,16 @@ export interface VMwareIpfixConfig extends DynamicData {
   samplingRate: number;
   internalFlowsOnly: boolean;
 }
-export interface VMwareDvsIpfixCapability extends DynamicData {
+export type VMwareDvsIpfixCapability = DynamicData &  {
   ipfixSupported?: boolean;
   ipv6ForIpfixSupported?: boolean;
   observationDomainIdSupported?: boolean;
 }
-export interface VMwareDvsLacpCapability extends DynamicData {
+export type VMwareDvsLacpCapability = DynamicData &  {
   lacpSupported?: boolean;
   multiLacpGroupSupported?: boolean;
 }
-export interface VMwareDvsLacpGroupConfig extends DynamicData {
+export type VMwareDvsLacpGroupConfig = DynamicData &  {
   key?: string;
   name?: string;
   mode?: string;
@@ -12076,68 +12076,68 @@ export interface VMwareDvsLacpGroupConfig extends DynamicData {
   uplinkName?: string[];
   uplinkPortKey?: string[];
 }
-export interface VMwareDvsLacpGroupSpec extends DynamicData {
+export type VMwareDvsLacpGroupSpec = DynamicData &  {
   lacpGroupConfig: VMwareDvsLacpGroupConfig;
   operation: string;
 }
-export interface VMwareDvsLagIpfixConfig extends DynamicData {
+export type VMwareDvsLagIpfixConfig = DynamicData &  {
   ipfixEnabled?: boolean;
 }
-export interface VMwareDvsLagVlanConfig extends DynamicData {
+export type VMwareDvsLagVlanConfig = DynamicData &  {
   vlanId?: NumericRange[];
 }
-export interface DVSMacLearningPolicy extends InheritablePolicy {
+export type DVSMacLearningPolicy = InheritablePolicy &  {
   enabled: boolean;
   allowUnicastFlooding?: boolean;
   limit?: number;
   limitPolicy?: string;
 }
-export interface DVSMacManagementPolicy extends InheritablePolicy {
+export type DVSMacManagementPolicy = InheritablePolicy &  {
   allowPromiscuous?: boolean;
   macChanges?: boolean;
   forgedTransmits?: boolean;
   macLearningPolicy?: DVSMacLearningPolicy;
 }
-export interface VMwareDVSMtuHealthCheckResult extends HostMemberUplinkHealthCheckResult {
+export type VMwareDVSMtuHealthCheckResult = HostMemberUplinkHealthCheckResult &  {
   mtuMismatch: boolean;
   vlanSupportSwitchMtu?: NumericRange[];
   vlanNotSupportSwitchMtu?: NumericRange[];
 }
-export interface VMwareDVSPvlanConfigSpec extends DynamicData {
+export type VMwareDVSPvlanConfigSpec = DynamicData &  {
   pvlanEntry: VMwareDVSPvlanMapEntry;
   operation: string;
 }
-export interface VMwareDVSPvlanMapEntry extends DynamicData {
+export type VMwareDVSPvlanMapEntry = DynamicData &  {
   primaryVlanId: number;
   secondaryVlanId: number;
   pvlanType: string;
 }
-export interface VmwareDistributedVirtualSwitchPvlanSpec extends VmwareDistributedVirtualSwitchVlanSpec {
+export type VmwareDistributedVirtualSwitchPvlanSpec = VmwareDistributedVirtualSwitchVlanSpec &  {
   pvlanId: number;
 }
-export interface DVSSecurityPolicy extends InheritablePolicy {
+export type DVSSecurityPolicy = InheritablePolicy &  {
   allowPromiscuous?: BoolPolicy;
   macChanges?: BoolPolicy;
   forgedTransmits?: BoolPolicy;
 }
-export interface VMwareDVSTeamingHealthCheckConfig extends VMwareDVSHealthCheckConfig {
+export type VMwareDVSTeamingHealthCheckConfig = VMwareDVSHealthCheckConfig &  {
   
 }
-export interface VMwareDVSTeamingHealthCheckResult extends HostMemberHealthCheckResult {
+export type VMwareDVSTeamingHealthCheckResult = HostMemberHealthCheckResult &  {
   teamingStatus: string;
 }
-export interface VmwareDistributedVirtualSwitchTrunkVlanSpec extends VmwareDistributedVirtualSwitchVlanSpec {
+export type VmwareDistributedVirtualSwitchTrunkVlanSpec = VmwareDistributedVirtualSwitchVlanSpec &  {
   vlanId?: NumericRange[];
 }
-export interface VMwareUplinkLacpPolicy extends InheritablePolicy {
+export type VMwareUplinkLacpPolicy = InheritablePolicy &  {
   enable?: BoolPolicy;
   mode?: StringPolicy;
 }
-export interface VMwareUplinkPortOrderPolicy extends InheritablePolicy {
+export type VMwareUplinkPortOrderPolicy = InheritablePolicy &  {
   activeUplinkPort?: string[];
   standbyUplinkPort?: string[];
 }
-export interface VmwareUplinkPortTeamingPolicy extends InheritablePolicy {
+export type VmwareUplinkPortTeamingPolicy = InheritablePolicy &  {
   policy?: StringPolicy;
   reversePolicy?: BoolPolicy;
   notifySwitches?: BoolPolicy;
@@ -12145,34 +12145,34 @@ export interface VmwareUplinkPortTeamingPolicy extends InheritablePolicy {
   failureCriteria?: DVSFailureCriteria;
   uplinkPortOrder?: VMwareUplinkPortOrderPolicy;
 }
-export interface VMwareDVSPortgroupPolicy extends DVPortgroupPolicy {
+export type VMwareDVSPortgroupPolicy = DVPortgroupPolicy &  {
   vlanOverrideAllowed: boolean;
   uplinkTeamingOverrideAllowed: boolean;
   securityPolicyOverrideAllowed: boolean;
   ipfixOverrideAllowed?: boolean;
   macManagementOverrideAllowed?: boolean;
 }
-export interface VMwareDVSVlanHealthCheckResult extends HostMemberUplinkHealthCheckResult {
+export type VMwareDVSVlanHealthCheckResult = HostMemberUplinkHealthCheckResult &  {
   trunkedVlan?: NumericRange[];
   untrunkedVlan?: NumericRange[];
 }
-export interface VmwareDistributedVirtualSwitchVlanIdSpec extends VmwareDistributedVirtualSwitchVlanSpec {
+export type VmwareDistributedVirtualSwitchVlanIdSpec = VmwareDistributedVirtualSwitchVlanSpec &  {
   vlanId: number;
 }
-export interface VMwareDVSVlanMtuHealthCheckConfig extends VMwareDVSHealthCheckConfig {
+export type VMwareDVSVlanMtuHealthCheckConfig = VMwareDVSHealthCheckConfig &  {
   
 }
-export interface VmwareDistributedVirtualSwitchVlanSpec extends InheritablePolicy {
+export type VmwareDistributedVirtualSwitchVlanSpec = InheritablePolicy &  {
   
 }
-export interface VMwareDVSHealthCheckConfig extends DVSHealthCheckConfig {
+export type VMwareDVSHealthCheckConfig = DVSHealthCheckConfig &  {
   
 }
-export interface VMwareDVSHealthCheckCapability extends DVSHealthCheckCapability {
+export type VMwareDVSHealthCheckCapability = DVSHealthCheckCapability &  {
   vlanMtuSupported: boolean;
   teamingSupported: boolean;
 }
-export interface VMwareDVSPortSetting extends DVPortSetting {
+export type VMwareDVSPortSetting = DVPortSetting &  {
   vlan?: VmwareDistributedVirtualSwitchVlanSpec;
   qosTag?: IntPolicy;
   uplinkTeamingPolicy?: VmwareUplinkPortTeamingPolicy;
@@ -12183,11 +12183,11 @@ export interface VMwareDVSPortSetting extends DVPortSetting {
   macManagementPolicy?: DVSMacManagementPolicy;
   VNI?: IntPolicy;
 }
-export interface VMwareDVSVspanConfigSpec extends DynamicData {
+export type VMwareDVSVspanConfigSpec = DynamicData &  {
   vspanSession: VMwareVspanSession;
   operation: string;
 }
-export interface VMwareDVSVspanCapability extends DynamicData {
+export type VMwareDVSVspanCapability = DynamicData &  {
   mixedDestSupported: boolean;
   dvportSupported: boolean;
   remoteSourceSupported: boolean;
@@ -12196,14 +12196,14 @@ export interface VMwareDVSVspanCapability extends DynamicData {
   erspanProtocolSupported?: boolean;
   mirrorNetstackSupported?: boolean;
 }
-export interface VMwareVspanPort extends DynamicData {
+export type VMwareVspanPort = DynamicData &  {
   portKey?: string[];
   uplinkPortName?: string[];
   wildcardPortConnecteeType?: string[];
   vlans?: number[];
   ipAddress?: string[];
 }
-export interface VMwareVspanSession extends DynamicData {
+export type VMwareVspanSession = DynamicData &  {
   key?: string;
   name?: string;
   description?: string;
@@ -12223,241 +12223,241 @@ export interface VMwareVspanSession extends DynamicData {
   erspanGraNanosec?: boolean;
   netstack?: string;
 }
-export interface AlarmAcknowledgedEvent extends AlarmEvent {
+export type AlarmAcknowledgedEvent = AlarmEvent &  {
   source: ManagedEntityEventArgument;
   entity: ManagedEntityEventArgument;
 }
-export interface AlarmActionTriggeredEvent extends AlarmEvent {
+export type AlarmActionTriggeredEvent = AlarmEvent &  {
   source: ManagedEntityEventArgument;
   entity: ManagedEntityEventArgument;
 }
-export interface AlarmClearedEvent extends AlarmEvent {
+export type AlarmClearedEvent = AlarmEvent &  {
   source: ManagedEntityEventArgument;
   entity: ManagedEntityEventArgument;
   from: string;
 }
-export interface AlarmCreatedEvent extends AlarmEvent {
+export type AlarmCreatedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
 }
-export interface AlarmEmailCompletedEvent extends AlarmEvent {
+export type AlarmEmailCompletedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   to: string;
 }
-export interface AlarmEmailFailedEvent extends AlarmEvent {
+export type AlarmEmailFailedEvent = AlarmEvent &  {
   entity: ManagedEntityEventArgument;
   to: string;
   reason: MethodFault;
 }
-export interface AlarmEventArgument extends EntityEventArgument {
+export type AlarmEventArgument = EntityEventArgument &  {
   alarm: Alarm;
 }
-export interface ClusterComplianceCheckedEvent extends ClusterEvent {
+export type ClusterComplianceCheckedEvent = ClusterEvent &  {
   profile: ProfileEventArgument;
 }
-export interface ClusterCreatedEvent extends ClusterEvent {
+export type ClusterCreatedEvent = ClusterEvent &  {
   parent: FolderEventArgument;
 }
-export interface ClusterDestroyedEvent extends ClusterEvent {
+export type ClusterDestroyedEvent = ClusterEvent &  {
   
 }
-export interface ComputeResourceEventArgument extends EntityEventArgument {
+export type ComputeResourceEventArgument = EntityEventArgument &  {
   computeResource: ComputeResource;
 }
-export interface CustomFieldDefEvent extends CustomFieldEvent {
+export type CustomFieldDefEvent = CustomFieldEvent &  {
   fieldKey: number;
   name: string;
 }
-export interface CustomFieldDefRemovedEvent extends CustomFieldDefEvent {
+export type CustomFieldDefRemovedEvent = CustomFieldDefEvent &  {
   
 }
-export interface CustomFieldDefRenamedEvent extends CustomFieldDefEvent {
+export type CustomFieldDefRenamedEvent = CustomFieldDefEvent &  {
   newName: string;
 }
-export interface DVPortgroupCreatedEvent extends DVPortgroupEvent {
+export type DVPortgroupCreatedEvent = DVPortgroupEvent &  {
   
 }
-export interface DVPortgroupDestroyedEvent extends DVPortgroupEvent {
+export type DVPortgroupDestroyedEvent = DVPortgroupEvent &  {
   
 }
-export interface DatacenterCreatedEvent extends DatacenterEvent {
+export type DatacenterCreatedEvent = DatacenterEvent &  {
   parent: FolderEventArgument;
 }
-export interface DatacenterEventArgument extends EntityEventArgument {
+export type DatacenterEventArgument = EntityEventArgument &  {
   datacenter: Datacenter;
 }
-export interface DatastoreCapacityIncreasedEvent extends DatastoreEvent {
+export type DatastoreCapacityIncreasedEvent = DatastoreEvent &  {
   oldCapacity: number;
   newCapacity: number;
 }
-export interface DatastoreDestroyedEvent extends DatastoreEvent {
+export type DatastoreDestroyedEvent = DatastoreEvent &  {
   
 }
-export interface DatastoreDuplicatedEvent extends DatastoreEvent {
+export type DatastoreDuplicatedEvent = DatastoreEvent &  {
   
 }
-export interface DatastoreEventArgument extends EntityEventArgument {
+export type DatastoreEventArgument = EntityEventArgument &  {
   datastore: Datastore;
 }
-export interface DatastoreFileCopiedEvent extends DatastoreFileEvent {
+export type DatastoreFileCopiedEvent = DatastoreFileEvent &  {
   sourceDatastore: DatastoreEventArgument;
   sourceFile: string;
 }
-export interface DatastoreFileDeletedEvent extends DatastoreFileEvent {
+export type DatastoreFileDeletedEvent = DatastoreFileEvent &  {
   
 }
-export interface DrsEnteredStandbyModeEvent extends EnteredStandbyModeEvent {
+export type DrsEnteredStandbyModeEvent = EnteredStandbyModeEvent &  {
   
 }
-export interface DrsEnteringStandbyModeEvent extends EnteringStandbyModeEvent {
+export type DrsEnteringStandbyModeEvent = EnteringStandbyModeEvent &  {
   
 }
-export interface DrsExitStandbyModeFailedEvent extends ExitStandbyModeFailedEvent {
+export type DrsExitStandbyModeFailedEvent = ExitStandbyModeFailedEvent &  {
   
 }
-export interface DrsExitedStandbyModeEvent extends ExitedStandbyModeEvent {
+export type DrsExitedStandbyModeEvent = ExitedStandbyModeEvent &  {
   
 }
-export interface DrsExitingStandbyModeEvent extends ExitingStandbyModeEvent {
+export type DrsExitingStandbyModeEvent = ExitingStandbyModeEvent &  {
   
 }
-export interface DvsCreatedEvent extends DvsEvent {
+export type DvsCreatedEvent = DvsEvent &  {
   parent: FolderEventArgument;
 }
-export interface DvsDestroyedEvent extends DvsEvent {
+export type DvsDestroyedEvent = DvsEvent &  {
   
 }
-export interface DvsEventArgument extends EntityEventArgument {
+export type DvsEventArgument = EntityEventArgument &  {
   dvs: DistributedVirtualSwitch;
 }
-export interface DvsReconfiguredEvent extends DvsEvent {
+export type DvsReconfiguredEvent = DvsEvent &  {
   configSpec: DVSConfigSpec;
   configChanges?: ChangesInfoEventArgument;
 }
-export interface MigrationErrorEvent extends MigrationEvent {
+export type MigrationErrorEvent = MigrationEvent &  {
   
 }
-export interface PermissionAddedEvent extends PermissionEvent {
+export type PermissionAddedEvent = PermissionEvent &  {
   role: RoleEventArgument;
   propagate: boolean;
 }
-export interface RoleAddedEvent extends RoleEvent {
+export type RoleAddedEvent = RoleEvent &  {
   privilegeList?: string[];
 }
-export interface VmBeingClonedEvent extends VmCloneEvent {
+export type VmBeingClonedEvent = VmCloneEvent &  {
   destFolder: FolderEventArgument;
   destName: string;
   destHost: HostEventArgument;
 }
-export interface VmBeingClonedNoFolderEvent extends VmCloneEvent {
+export type VmBeingClonedNoFolderEvent = VmCloneEvent &  {
   destName: string;
   destHost: HostEventArgument;
 }
-export interface ActiveVMsBlockingEVC extends EVCConfigFault {
+export type ActiveVMsBlockingEVC = EVCConfigFault &  {
   evcMode?: string;
   host?: HostSystem[];
   hostName?: string[];
 }
-export interface AdminDisabled extends HostConfigFault {
+export type AdminDisabled = HostConfigFault &  {
   
 }
-export interface AdminNotDisabled extends HostConfigFault {
+export type AdminNotDisabled = HostConfigFault &  {
   
 }
-export interface AffinityConfigured extends MigrationFault {
+export type AffinityConfigured = MigrationFault &  {
   configuredAffinity: string[];
 }
-export interface AgentInstallFailed extends HostConnectFault {
+export type AgentInstallFailed = HostConnectFault &  {
   reason?: string;
   statusCode?: number;
   installerOutput?: string;
 }
-export interface AlreadyBeingManaged extends HostConnectFault {
+export type AlreadyBeingManaged = HostConnectFault &  {
   ipAddress: string;
 }
-export interface AlreadyConnected extends HostConnectFault {
+export type AlreadyConnected = HostConnectFault &  {
   name: string;
 }
-export interface ApplicationQuiesceFault extends SnapshotFault {
+export type ApplicationQuiesceFault = SnapshotFault &  {
   
 }
-export interface BackupBlobReadFailure extends DvsFault {
+export type BackupBlobReadFailure = DvsFault &  {
   entityName: string;
   entityType: string;
   fault: MethodFault;
 }
-export interface BackupBlobWriteFailure extends DvsFault {
+export type BackupBlobWriteFailure = DvsFault &  {
   entityName: string;
   entityType: string;
   fault: MethodFault;
 }
-export interface BlockedByFirewall extends HostConfigFault {
+export type BlockedByFirewall = HostConfigFault &  {
   
 }
-export interface CAMServerRefusedConnection extends InvalidCAMServer {
+export type CAMServerRefusedConnection = InvalidCAMServer &  {
   
 }
-export interface CannotAccessFile extends FileFault {
+export type CannotAccessFile = FileFault &  {
   
 }
-export interface CannotAccessNetwork extends CannotAccessVmDevice {
+export type CannotAccessNetwork = CannotAccessVmDevice &  {
   network?: Network;
 }
-export interface CannotAddHostWithFTVmAsStandalone extends HostConnectFault {
+export type CannotAddHostWithFTVmAsStandalone = HostConnectFault &  {
   
 }
-export interface CannotAddHostWithFTVmToDifferentCluster extends HostConnectFault {
+export type CannotAddHostWithFTVmToDifferentCluster = HostConnectFault &  {
   
 }
-export interface CannotAddHostWithFTVmToNonHACluster extends HostConnectFault {
+export type CannotAddHostWithFTVmToNonHACluster = HostConnectFault &  {
   
 }
-export interface CannotCreateFile extends FileFault {
+export type CannotCreateFile = FileFault &  {
   
 }
-export interface CannotDecryptPasswords extends CustomizationFault {
+export type CannotDecryptPasswords = CustomizationFault &  {
   
 }
-export interface CannotDeleteFile extends FileFault {
+export type CannotDeleteFile = FileFault &  {
   
 }
-export interface CannotModifyConfigCpuRequirements extends MigrationFault {
+export type CannotModifyConfigCpuRequirements = MigrationFault &  {
   
 }
-export interface CannotMoveVmWithDeltaDisk extends MigrationFault {
+export type CannotMoveVmWithDeltaDisk = MigrationFault &  {
   device: string;
 }
-export interface CannotMoveVmWithNativeDeltaDisk extends MigrationFault {
+export type CannotMoveVmWithNativeDeltaDisk = MigrationFault &  {
   
 }
-export interface CannotPowerOffVmInCluster extends InvalidState {
+export type CannotPowerOffVmInCluster = InvalidState &  {
   operation: string;
   vm: VirtualMachine;
   vmName: string;
 }
-export interface ClockSkew extends HostConfigFault {
+export type ClockSkew = HostConfigFault &  {
   
 }
-export interface CloneFromSnapshotNotSupported extends MigrationFault {
+export type CloneFromSnapshotNotSupported = MigrationFault &  {
   
 }
-export interface CollectorAddressUnset extends DvsFault {
+export type CollectorAddressUnset = DvsFault &  {
   
 }
-export interface ConflictingConfiguration extends DvsFault {
+export type ConflictingConfiguration = DvsFault &  {
   configInConflict: ConflictingConfigurationConfig[];
 }
-export interface ConflictingConfigurationConfig extends DynamicData {
+export type ConflictingConfigurationConfig = DynamicData &  {
   entity?: ManagedEntity;
   propertyPath: string;
 }
-export interface CpuIncompatible extends VirtualHardwareCompatibilityIssue {
+export type CpuIncompatible = VirtualHardwareCompatibilityIssue &  {
   level: number;
   registerName: string;
   registerBits?: string;
   desiredBits?: string;
   host?: HostSystem;
 }
-export interface CpuIncompatible1ECX extends CpuIncompatible {
+export type CpuIncompatible1ECX = CpuIncompatible &  {
   sse3: boolean;
   pclmulqdq: boolean;
   ssse3: boolean;
@@ -12467,7 +12467,7 @@ export interface CpuIncompatible1ECX extends CpuIncompatible {
   other: boolean;
   otherOnly: boolean;
 }
-export interface CpuIncompatible81EDX extends CpuIncompatible {
+export type CpuIncompatible81EDX = CpuIncompatible &  {
   nx: boolean;
   ffxsr: boolean;
   rdtscp: boolean;
@@ -12475,250 +12475,250 @@ export interface CpuIncompatible81EDX extends CpuIncompatible {
   other: boolean;
   otherOnly: boolean;
 }
-export interface DatacenterMismatch extends MigrationFault {
+export type DatacenterMismatch = MigrationFault &  {
   invalidArgument: DatacenterMismatchArgument[];
   expectedDatacenter: Datacenter;
 }
-export interface DatacenterMismatchArgument extends DynamicData {
+export type DatacenterMismatchArgument = DynamicData &  {
   entity: ManagedEntity;
   inputDatacenter?: Datacenter;
 }
-export interface DatastoreNotWritableOnHost extends InvalidDatastore {
+export type DatastoreNotWritableOnHost = InvalidDatastore &  {
   host: HostSystem;
 }
-export interface DestinationSwitchFull extends CannotAccessNetwork {
+export type DestinationSwitchFull = CannotAccessNetwork &  {
   
 }
-export interface DeviceNotSupported extends VirtualHardwareCompatibilityIssue {
+export type DeviceNotSupported = VirtualHardwareCompatibilityIssue &  {
   device: string;
   reason?: string;
 }
-export interface DigestNotSupported extends DeviceNotSupported {
+export type DigestNotSupported = DeviceNotSupported &  {
   
 }
-export interface DirectoryNotEmpty extends FileFault {
+export type DirectoryNotEmpty = FileFault &  {
   
 }
-export interface DisableAdminNotSupported extends HostConfigFault {
+export type DisableAdminNotSupported = HostConfigFault &  {
   
 }
-export interface DisallowedMigrationDeviceAttached extends MigrationFault {
+export type DisallowedMigrationDeviceAttached = MigrationFault &  {
   fault: MethodFault;
 }
-export interface DisconnectedHostsBlockingEVC extends EVCConfigFault {
+export type DisconnectedHostsBlockingEVC = EVCConfigFault &  {
   
 }
-export interface DiskHasPartitions extends VsanDiskFault {
+export type DiskHasPartitions = VsanDiskFault &  {
   
 }
-export interface DiskIsLastRemainingNonSSD extends VsanDiskFault {
+export type DiskIsLastRemainingNonSSD = VsanDiskFault &  {
   
 }
-export interface DiskIsNonLocal extends VsanDiskFault {
+export type DiskIsNonLocal = VsanDiskFault &  {
   
 }
-export interface DiskIsUSB extends VsanDiskFault {
+export type DiskIsUSB = VsanDiskFault &  {
   
 }
-export interface DiskMoveTypeNotSupported extends MigrationFault {
+export type DiskMoveTypeNotSupported = MigrationFault &  {
   
 }
-export interface DiskNotSupported extends VirtualHardwareCompatibilityIssue {
+export type DiskNotSupported = VirtualHardwareCompatibilityIssue &  {
   disk: number;
 }
-export interface DiskTooSmall extends VsanDiskFault {
+export type DiskTooSmall = VsanDiskFault &  {
   
 }
-export interface DrsVmotionIncompatibleFault extends VirtualHardwareCompatibilityIssue {
+export type DrsVmotionIncompatibleFault = VirtualHardwareCompatibilityIssue &  {
   host: HostSystem;
 }
-export interface DuplicateDisks extends VsanDiskFault {
+export type DuplicateDisks = VsanDiskFault &  {
   
 }
-export interface DvsApplyOperationFault extends DvsFault {
+export type DvsApplyOperationFault = DvsFault &  {
   objectFault: DvsApplyOperationFaultFaultOnObject[];
 }
-export interface DvsApplyOperationFaultFaultOnObject extends DynamicData {
+export type DvsApplyOperationFaultFaultOnObject = DynamicData &  {
   objectId: string;
   type: string;
   fault: MethodFault;
 }
-export interface EVCAdmissionFailed extends NotSupportedHostInCluster {
+export type EVCAdmissionFailed = NotSupportedHostInCluster &  {
   faults?: MethodFault[];
 }
-export interface EVCAdmissionFailedCPUFeaturesForMode extends EVCAdmissionFailed {
+export type EVCAdmissionFailedCPUFeaturesForMode = EVCAdmissionFailed &  {
   currentEVCModeKey: string;
 }
-export interface EVCAdmissionFailedCPUModel extends EVCAdmissionFailed {
+export type EVCAdmissionFailedCPUModel = EVCAdmissionFailed &  {
   
 }
-export interface EVCAdmissionFailedCPUModelForMode extends EVCAdmissionFailed {
+export type EVCAdmissionFailedCPUModelForMode = EVCAdmissionFailed &  {
   currentEVCModeKey: string;
 }
-export interface EVCAdmissionFailedCPUVendor extends EVCAdmissionFailed {
+export type EVCAdmissionFailedCPUVendor = EVCAdmissionFailed &  {
   clusterCPUVendor: string;
   hostCPUVendor: string;
 }
-export interface EVCAdmissionFailedCPUVendorUnknown extends EVCAdmissionFailed {
+export type EVCAdmissionFailedCPUVendorUnknown = EVCAdmissionFailed &  {
   
 }
-export interface EVCAdmissionFailedHostDisconnected extends EVCAdmissionFailed {
+export type EVCAdmissionFailedHostDisconnected = EVCAdmissionFailed &  {
   
 }
-export interface EVCAdmissionFailedHostSoftware extends EVCAdmissionFailed {
+export type EVCAdmissionFailedHostSoftware = EVCAdmissionFailed &  {
   
 }
-export interface EVCAdmissionFailedHostSoftwareForMode extends EVCAdmissionFailed {
+export type EVCAdmissionFailedHostSoftwareForMode = EVCAdmissionFailed &  {
   
 }
-export interface EVCAdmissionFailedVmActive extends EVCAdmissionFailed {
+export type EVCAdmissionFailedVmActive = EVCAdmissionFailed &  {
   
 }
-export interface EncryptionKeyRequired extends InvalidState {
+export type EncryptionKeyRequired = InvalidState &  {
   requiredKey?: CryptoKeyId[];
 }
-export interface FailToEnableSPBM extends NotEnoughLicenses {
+export type FailToEnableSPBM = NotEnoughLicenses &  {
   cs: ComputeResource;
   csName: string;
   hostLicenseStates: ComputeResourceHostSPBMLicenseInfo[];
 }
-export interface FaultToleranceAntiAffinityViolated extends MigrationFault {
+export type FaultToleranceAntiAffinityViolated = MigrationFault &  {
   hostName: string;
   host: HostSystem;
 }
-export interface FaultToleranceCpuIncompatible extends CpuIncompatible {
+export type FaultToleranceCpuIncompatible = CpuIncompatible &  {
   model: boolean;
   family: boolean;
   stepping: boolean;
 }
-export interface FaultToleranceNeedsThickDisk extends MigrationFault {
+export type FaultToleranceNeedsThickDisk = MigrationFault &  {
   vmName: string;
 }
-export interface FaultToleranceNotSameBuild extends MigrationFault {
+export type FaultToleranceNotSameBuild = MigrationFault &  {
   build: string;
 }
-export interface FeatureRequirementsNotMet extends VirtualHardwareCompatibilityIssue {
+export type FeatureRequirementsNotMet = VirtualHardwareCompatibilityIssue &  {
   featureRequirement?: VirtualMachineFeatureRequirement[];
   vm?: VirtualMachine;
   host?: HostSystem;
 }
-export interface FileAlreadyExists extends FileFault {
+export type FileAlreadyExists = FileFault &  {
   
 }
-export interface FileBackedPortNotSupported extends DeviceNotSupported {
+export type FileBackedPortNotSupported = DeviceNotSupported &  {
   
 }
-export interface FilesystemQuiesceFault extends SnapshotFault {
+export type FilesystemQuiesceFault = SnapshotFault &  {
   
 }
-export interface FilterInUse extends ResourceInUse {
+export type FilterInUse = ResourceInUse &  {
   disk?: VirtualDiskId[];
 }
-export interface FullStorageVMotionNotSupported extends MigrationFeatureNotSupported {
+export type FullStorageVMotionNotSupported = MigrationFeatureNotSupported &  {
   
 }
-export interface GatewayConnectFault extends HostConnectFault {
+export type GatewayConnectFault = HostConnectFault &  {
   gatewayType: string;
   gatewayId: string;
   gatewayInfo: string;
   details?: LocalizableMessage;
 }
-export interface GatewayNotFound extends GatewayConnectFault {
+export type GatewayNotFound = GatewayConnectFault &  {
   
 }
-export interface GatewayNotReachable extends GatewayConnectFault {
+export type GatewayNotReachable = GatewayConnectFault &  {
   
 }
-export interface GatewayOperationRefused extends GatewayConnectFault {
+export type GatewayOperationRefused = GatewayConnectFault &  {
   
 }
-export interface GatewayToHostConnectFault extends GatewayConnectFault {
+export type GatewayToHostConnectFault = GatewayConnectFault &  {
   hostname: string;
   port?: number;
 }
-export interface GatewayToHostTrustVerifyFault extends GatewayToHostConnectFault {
+export type GatewayToHostTrustVerifyFault = GatewayToHostConnectFault &  {
   verificationToken: string;
   propertiesToVerify: KeyValue[];
 }
-export interface GuestAuthenticationChallenge extends GuestOperationsFault {
+export type GuestAuthenticationChallenge = GuestOperationsFault &  {
   serverChallenge: GuestAuthentication;
   sessionID: number;
 }
-export interface GuestComponentsOutOfDate extends GuestOperationsFault {
+export type GuestComponentsOutOfDate = GuestOperationsFault &  {
   
 }
-export interface GuestMultipleMappings extends GuestOperationsFault {
+export type GuestMultipleMappings = GuestOperationsFault &  {
   
 }
-export interface GuestRegistryKeyAlreadyExists extends GuestRegistryKeyFault {
+export type GuestRegistryKeyAlreadyExists = GuestRegistryKeyFault &  {
   
 }
-export interface HAErrorsAtDest extends MigrationFault {
+export type HAErrorsAtDest = MigrationFault &  {
   
 }
-export interface HostConfigFailed extends HostConfigFault {
+export type HostConfigFailed = HostConfigFault &  {
   failure: MethodFault[];
 }
-export interface HotSnapshotMoveNotSupported extends SnapshotCopyNotSupported {
+export type HotSnapshotMoveNotSupported = SnapshotCopyNotSupported &  {
   
 }
-export interface IDEDiskNotSupported extends DiskNotSupported {
+export type IDEDiskNotSupported = DiskNotSupported &  {
   
 }
-export interface InaccessibleDatastore extends InvalidDatastore {
+export type InaccessibleDatastore = InvalidDatastore &  {
   detail?: string;
 }
-export interface InaccessibleFTMetadataDatastore extends InaccessibleDatastore {
+export type InaccessibleFTMetadataDatastore = InaccessibleDatastore &  {
   
 }
-export interface IncompatibleDefaultDevice extends MigrationFault {
+export type IncompatibleDefaultDevice = MigrationFault &  {
   device: string;
 }
-export interface IncompatibleHostForVmReplication extends ReplicationFault {
+export type IncompatibleHostForVmReplication = ReplicationFault &  {
   vmName: string;
   hostName: string;
   reason: string;
 }
-export interface IndependentDiskVMotionNotSupported extends MigrationFeatureNotSupported {
+export type IndependentDiskVMotionNotSupported = MigrationFeatureNotSupported &  {
   
 }
-export interface InsufficientAgentVmsDeployed extends InsufficientResourcesFault {
+export type InsufficientAgentVmsDeployed = InsufficientResourcesFault &  {
   hostName: string;
   requiredNumAgentVms: number;
   currentNumAgentVms: number;
 }
-export interface InsufficientCpuResourcesFault extends InsufficientResourcesFault {
+export type InsufficientCpuResourcesFault = InsufficientResourcesFault &  {
   unreserved: number;
   requested: number;
 }
-export interface InsufficientDisks extends VsanDiskFault {
+export type InsufficientDisks = VsanDiskFault &  {
   
 }
-export interface InsufficientFailoverResourcesFault extends InsufficientResourcesFault {
+export type InsufficientFailoverResourcesFault = InsufficientResourcesFault &  {
   
 }
-export interface InsufficientGraphicsResourcesFault extends InsufficientResourcesFault {
+export type InsufficientGraphicsResourcesFault = InsufficientResourcesFault &  {
   
 }
-export interface InsufficientHostCapacityFault extends InsufficientResourcesFault {
+export type InsufficientHostCapacityFault = InsufficientResourcesFault &  {
   host?: HostSystem;
 }
-export interface InsufficientHostCpuCapacityFault extends InsufficientHostCapacityFault {
+export type InsufficientHostCpuCapacityFault = InsufficientHostCapacityFault &  {
   unreserved: number;
   requested: number;
 }
-export interface InsufficientHostMemoryCapacityFault extends InsufficientHostCapacityFault {
+export type InsufficientHostMemoryCapacityFault = InsufficientHostCapacityFault &  {
   unreserved: number;
   requested: number;
 }
-export interface InsufficientMemoryResourcesFault extends InsufficientResourcesFault {
+export type InsufficientMemoryResourcesFault = InsufficientResourcesFault &  {
   unreserved: number;
   requested: number;
 }
-export interface InsufficientNetworkCapacity extends InsufficientResourcesFault {
+export type InsufficientNetworkCapacity = InsufficientResourcesFault &  {
   
 }
-export interface InsufficientNetworkResourcePoolCapacity extends InsufficientResourcesFault {
+export type InsufficientNetworkResourcePoolCapacity = InsufficientResourcesFault &  {
   dvsName: string;
   dvsUuid: string;
   resourcePoolKey: string;
@@ -12726,383 +12726,383 @@ export interface InsufficientNetworkResourcePoolCapacity extends InsufficientRes
   requested: number;
   device: string[];
 }
-export interface InsufficientPerCpuCapacity extends InsufficientHostCapacityFault {
+export type InsufficientPerCpuCapacity = InsufficientHostCapacityFault &  {
   
 }
-export interface InsufficientStandbyCpuResource extends InsufficientStandbyResource {
+export type InsufficientStandbyCpuResource = InsufficientStandbyResource &  {
   available: number;
   requested: number;
 }
-export interface InsufficientStandbyMemoryResource extends InsufficientStandbyResource {
+export type InsufficientStandbyMemoryResource = InsufficientStandbyResource &  {
   available: number;
   requested: number;
 }
-export interface InvalidBundle extends PlatformConfigFault {
+export type InvalidBundle = PlatformConfigFault &  {
   
 }
-export interface InvalidCAMCertificate extends InvalidCAMServer {
+export type InvalidCAMCertificate = InvalidCAMServer &  {
   
 }
-export interface InvalidClientCertificate extends InvalidLogin {
+export type InvalidClientCertificate = InvalidLogin &  {
   
 }
-export interface InvalidDatastoreState extends InvalidState {
+export type InvalidDatastoreState = InvalidState &  {
   datastoreName?: string;
 }
-export interface InvalidDeviceSpec extends InvalidVmConfig {
+export type InvalidDeviceSpec = InvalidVmConfig &  {
   deviceIndex: number;
 }
-export interface InvalidDiskFormat extends InvalidFormat {
+export type InvalidDiskFormat = InvalidFormat &  {
   
 }
-export interface InvalidHostState extends InvalidState {
+export type InvalidHostState = InvalidState &  {
   host?: HostSystem;
 }
-export interface InvalidNasCredentials extends NasConfigFault {
+export type InvalidNasCredentials = NasConfigFault &  {
   userName: string;
 }
-export interface InvalidNetworkInType extends VAppPropertyFault {
+export type InvalidNetworkInType = VAppPropertyFault &  {
   
 }
-export interface InvalidNetworkResource extends NasConfigFault {
+export type InvalidNetworkResource = NasConfigFault &  {
   remoteHost: string;
   remotePath: string;
 }
-export interface InvalidPowerState extends InvalidState {
+export type InvalidPowerState = InvalidState &  {
   requestedState?: VirtualMachinePowerState;
   existingState: VirtualMachinePowerState;
 }
-export interface InvalidPropertyType extends VAppPropertyFault {
+export type InvalidPropertyType = VAppPropertyFault &  {
   
 }
-export interface InvalidPropertyValue extends VAppPropertyFault {
+export type InvalidPropertyValue = VAppPropertyFault &  {
   
 }
-export interface LargeRDMConversionNotSupported extends MigrationFault {
+export type LargeRDMConversionNotSupported = MigrationFault &  {
   device: string;
 }
-export interface LegacyNetworkInterfaceInUse extends CannotAccessNetwork {
+export type LegacyNetworkInterfaceInUse = CannotAccessNetwork &  {
   
 }
-export interface MaintenanceModeFileMove extends MigrationFault {
+export type MaintenanceModeFileMove = MigrationFault &  {
   
 }
-export interface MemoryFileFormatNotSupportedByDatastore extends UnsupportedDatastore {
+export type MemoryFileFormatNotSupportedByDatastore = UnsupportedDatastore &  {
   datastoreName: string;
   type: string;
 }
-export interface MemorySizeNotRecommended extends VirtualHardwareCompatibilityIssue {
+export type MemorySizeNotRecommended = VirtualHardwareCompatibilityIssue &  {
   memorySizeMB: number;
   minMemorySizeMB: number;
   maxMemorySizeMB: number;
 }
-export interface MemorySizeNotSupported extends VirtualHardwareCompatibilityIssue {
+export type MemorySizeNotSupported = VirtualHardwareCompatibilityIssue &  {
   memorySizeMB: number;
   minMemorySizeMB: number;
   maxMemorySizeMB: number;
 }
-export interface MemorySizeNotSupportedByDatastore extends VirtualHardwareCompatibilityIssue {
+export type MemorySizeNotSupportedByDatastore = VirtualHardwareCompatibilityIssue &  {
   datastore: Datastore;
   memorySizeMB: number;
   maxMemorySizeMB: number;
 }
-export interface MemorySnapshotOnIndependentDisk extends SnapshotFault {
+export type MemorySnapshotOnIndependentDisk = SnapshotFault &  {
   
 }
-export interface MigrationDisabled extends MigrationFault {
+export type MigrationDisabled = MigrationFault &  {
   
 }
-export interface MissingController extends InvalidDeviceSpec {
+export type MissingController = InvalidDeviceSpec &  {
   
 }
-export interface MissingIpPool extends VAppPropertyFault {
+export type MissingIpPool = VAppPropertyFault &  {
   
 }
-export interface MissingNetworkIpConfig extends VAppPropertyFault {
+export type MissingNetworkIpConfig = VAppPropertyFault &  {
   
 }
-export interface MissingPowerOffConfiguration extends VAppConfigFault {
+export type MissingPowerOffConfiguration = VAppConfigFault &  {
   
 }
-export interface MissingPowerOnConfiguration extends VAppConfigFault {
+export type MissingPowerOnConfiguration = VAppConfigFault &  {
   
 }
-export interface MultiWriterNotSupported extends DeviceNotSupported {
+export type MultiWriterNotSupported = DeviceNotSupported &  {
   
 }
-export interface MultipleSnapshotsNotSupported extends SnapshotFault {
+export type MultipleSnapshotsNotSupported = SnapshotFault &  {
   
 }
-export interface NoAvailableIp extends VAppPropertyFault {
+export type NoAvailableIp = VAppPropertyFault &  {
   network: Network;
 }
-export interface NoVcManagedIpConfigured extends VAppPropertyFault {
+export type NoVcManagedIpConfigured = VAppPropertyFault &  {
   
 }
-export interface NoVmInVApp extends VAppConfigFault {
+export type NoVmInVApp = VAppConfigFault &  {
   
 }
-export interface NonPersistentDisksNotSupported extends DeviceNotSupported {
+export type NonPersistentDisksNotSupported = DeviceNotSupported &  {
   
 }
-export interface NonVmwareOuiMacNotSupportedHost extends NotSupportedHost {
+export type NonVmwareOuiMacNotSupportedHost = NotSupportedHost &  {
   hostName: string;
 }
-export interface NotEnoughCpus extends VirtualHardwareCompatibilityIssue {
+export type NotEnoughCpus = VirtualHardwareCompatibilityIssue &  {
   numCpuDest: number;
   numCpuVm: number;
 }
-export interface NotEnoughLogicalCpus extends NotEnoughCpus {
+export type NotEnoughLogicalCpus = NotEnoughCpus &  {
   host?: HostSystem;
 }
-export interface NotUserConfigurableProperty extends VAppPropertyFault {
+export type NotUserConfigurableProperty = VAppPropertyFault &  {
   
 }
-export interface NumVirtualCoresPerSocketNotSupported extends VirtualHardwareCompatibilityIssue {
+export type NumVirtualCoresPerSocketNotSupported = VirtualHardwareCompatibilityIssue &  {
   maxSupportedCoresPerSocketDest: number;
   numCoresPerSocketVm: number;
 }
-export interface NumVirtualCpusNotSupported extends VirtualHardwareCompatibilityIssue {
+export type NumVirtualCpusNotSupported = VirtualHardwareCompatibilityIssue &  {
   maxSupportedVcpusDest: number;
   numCpuVm: number;
 }
-export interface OvfAttribute extends OvfInvalidPackage {
+export type OvfAttribute = OvfInvalidPackage &  {
   elementName: string;
   attributeName: string;
 }
-export interface OvfConstraint extends OvfInvalidPackage {
+export type OvfConstraint = OvfInvalidPackage &  {
   name: string;
 }
-export interface OvfConsumerCallbackFault extends OvfFault {
+export type OvfConsumerCallbackFault = OvfFault &  {
   extensionKey: string;
   extensionName: string;
 }
-export interface OvfConsumerCommunicationError extends OvfConsumerCallbackFault {
+export type OvfConsumerCommunicationError = OvfConsumerCallbackFault &  {
   description: string;
 }
-export interface OvfConsumerFault extends OvfConsumerCallbackFault {
+export type OvfConsumerFault = OvfConsumerCallbackFault &  {
   errorKey: string;
   message: string;
   params?: KeyValue[];
 }
-export interface OvfConsumerInvalidSection extends OvfConsumerCallbackFault {
+export type OvfConsumerInvalidSection = OvfConsumerCallbackFault &  {
   lineNumber: number;
   description: string;
 }
-export interface OvfConsumerUndeclaredSection extends OvfConsumerCallbackFault {
+export type OvfConsumerUndeclaredSection = OvfConsumerCallbackFault &  {
   qualifiedSectionType: string;
 }
-export interface OvfConsumerUndefinedPrefix extends OvfConsumerCallbackFault {
+export type OvfConsumerUndefinedPrefix = OvfConsumerCallbackFault &  {
   prefix: string;
 }
-export interface OvfCpuCompatibility extends OvfImport {
+export type OvfCpuCompatibility = OvfImport &  {
   registerName: string;
   level: number;
   registerValue: string;
   desiredRegisterValue: string;
 }
-export interface OvfCpuCompatibilityCheckNotSupported extends OvfImport {
+export type OvfCpuCompatibilityCheckNotSupported = OvfImport &  {
   
 }
-export interface OvfDiskMappingNotFound extends OvfSystemFault {
+export type OvfDiskMappingNotFound = OvfSystemFault &  {
   diskName: string;
   vmName: string;
 }
-export interface OvfDiskOrderConstraint extends OvfConstraint {
+export type OvfDiskOrderConstraint = OvfConstraint &  {
   
 }
-export interface OvfElement extends OvfInvalidPackage {
+export type OvfElement = OvfInvalidPackage &  {
   name: string;
 }
-export interface OvfElementInvalidValue extends OvfElement {
+export type OvfElementInvalidValue = OvfElement &  {
   value: string;
 }
-export interface OvfExport extends OvfFault {
+export type OvfExport = OvfFault &  {
   
 }
-export interface OvfExportFailed extends OvfExport {
+export type OvfExportFailed = OvfExport &  {
   
 }
-export interface OvfHardwareCheck extends OvfImport {
+export type OvfHardwareCheck = OvfImport &  {
   
 }
-export interface OvfHardwareExport extends OvfExport {
+export type OvfHardwareExport = OvfExport &  {
   device?: VirtualDevice;
   vmPath: string;
 }
-export interface OvfHostResourceConstraint extends OvfConstraint {
+export type OvfHostResourceConstraint = OvfConstraint &  {
   value: string;
 }
-export interface OvfHostValueNotParsed extends OvfSystemFault {
+export type OvfHostValueNotParsed = OvfSystemFault &  {
   property: string;
   value: string;
 }
-export interface OvfInternalError extends OvfSystemFault {
+export type OvfInternalError = OvfSystemFault &  {
   
 }
-export interface OvfInvalidValue extends OvfAttribute {
+export type OvfInvalidValue = OvfAttribute &  {
   value: string;
 }
-export interface OvfInvalidValueConfiguration extends OvfInvalidValue {
+export type OvfInvalidValueConfiguration = OvfInvalidValue &  {
   
 }
-export interface OvfInvalidValueEmpty extends OvfInvalidValue {
+export type OvfInvalidValueEmpty = OvfInvalidValue &  {
   
 }
-export interface OvfInvalidValueFormatMalformed extends OvfInvalidValue {
+export type OvfInvalidValueFormatMalformed = OvfInvalidValue &  {
   
 }
-export interface OvfInvalidValueReference extends OvfInvalidValue {
+export type OvfInvalidValueReference = OvfInvalidValue &  {
   
 }
-export interface OvfInvalidVmName extends OvfUnsupportedPackage {
+export type OvfInvalidVmName = OvfUnsupportedPackage &  {
   name: string;
 }
-export interface OvfMissingAttribute extends OvfAttribute {
+export type OvfMissingAttribute = OvfAttribute &  {
   
 }
-export interface OvfMissingElement extends OvfElement {
+export type OvfMissingElement = OvfElement &  {
   
 }
-export interface OvfMissingElementNormalBoundary extends OvfMissingElement {
+export type OvfMissingElementNormalBoundary = OvfMissingElement &  {
   boundary: string;
 }
-export interface OvfNoHostNic extends OvfUnsupportedPackage {
+export type OvfNoHostNic = OvfUnsupportedPackage &  {
   
 }
-export interface OvfNoSupportedHardwareFamily extends OvfUnsupportedPackage {
+export type OvfNoSupportedHardwareFamily = OvfUnsupportedPackage &  {
   version: string;
 }
-export interface OvfPropertyExport extends OvfExport {
+export type OvfPropertyExport = OvfExport &  {
   type: string;
   value: string;
 }
-export interface OvfPropertyNetworkExport extends OvfExport {
+export type OvfPropertyNetworkExport = OvfExport &  {
   network: string;
 }
-export interface OvfUnableToExportDisk extends OvfHardwareExport {
+export type OvfUnableToExportDisk = OvfHardwareExport &  {
   diskName: string;
 }
-export interface OvfUnexpectedElement extends OvfElement {
+export type OvfUnexpectedElement = OvfElement &  {
   
 }
-export interface OvfUnknownDeviceBacking extends OvfHardwareExport {
+export type OvfUnknownDeviceBacking = OvfHardwareExport &  {
   backing: VirtualDeviceBackingInfo;
 }
-export interface OvfUnsupportedAttribute extends OvfUnsupportedPackage {
+export type OvfUnsupportedAttribute = OvfUnsupportedPackage &  {
   elementName: string;
   attributeName: string;
 }
-export interface OvfUnsupportedAttributeValue extends OvfUnsupportedAttribute {
+export type OvfUnsupportedAttributeValue = OvfUnsupportedAttribute &  {
   value: string;
 }
-export interface OvfUnsupportedDeviceExport extends OvfHardwareExport {
+export type OvfUnsupportedDeviceExport = OvfHardwareExport &  {
   
 }
-export interface OvfUnsupportedElement extends OvfUnsupportedPackage {
+export type OvfUnsupportedElement = OvfUnsupportedPackage &  {
   name: string;
 }
-export interface OvfUnsupportedElementValue extends OvfUnsupportedElement {
+export type OvfUnsupportedElementValue = OvfUnsupportedElement &  {
   value: string;
 }
-export interface OvfUnsupportedSection extends OvfUnsupportedElement {
+export type OvfUnsupportedSection = OvfUnsupportedElement &  {
   info: string;
 }
-export interface OvfWrongElement extends OvfElement {
+export type OvfWrongElement = OvfElement &  {
   
 }
-export interface PatchAlreadyInstalled extends PatchNotApplicable {
+export type PatchAlreadyInstalled = PatchNotApplicable &  {
   
 }
-export interface PatchInstallFailed extends PlatformConfigFault {
+export type PatchInstallFailed = PlatformConfigFault &  {
   rolledBack: boolean;
 }
-export interface PatchIntegrityError extends PlatformConfigFault {
+export type PatchIntegrityError = PlatformConfigFault &  {
   
 }
-export interface PatchMetadataCorrupted extends PatchMetadataInvalid {
+export type PatchMetadataCorrupted = PatchMetadataInvalid &  {
   
 }
-export interface PatchMissingDependencies extends PatchNotApplicable {
+export type PatchMissingDependencies = PatchNotApplicable &  {
   prerequisitePatch?: string[];
   prerequisiteLib?: string[];
 }
-export interface PowerOnFtSecondaryTimedout extends Timedout {
+export type PowerOnFtSecondaryTimedout = Timedout &  {
   vm: VirtualMachine;
   vmName: string;
   timeout: number;
 }
-export interface QuiesceDatastoreIOForHAFailed extends ResourceInUse {
+export type QuiesceDatastoreIOForHAFailed = ResourceInUse &  {
   host: HostSystem;
   hostName: string;
   ds: Datastore;
   dsName: string;
 }
-export interface RDMNotSupported extends DeviceNotSupported {
+export type RDMNotSupported = DeviceNotSupported &  {
   
 }
-export interface RawDiskNotSupported extends DeviceNotSupported {
+export type RawDiskNotSupported = DeviceNotSupported &  {
   
 }
-export interface RemoteDeviceNotSupported extends DeviceNotSupported {
+export type RemoteDeviceNotSupported = DeviceNotSupported &  {
   
 }
-export interface ReplicationConfigFault extends ReplicationFault {
+export type ReplicationConfigFault = ReplicationFault &  {
   
 }
-export interface ReplicationDiskConfigFault extends ReplicationConfigFault {
+export type ReplicationDiskConfigFault = ReplicationConfigFault &  {
   reason?: string;
   vmRef?: VirtualMachine;
   key?: number;
 }
-export interface ReplicationVmConfigFault extends ReplicationConfigFault {
+export type ReplicationVmConfigFault = ReplicationConfigFault &  {
   reason?: string;
   vmRef?: VirtualMachine;
 }
-export interface SharedBusControllerNotSupported extends DeviceNotSupported {
+export type SharedBusControllerNotSupported = DeviceNotSupported &  {
   
 }
-export interface SnapshotCloneNotSupported extends SnapshotCopyNotSupported {
+export type SnapshotCloneNotSupported = SnapshotCopyNotSupported &  {
   
 }
-export interface SnapshotDisabled extends SnapshotFault {
+export type SnapshotDisabled = SnapshotFault &  {
   
 }
-export interface StorageVmotionIncompatible extends VirtualHardwareCompatibilityIssue {
+export type StorageVmotionIncompatible = VirtualHardwareCompatibilityIssue &  {
   datastore?: Datastore;
 }
-export interface SwapDatastoreNotWritableOnHost extends DatastoreNotWritableOnHost {
+export type SwapDatastoreNotWritableOnHost = DatastoreNotWritableOnHost &  {
   
 }
-export interface UnSupportedDatastoreForVFlash extends UnsupportedDatastore {
+export type UnSupportedDatastoreForVFlash = UnsupportedDatastore &  {
   datastoreName: string;
   type: string;
 }
-export interface UnconfiguredPropertyValue extends InvalidPropertyValue {
+export type UnconfiguredPropertyValue = InvalidPropertyValue &  {
   
 }
-export interface VMINotSupported extends DeviceNotSupported {
+export type VMINotSupported = DeviceNotSupported &  {
   
 }
-export interface VMOnConflictDVPort extends CannotAccessNetwork {
+export type VMOnConflictDVPort = CannotAccessNetwork &  {
   
 }
-export interface VMOnVirtualIntranet extends CannotAccessNetwork {
+export type VMOnVirtualIntranet = CannotAccessNetwork &  {
   
 }
-export interface VirtualDiskModeNotSupported extends DeviceNotSupported {
+export type VirtualDiskModeNotSupported = DeviceNotSupported &  {
   mode: string;
 }
-export interface VirtualEthernetCardNotSupported extends DeviceNotSupported {
+export type VirtualEthernetCardNotSupported = DeviceNotSupported &  {
   
 }
-export interface VmfsAlreadyMounted extends VmfsMountFault {
+export type VmfsAlreadyMounted = VmfsMountFault &  {
   
 }
-export interface VmfsAmbiguousMount extends VmfsMountFault {
+export type VmfsAmbiguousMount = VmfsMountFault &  {
   
 }
-export interface HostConfigInfo extends DynamicData {
+export type HostConfigInfo = DynamicData &  {
   host: HostSystem;
   product: AboutInfo;
   deploymentInfo?: HostDeploymentInfo;
@@ -13161,7 +13161,7 @@ export interface HostConfigInfo extends DynamicData {
   assignableHardwareBinding?: HostAssignableHardwareBinding[];
   assignableHardwareConfig?: HostAssignableHardwareConfig;
 }
-export interface HostConnectInfo extends DynamicData {
+export type HostConnectInfo = DynamicData &  {
   serverIp?: string;
   inDasCluster?: boolean;
   host: HostListSummary;
@@ -13173,64 +13173,64 @@ export interface HostConnectInfo extends DynamicData {
   license?: HostLicenseConnectInfo;
   capability?: HostCapability;
 }
-export interface HostDatastoreExistsConnectInfo extends HostDatastoreConnectInfo {
+export type HostDatastoreExistsConnectInfo = HostDatastoreConnectInfo &  {
   newDatastoreName: string;
 }
-export interface HostDatastoreConnectInfo extends DynamicData {
+export type HostDatastoreConnectInfo = DynamicData &  {
   summary: DatastoreSummary;
 }
-export interface HostDatastoreNameConflictConnectInfo extends HostDatastoreConnectInfo {
+export type HostDatastoreNameConflictConnectInfo = HostDatastoreConnectInfo &  {
   newDatastoreName: string;
 }
-export interface HostLicenseConnectInfo extends DynamicData {
+export type HostLicenseConnectInfo = DynamicData &  {
   license: LicenseManagerLicenseInfo;
   evaluation: LicenseManagerEvaluationInfo;
   resource?: HostLicensableResourceInfo;
 }
-export interface HostConnectInfoNetworkInfo extends DynamicData {
+export type HostConnectInfoNetworkInfo = DynamicData &  {
   summary: NetworkSummary;
 }
-export interface HostNewNetworkConnectInfo extends HostConnectInfoNetworkInfo {
+export type HostNewNetworkConnectInfo = HostConnectInfoNetworkInfo &  {
   
 }
-export interface HostDiagnosticPartition extends DynamicData {
+export type HostDiagnosticPartition = DynamicData &  {
   storageType: string;
   diagnosticType: string;
   slots: number;
   id: HostScsiDiskPartition;
 }
-export interface HostDiagnosticPartitionCreateDescription extends DynamicData {
+export type HostDiagnosticPartitionCreateDescription = DynamicData &  {
   layout: HostDiskPartitionLayout;
   diskUuid: string;
   spec: HostDiagnosticPartitionCreateSpec;
 }
-export interface HostDiagnosticPartitionCreateOption extends DynamicData {
+export type HostDiagnosticPartitionCreateOption = DynamicData &  {
   storageType: string;
   diagnosticType: string;
   disk: HostScsiDisk;
 }
-export interface HostDiagnosticPartitionCreateSpec extends DynamicData {
+export type HostDiagnosticPartitionCreateSpec = DynamicData &  {
   storageType: string;
   diagnosticType: string;
   id: HostScsiDiskPartition;
   partition: HostDiskPartitionSpec;
   active?: boolean;
 }
-export interface HostFibreChannelOverEthernetTargetTransport extends HostFibreChannelTargetTransport {
+export type HostFibreChannelOverEthernetTargetTransport = HostFibreChannelTargetTransport &  {
   vnportMac: string;
   fcfMac: string;
   vlanId: number;
 }
-export interface LocalDatastoreInfo extends DatastoreInfo {
+export type LocalDatastoreInfo = DatastoreInfo &  {
   path?: string;
 }
-export interface NasDatastoreInfo extends DatastoreInfo {
+export type NasDatastoreInfo = DatastoreInfo &  {
   nas?: HostNasVolume;
 }
-export interface PMemDatastoreInfo extends DatastoreInfo {
+export type PMemDatastoreInfo = DatastoreInfo &  {
   pmem: HostPMemVolume;
 }
-export interface HostRuntimeInfo extends DynamicData {
+export type HostRuntimeInfo = DynamicData &  {
   connectionState: HostSystemConnectionState;
   powerState: HostSystemPowerState;
   standbyMode?: string;
@@ -13247,44 +13247,44 @@ export interface HostRuntimeInfo extends DynamicData {
   cryptoState?: string;
   cryptoKeyId?: CryptoKeyId;
 }
-export interface HostRuntimeInfoNetStackInstanceRuntimeInfo extends DynamicData {
+export type HostRuntimeInfoNetStackInstanceRuntimeInfo = DynamicData &  {
   netStackInstanceKey: string;
   state?: string;
   vmknicKeys?: string[];
   maxNumberOfConnections?: number;
   currentIpV6Enabled?: boolean;
 }
-export interface HostNetworkResourceRuntime extends DynamicData {
+export type HostNetworkResourceRuntime = DynamicData &  {
   pnicResourceInfo: HostPnicNetworkResourceInfo[];
 }
-export interface HostRuntimeInfoNetworkRuntimeInfo extends DynamicData {
+export type HostRuntimeInfoNetworkRuntimeInfo = DynamicData &  {
   netStackInstanceRuntimeInfo?: HostRuntimeInfoNetStackInstanceRuntimeInfo[];
   networkResourceRuntime?: HostNetworkResourceRuntime;
 }
-export interface HostPlacedVirtualNicIdentifier extends DynamicData {
+export type HostPlacedVirtualNicIdentifier = DynamicData &  {
   vm: VirtualMachine;
   vnicKey: string;
   reservation?: number;
 }
-export interface HostPnicNetworkResourceInfo extends DynamicData {
+export type HostPnicNetworkResourceInfo = DynamicData &  {
   pnicDevice: string;
   availableBandwidthForVMTraffic?: number;
   unusedBandwidthForVMTraffic?: number;
   placedVirtualNics?: HostPlacedVirtualNicIdentifier[];
 }
-export interface HostStorageSystemDiskLocatorLedResult extends DynamicData {
+export type HostStorageSystemDiskLocatorLedResult = DynamicData &  {
   key: string;
   fault: MethodFault;
 }
-export interface HostStorageSystemScsiLunResult extends DynamicData {
+export type HostStorageSystemScsiLunResult = DynamicData &  {
   key: string;
   fault?: MethodFault;
 }
-export interface HostStorageSystemVmfsVolumeResult extends DynamicData {
+export type HostStorageSystemVmfsVolumeResult = DynamicData &  {
   key: string;
   fault?: MethodFault;
 }
-export interface HostVMotionManagerDstInstantCloneResult extends DynamicData {
+export type HostVMotionManagerDstInstantCloneResult = DynamicData &  {
   dstVmId?: number;
   startTime?: number;
   cptLoadTime?: number;
@@ -13296,34 +13296,34 @@ export interface HostVMotionManagerDstInstantCloneResult extends DynamicData {
   devCptStreamSize?: number;
   devCptStreamTime?: number;
 }
-export interface HostVMotionManagerSrcInstantCloneResult extends DynamicData {
+export type HostVMotionManagerSrcInstantCloneResult = DynamicData &  {
   startTime?: number;
   quiesceTime?: number;
   quiesceDoneTime?: number;
   resumeDoneTime?: number;
   endTime?: number;
 }
-export interface VmfsDatastoreCreateSpec extends VmfsDatastoreSpec {
+export type VmfsDatastoreCreateSpec = VmfsDatastoreSpec &  {
   partition: HostDiskPartitionSpec;
   vmfs: HostVmfsSpec;
   extent?: HostScsiDiskPartition[];
 }
-export interface VmfsDatastoreInfo extends DatastoreInfo {
+export type VmfsDatastoreInfo = DatastoreInfo &  {
   maxPhysicalRDMFileSize: number;
   maxVirtualRDMFileSize: number;
   vmfs?: HostVmfsVolume;
 }
-export interface VsanDatastoreInfo extends DatastoreInfo {
+export type VsanDatastoreInfo = DatastoreInfo &  {
   membershipUuid?: string;
   accessGenNo?: number;
 }
-export interface VvolDatastoreInfo extends DatastoreInfo {
+export type VvolDatastoreInfo = DatastoreInfo &  {
   vvolDS?: HostVvolVolume;
 }
-export interface HourlyTaskScheduler extends RecurrentTaskScheduler {
+export type HourlyTaskScheduler = RecurrentTaskScheduler &  {
   minute: number;
 }
-export interface VirtualMachineDatastoreInfo extends VirtualMachineTargetInfo {
+export type VirtualMachineDatastoreInfo = VirtualMachineTargetInfo &  {
   datastore: DatastoreSummary;
   capability: DatastoreCapability;
   maxFileSize: number;
@@ -13333,97 +13333,97 @@ export interface VirtualMachineDatastoreInfo extends VirtualMachineTargetInfo {
   mode: string;
   vStorageSupport?: string;
 }
-export interface ParaVirtualSCSIController extends VirtualSCSIController {
+export type ParaVirtualSCSIController = VirtualSCSIController &  {
   
 }
-export interface ParaVirtualSCSIControllerOption extends VirtualSCSIControllerOption {
+export type ParaVirtualSCSIControllerOption = VirtualSCSIControllerOption &  {
   
 }
-export interface VirtualAHCIController extends VirtualSATAController {
+export type VirtualAHCIController = VirtualSATAController &  {
   
 }
-export interface VirtualAHCIControllerOption extends VirtualSATAControllerOption {
+export type VirtualAHCIControllerOption = VirtualSATAControllerOption &  {
   
 }
-export interface VirtualBusLogicController extends VirtualSCSIController {
+export type VirtualBusLogicController = VirtualSCSIController &  {
   
 }
-export interface VirtualBusLogicControllerOption extends VirtualSCSIControllerOption {
+export type VirtualBusLogicControllerOption = VirtualSCSIControllerOption &  {
   
 }
-export interface VirtualLsiLogicController extends VirtualSCSIController {
+export type VirtualLsiLogicController = VirtualSCSIController &  {
   
 }
-export interface VirtualLsiLogicControllerOption extends VirtualSCSIControllerOption {
+export type VirtualLsiLogicControllerOption = VirtualSCSIControllerOption &  {
   
 }
-export interface VirtualLsiLogicSASController extends VirtualSCSIController {
+export type VirtualLsiLogicSASController = VirtualSCSIController &  {
   
 }
-export interface VirtualLsiLogicSASControllerOption extends VirtualSCSIControllerOption {
+export type VirtualLsiLogicSASControllerOption = VirtualSCSIControllerOption &  {
   
 }
-export interface ClusterComputeResourceClusterConfigResult extends DynamicData {
+export type ClusterComputeResourceClusterConfigResult = DynamicData &  {
   failedHosts?: FolderFailedHostResult[];
   configuredHosts?: HostSystem[];
 }
-export interface ClusterComputeResourceDVSConfigurationValidation extends ClusterComputeResourceValidationResultBase {
+export type ClusterComputeResourceDVSConfigurationValidation = ClusterComputeResourceValidationResultBase &  {
   isDvsValid: boolean;
   isDvpgValid: boolean;
 }
-export interface ClusterComputeResourceDVSSetting extends DynamicData {
+export type ClusterComputeResourceDVSSetting = DynamicData &  {
   dvSwitch: DistributedVirtualSwitch;
   pnicDevices?: string[];
   dvPortgroupSetting?: ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping[];
 }
-export interface ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping extends DynamicData {
+export type ClusterComputeResourceDVSSettingDVPortgroupToServiceMapping = DynamicData &  {
   dvPortgroup: DistributedVirtualPortgroup;
   service: string;
 }
-export interface ClusterComputeResourceDvsProfile extends DynamicData {
+export type ClusterComputeResourceDvsProfile = DynamicData &  {
   dvsName?: string;
   dvSwitch?: DistributedVirtualSwitch;
   pnicDevices?: string[];
   dvPortgroupMapping?: ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping[];
 }
-export interface ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping extends DynamicData {
+export type ClusterComputeResourceDvsProfileDVPortgroupSpecToServiceMapping = DynamicData &  {
   dvPortgroupSpec?: DVPortgroupConfigSpec;
   dvPortgroup?: DistributedVirtualPortgroup;
   service: string;
 }
-export interface ClusterComputeResourceHCIConfigInfo extends DynamicData {
+export type ClusterComputeResourceHCIConfigInfo = DynamicData &  {
   workflowState: string;
   dvsSetting?: ClusterComputeResourceDVSSetting[];
   configuredHosts?: HostSystem[];
   hostConfigProfile?: ClusterComputeResourceHostConfigurationProfile;
 }
-export interface ClusterComputeResourceHCIConfigSpec extends DynamicData {
+export type ClusterComputeResourceHCIConfigSpec = DynamicData &  {
   dvsProf?: ClusterComputeResourceDvsProfile[];
   hostConfigProfile?: ClusterComputeResourceHostConfigurationProfile;
   vSanConfigSpec?: SDDCBase;
   vcProf?: ClusterComputeResourceVCProfile;
 }
-export interface ClusterComputeResourceHostConfigurationInput extends DynamicData {
+export type ClusterComputeResourceHostConfigurationInput = DynamicData &  {
   host: HostSystem;
   hostVmkNics?: ClusterComputeResourceHostVmkNicInfo[];
   allowedInNonMaintenanceMode?: boolean;
 }
-export interface ClusterComputeResourceHostConfigurationProfile extends DynamicData {
+export type ClusterComputeResourceHostConfigurationProfile = DynamicData &  {
   dateTimeConfig?: HostDateTimeConfig;
   lockdownMode?: HostLockdownMode;
 }
-export interface ClusterComputeResourceHostConfigurationValidation extends ClusterComputeResourceValidationResultBase {
+export type ClusterComputeResourceHostConfigurationValidation = ClusterComputeResourceValidationResultBase &  {
   host: HostSystem;
   isDvsSettingValid?: boolean;
   isVmknicSettingValid?: boolean;
   isNtpSettingValid?: boolean;
   isLockdownModeValid?: boolean;
 }
-export interface ClusterComputeResourceHostVmkNicInfo extends DynamicData {
+export type ClusterComputeResourceHostVmkNicInfo = DynamicData &  {
   nicSpec: HostVirtualNicSpec;
   service: string;
 }
-export interface ClusterComputeResourceSummary extends ComputeResourceSummary {
+export type ClusterComputeResourceSummary = ComputeResourceSummary &  {
   currentFailoverLevel: number;
   admissionControlInfo?: ClusterDasAdmissionControlInfo;
   numVmotions: number;
@@ -13437,106 +13437,106 @@ export interface ClusterComputeResourceSummary extends ComputeResourceSummary {
   dasData?: ClusterDasData;
   clusterMaintenanceModeStatus?: string;
 }
-export interface ClusterComputeResourceVCProfile extends DynamicData {
+export type ClusterComputeResourceVCProfile = DynamicData &  {
   clusterSpec?: ClusterConfigSpecEx;
   evcModeKey?: string;
   evcGraphicsModeKey?: string;
 }
-export interface ClusterComputeResourceValidationResultBase extends DynamicData {
+export type ClusterComputeResourceValidationResultBase = DynamicData &  {
   info?: LocalizableMessage[];
 }
-export interface CustomFieldDefAddedEvent extends CustomFieldDefEvent {
+export type CustomFieldDefAddedEvent = CustomFieldDefEvent &  {
   
 }
-export interface ConnectedIso extends OvfExport {
+export type ConnectedIso = OvfExport &  {
   cdrom: VirtualCdrom;
   filename: string;
 }
-export interface CpuCompatibilityUnknown extends CpuIncompatible {
+export type CpuCompatibilityUnknown = CpuIncompatible &  {
   
 }
-export interface DeviceBackingNotSupported extends DeviceNotSupported {
+export type DeviceBackingNotSupported = DeviceNotSupported &  {
   backing: string;
 }
-export interface DeviceControllerNotSupported extends DeviceNotSupported {
+export type DeviceControllerNotSupported = DeviceNotSupported &  {
   controller: string;
 }
-export interface DeviceHotPlugNotSupported extends InvalidDeviceSpec {
+export type DeviceHotPlugNotSupported = InvalidDeviceSpec &  {
   
 }
-export interface DeviceNotFound extends InvalidDeviceSpec {
+export type DeviceNotFound = InvalidDeviceSpec &  {
   
 }
-export interface DeviceUnsupportedForVmPlatform extends InvalidDeviceSpec {
+export type DeviceUnsupportedForVmPlatform = InvalidDeviceSpec &  {
   
 }
-export interface DeviceUnsupportedForVmVersion extends InvalidDeviceSpec {
+export type DeviceUnsupportedForVmVersion = InvalidDeviceSpec &  {
   currentVersion: string;
   expectedVersion: string;
 }
-export interface DisallowedDiskModeChange extends InvalidDeviceSpec {
+export type DisallowedDiskModeChange = InvalidDeviceSpec &  {
   
 }
-export interface GatewayHostNotReachable extends GatewayToHostConnectFault {
+export type GatewayHostNotReachable = GatewayToHostConnectFault &  {
   
 }
-export interface GatewayToHostAuthFault extends GatewayToHostConnectFault {
+export type GatewayToHostAuthFault = GatewayToHostConnectFault &  {
   invalidProperties: string[];
   missingProperties: string[];
 }
-export interface InvalidController extends InvalidDeviceSpec {
+export type InvalidController = InvalidDeviceSpec &  {
   controllerKey: number;
 }
-export interface InvalidDeviceBacking extends InvalidDeviceSpec {
+export type InvalidDeviceBacking = InvalidDeviceSpec &  {
   
 }
-export interface InvalidDeviceOperation extends InvalidDeviceSpec {
+export type InvalidDeviceOperation = InvalidDeviceSpec &  {
   badOp?: VirtualDeviceConfigSpecOperation;
   badFileOp?: VirtualDeviceConfigSpecFileOperation;
 }
-export interface InvalidHostConnectionState extends InvalidHostState {
+export type InvalidHostConnectionState = InvalidHostState &  {
   
 }
-export interface OvfConnectedDevice extends OvfHardwareExport {
+export type OvfConnectedDevice = OvfHardwareExport &  {
   
 }
-export interface OvfConnectedDeviceFloppy extends OvfConnectedDevice {
+export type OvfConnectedDeviceFloppy = OvfConnectedDevice &  {
   filename: string;
 }
-export interface OvfConnectedDeviceIso extends OvfConnectedDevice {
+export type OvfConnectedDeviceIso = OvfConnectedDevice &  {
   filename: string;
 }
-export interface OvfDuplicateElement extends OvfElement {
+export type OvfDuplicateElement = OvfElement &  {
   
 }
-export interface OvfDuplicatedElementBoundary extends OvfElement {
+export type OvfDuplicatedElementBoundary = OvfElement &  {
   boundary: string;
 }
-export interface OvfDuplicatedPropertyIdExport extends OvfExport {
+export type OvfDuplicatedPropertyIdExport = OvfExport &  {
   fqid: string;
 }
-export interface OvfDuplicatedPropertyIdImport extends OvfExport {
+export type OvfDuplicatedPropertyIdImport = OvfExport &  {
   
 }
-export interface OvfNoSpaceOnController extends OvfUnsupportedElement {
+export type OvfNoSpaceOnController = OvfUnsupportedElement &  {
   parent: string;
 }
-export interface PhysCompatRDMNotSupported extends RDMNotSupported {
+export type PhysCompatRDMNotSupported = RDMNotSupported &  {
   
 }
-export interface UnusedVirtualDiskBlocksNotScrubbed extends DeviceBackingNotSupported {
+export type UnusedVirtualDiskBlocksNotScrubbed = DeviceBackingNotSupported &  {
   
 }
-export interface VirtualDiskBlocksNotFullyProvisioned extends DeviceBackingNotSupported {
+export type VirtualDiskBlocksNotFullyProvisioned = DeviceBackingNotSupported &  {
   
 }
-export interface DailyTaskScheduler extends HourlyTaskScheduler {
+export type DailyTaskScheduler = HourlyTaskScheduler &  {
   hour: number;
 }
-export interface MonthlyTaskScheduler extends DailyTaskScheduler {
+export type MonthlyTaskScheduler = DailyTaskScheduler &  {
   
 }
-export interface WeeklyTaskScheduler extends DailyTaskScheduler {
+export type WeeklyTaskScheduler = DailyTaskScheduler &  {
   sunday: boolean;
   monday: boolean;
   tuesday: boolean;
@@ -13545,13 +13545,13 @@ export interface WeeklyTaskScheduler extends DailyTaskScheduler {
   friday: boolean;
   saturday: boolean;
 }
-export interface DVPortNotSupported extends DeviceBackingNotSupported {
+export type DVPortNotSupported = DeviceBackingNotSupported &  {
   
 }
-export interface MonthlyByDayTaskScheduler extends MonthlyTaskScheduler {
+export type MonthlyByDayTaskScheduler = MonthlyTaskScheduler &  {
   day: number;
 }
-export interface MonthlyByWeekdayTaskScheduler extends MonthlyTaskScheduler {
+export type MonthlyByWeekdayTaskScheduler = MonthlyTaskScheduler &  {
   offset: WeekOfMonth;
   weekday: DayOfWeek;
 }

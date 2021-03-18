@@ -40,7 +40,7 @@ ${this.createTypeNames()}
 
   private createDataTypes(): string {
     return this.definitions.dataTypes.map(type => `
-export interface ${type.wsdlName}${type.parent ? ` extends ${this.typeMap[type.parent].wsdlName}` : ""} {
+export type ${type.wsdlName} = ${type.parent ? `${this.typeMap[type.parent].wsdlName} & ` : ""} {
   ${type.props ? `${this.createProps(type.props, ";\n  ")};` : ""}
 }`.trim()).join("\n");
   }

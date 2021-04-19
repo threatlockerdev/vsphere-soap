@@ -29,6 +29,9 @@ const constructHelperObjects = (connection: Connection, data: any, thisName: str
   if (data instanceof Array) {
     return data.map(item => constructHelperObjects(connection, item, thisName));
   }
+  if (thisName.endsWith("[]")) {
+    thisName = thisName.slice(0, -2);
+  }
   const fieldMap = typeNames.classes[thisName] ?? typeNames.interfaces[thisName];
   if ("_this" in fieldMap && typeof fieldMap._this === "function" && !fromConstructor) {
     return new fieldMap._this(connection, data);

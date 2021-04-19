@@ -16072,43 +16072,43 @@ export class PropertyCollector extends ManagedObject {
     }
   }
   async createFilter(args: {
-  spec: PropertyFilterSpec;
+    spec: PropertyFilterSpec;
     partialUpdates: boolean
-}): Promise<PropertyFilter> {
+  }): Promise<PropertyFilter> {
     const result = await this.connection.exec<{
-  spec: PropertyFilterSpec;
-    partialUpdates: boolean
-} & { _this: ObjectReference }, PropertyFilter>(
+      spec: PropertyFilterSpec;
+      partialUpdates: boolean
+    } & { _this: ObjectReference }, PropertyFilter>(
       "CreateFilter", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PropertyFilter");
   }
   async retrieveContents(args: {
-  specSet: PropertyFilterSpec[]
-}): Promise<ObjectContent[] | undefined> {
+    specSet: PropertyFilterSpec[]
+  }): Promise<ObjectContent[] | undefined> {
     const result = await this.connection.exec<{
-  specSet: PropertyFilterSpec[]
-} & { _this: ObjectReference }, ObjectContent[] | undefined>(
+      specSet: PropertyFilterSpec[]
+    } & { _this: ObjectReference }, ObjectContent[] | undefined>(
       "RetrieveProperties", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ObjectContent[]");
   }
   async checkForUpdates(args: {
-  version?: string
-}): Promise<UpdateSet | undefined> {
+    version?: string
+  }): Promise<UpdateSet | undefined> {
     const result = await this.connection.exec<{
-  version?: string
-} & { _this: ObjectReference }, UpdateSet | undefined>(
+      version?: string
+    } & { _this: ObjectReference }, UpdateSet | undefined>(
       "CheckForUpdates", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UpdateSet");
   }
   async waitForUpdates(args: {
-  version?: string
-}): Promise<UpdateSet> {
+    version?: string
+  }): Promise<UpdateSet> {
     const result = await this.connection.exec<{
-  version?: string
-} & { _this: ObjectReference }, UpdateSet>(
+      version?: string
+    } & { _this: ObjectReference }, UpdateSet>(
       "WaitForUpdates", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UpdateSet");
@@ -16120,45 +16120,45 @@ export class PropertyCollector extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async waitForUpdatesEx(args: {
-  version?: string;
+    version?: string;
     options?: WaitOptions
-}): Promise<UpdateSet | undefined> {
+  }): Promise<UpdateSet | undefined> {
     const result = await this.connection.exec<{
-  version?: string;
-    options?: WaitOptions
-} & { _this: ObjectReference }, UpdateSet | undefined>(
+      version?: string;
+      options?: WaitOptions
+    } & { _this: ObjectReference }, UpdateSet | undefined>(
       "WaitForUpdatesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UpdateSet");
   }
   async retrievePropertiesEx(args: {
-  specSet: PropertyFilterSpec[];
+    specSet: PropertyFilterSpec[];
     options: RetrieveOptions
-}): Promise<RetrieveResult | undefined> {
+  }): Promise<RetrieveResult | undefined> {
     const result = await this.connection.exec<{
-  specSet: PropertyFilterSpec[];
-    options: RetrieveOptions
-} & { _this: ObjectReference }, RetrieveResult | undefined>(
+      specSet: PropertyFilterSpec[];
+      options: RetrieveOptions
+    } & { _this: ObjectReference }, RetrieveResult | undefined>(
       "RetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "RetrieveResult");
   }
   async continueRetrievePropertiesEx(args: {
-  token: string
-}): Promise<RetrieveResult> {
+    token: string
+  }): Promise<RetrieveResult> {
     const result = await this.connection.exec<{
-  token: string
-} & { _this: ObjectReference }, RetrieveResult>(
+      token: string
+    } & { _this: ObjectReference }, RetrieveResult>(
       "ContinueRetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "RetrieveResult");
   }
   async cancelRetrievePropertiesEx(args: {
-  token: string
-}): Promise<void> {
+    token: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  token: string
-} & { _this: ObjectReference }, void>(
+      token: string
+    } & { _this: ObjectReference }, void>(
       "CancelRetrievePropertiesEx", { _this: { attributes: { type: "PropertyCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -16207,31 +16207,31 @@ export class CertificateManager extends ManagedObject {
     }
   }
   async refreshCACertificatesAndCRLs(args: {
-  host: HostSystem[]
-}): Promise<Task> {
+    host: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "CertMgrRefreshCACertificatesAndCRLs_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async refreshCertificates(args: {
-  host: HostSystem[]
-}): Promise<Task> {
+    host: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "CertMgrRefreshCertificates_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async revokeCertificates(args: {
-  host: HostSystem[]
-}): Promise<Task> {
+    host: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "CertMgrRevokeCertificates_Task", { _this: { attributes: { type: "CertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -16249,53 +16249,53 @@ export class CustomFieldsManager extends ManagedObject {
     }
   }
   async addFieldDefinition(args: {
-  name: string;
+    name: string;
     moType?: string;
     fieldDefPolicy?: PrivilegePolicyDef;
     fieldPolicy?: PrivilegePolicyDef
-}): Promise<CustomFieldDef> {
+  }): Promise<CustomFieldDef> {
     const result = await this.connection.exec<{
-  name: string;
-    moType?: string;
-    fieldDefPolicy?: PrivilegePolicyDef;
-    fieldPolicy?: PrivilegePolicyDef
-} & { _this: ObjectReference }, CustomFieldDef>(
+      name: string;
+      moType?: string;
+      fieldDefPolicy?: PrivilegePolicyDef;
+      fieldPolicy?: PrivilegePolicyDef
+    } & { _this: ObjectReference }, CustomFieldDef>(
       "AddCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CustomFieldDef");
   }
   async removeFieldDefinition(args: {
-  key: number
-}): Promise<void> {
+    key: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: number
-} & { _this: ObjectReference }, void>(
+      key: number
+    } & { _this: ObjectReference }, void>(
       "RemoveCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async renameFieldDefinition(args: {
-  key: number;
+    key: number;
     name: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: number;
-    name: string
-} & { _this: ObjectReference }, void>(
+      key: number;
+      name: string
+    } & { _this: ObjectReference }, void>(
       "RenameCustomFieldDef", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setField(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     key: number;
     value: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    key: number;
-    value: string
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      key: number;
+      value: string
+    } & { _this: ObjectReference }, void>(
       "SetField", { _this: { attributes: { type: "CustomFieldsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -16314,105 +16314,105 @@ export class CustomizationSpecManager extends ManagedObject {
     }
   }
   async checkResources(args: {
-  guestOs: string
-}): Promise<void> {
+    guestOs: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  guestOs: string
-} & { _this: ObjectReference }, void>(
+      guestOs: string
+    } & { _this: ObjectReference }, void>(
       "CheckCustomizationResources", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async create(args: {
-  item: CustomizationSpecItem
-}): Promise<void> {
+    item: CustomizationSpecItem
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  item: CustomizationSpecItem
-} & { _this: ObjectReference }, void>(
+      item: CustomizationSpecItem
+    } & { _this: ObjectReference }, void>(
       "CreateCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async specItemToXml(args: {
-  item: CustomizationSpecItem
-}): Promise<string> {
+    item: CustomizationSpecItem
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  item: CustomizationSpecItem
-} & { _this: ObjectReference }, string>(
+      item: CustomizationSpecItem
+    } & { _this: ObjectReference }, string>(
       "CustomizationSpecItemToXml", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async delete(args: {
-  name: string
-}): Promise<void> {
+    name: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, void>(
+      name: string
+    } & { _this: ObjectReference }, void>(
       "DeleteCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async exists(args: {
-  name: string
-}): Promise<boolean> {
+    name: string
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, boolean>(
+      name: string
+    } & { _this: ObjectReference }, boolean>(
       "DoesCustomizationSpecExist", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async duplicate(args: {
-  name: string;
+    name: string;
     newName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    newName: string
-} & { _this: ObjectReference }, void>(
+      name: string;
+      newName: string
+    } & { _this: ObjectReference }, void>(
       "DuplicateCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async get(args: {
-  name: string
-}): Promise<CustomizationSpecItem> {
+    name: string
+  }): Promise<CustomizationSpecItem> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, CustomizationSpecItem>(
+      name: string
+    } & { _this: ObjectReference }, CustomizationSpecItem>(
       "GetCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CustomizationSpecItem");
   }
   async overwrite(args: {
-  item: CustomizationSpecItem
-}): Promise<void> {
+    item: CustomizationSpecItem
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  item: CustomizationSpecItem
-} & { _this: ObjectReference }, void>(
+      item: CustomizationSpecItem
+    } & { _this: ObjectReference }, void>(
       "OverwriteCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async rename(args: {
-  name: string;
+    name: string;
     newName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    newName: string
-} & { _this: ObjectReference }, void>(
+      name: string;
+      newName: string
+    } & { _this: ObjectReference }, void>(
       "RenameCustomizationSpec", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async xmlToSpecItem(args: {
-  specItemXml: string
-}): Promise<CustomizationSpecItem> {
+    specItemXml: string
+  }): Promise<CustomizationSpecItem> {
     const result = await this.connection.exec<{
-  specItemXml: string
-} & { _this: ObjectReference }, CustomizationSpecItem>(
+      specItemXml: string
+    } & { _this: ObjectReference }, CustomizationSpecItem>(
       "XmlToCustomizationSpecItem", { _this: { attributes: { type: "CustomizationSpecManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CustomizationSpecItem");
@@ -16430,39 +16430,39 @@ export class DatastoreNamespaceManager extends ManagedObject {
     }
   }
   async ConvertNamespacePathToUuidPath(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     namespaceUrl: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    namespaceUrl: string
-} & { _this: ObjectReference }, string>(
+      datacenter?: Datacenter;
+      namespaceUrl: string
+    } & { _this: ObjectReference }, string>(
       "ConvertNamespacePathToUuidPath", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async CreateDirectory(args: {
-  datastore: Datastore;
+    datastore: Datastore;
     displayName?: string;
     policy?: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  datastore: Datastore;
-    displayName?: string;
-    policy?: string
-} & { _this: ObjectReference }, string>(
+      datastore: Datastore;
+      displayName?: string;
+      policy?: string
+    } & { _this: ObjectReference }, string>(
       "CreateDirectory", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async DeleteDirectory(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     datastorePath: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    datastorePath: string
-} & { _this: ObjectReference }, void>(
+      datacenter?: Datacenter;
+      datastorePath: string
+    } & { _this: ObjectReference }, void>(
       "DeleteDirectory", { _this: { attributes: { type: "DatastoreNamespaceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -16480,39 +16480,39 @@ export class DiagnosticManager extends ManagedObject {
     }
   }
   async browse(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     key: string;
     start?: number;
     lines?: number
-}): Promise<DiagnosticManagerLogHeader> {
+  }): Promise<DiagnosticManagerLogHeader> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    key: string;
-    start?: number;
-    lines?: number
-} & { _this: ObjectReference }, DiagnosticManagerLogHeader>(
+      host?: HostSystem;
+      key: string;
+      start?: number;
+      lines?: number
+    } & { _this: ObjectReference }, DiagnosticManagerLogHeader>(
       "BrowseDiagnosticLog", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DiagnosticManagerLogHeader");
   }
   async generateLogBundles(args: {
-  includeDefault: boolean;
+    includeDefault: boolean;
     host?: HostSystem[]
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  includeDefault: boolean;
-    host?: HostSystem[]
-} & { _this: ObjectReference }, Task | undefined>(
+      includeDefault: boolean;
+      host?: HostSystem[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "GenerateLogBundles_Task", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDescriptions(args: {
-  host?: HostSystem
-}): Promise<DiagnosticManagerLogDescriptor[] | undefined> {
+    host?: HostSystem
+  }): Promise<DiagnosticManagerLogDescriptor[] | undefined> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, DiagnosticManagerLogDescriptor[] | undefined>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, DiagnosticManagerLogDescriptor[] | undefined>(
       "QueryDescriptions", { _this: { attributes: { type: "DiagnosticManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DiagnosticManagerLogDescriptor[]");
@@ -16530,13 +16530,13 @@ export class EnvironmentBrowser extends ManagedObject {
     }
   }
   async queryConfigOption(args: {
-  key?: string;
+    key?: string;
     host?: HostSystem
-}): Promise<VirtualMachineConfigOption | undefined> {
+  }): Promise<VirtualMachineConfigOption | undefined> {
     const result = await this.connection.exec<{
-  key?: string;
-    host?: HostSystem
-} & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
+      key?: string;
+      host?: HostSystem
+    } & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
       "QueryConfigOption", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualMachineConfigOption");
@@ -16548,31 +16548,31 @@ export class EnvironmentBrowser extends ManagedObject {
     return constructHelperObjects(this.connection, result, "VirtualMachineConfigOptionDescriptor[]");
   }
   async queryConfigOptionEx(args: {
-  spec?: EnvironmentBrowserConfigOptionQuerySpec
-}): Promise<VirtualMachineConfigOption | undefined> {
+    spec?: EnvironmentBrowserConfigOptionQuerySpec
+  }): Promise<VirtualMachineConfigOption | undefined> {
     const result = await this.connection.exec<{
-  spec?: EnvironmentBrowserConfigOptionQuerySpec
-} & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
+      spec?: EnvironmentBrowserConfigOptionQuerySpec
+    } & { _this: ObjectReference }, VirtualMachineConfigOption | undefined>(
       "QueryConfigOptionEx", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualMachineConfigOption");
   }
   async queryConfigTarget(args: {
-  host?: HostSystem
-}): Promise<ConfigTarget | undefined> {
+    host?: HostSystem
+  }): Promise<ConfigTarget | undefined> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, ConfigTarget | undefined>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, ConfigTarget | undefined>(
       "QueryConfigTarget", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ConfigTarget");
   }
   async queryTargetCapabilities(args: {
-  host?: HostSystem
-}): Promise<HostCapability | undefined> {
+    host?: HostSystem
+  }): Promise<HostCapability | undefined> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, HostCapability | undefined>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, HostCapability | undefined>(
       "QueryTargetCapabilities", { _this: { attributes: { type: "EnvironmentBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostCapability");
@@ -16591,13 +16591,13 @@ export class ExtensibleManagedObject extends ManagedObject {
     }
   }
   async setCustomValue(args: {
-  key: string;
+    key: string;
     value: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string;
-    value: string
-} & { _this: ObjectReference }, void>(
+      key: string;
+      value: string
+    } & { _this: ObjectReference }, void>(
       "setCustomValue", { _this: { attributes: { type: "ExtensibleManagedObject" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -16615,11 +16615,11 @@ export class ExtensionManager extends ManagedObject {
     }
   }
   async findExtension(args: {
-  extensionKey: string
-}): Promise<Extension | undefined> {
+    extensionKey: string
+  }): Promise<Extension | undefined> {
     const result = await this.connection.exec<{
-  extensionKey: string
-} & { _this: ObjectReference }, Extension | undefined>(
+      extensionKey: string
+    } & { _this: ObjectReference }, Extension | undefined>(
       "FindExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Extension");
@@ -16631,75 +16631,75 @@ export class ExtensionManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryExtensionIpAllocationUsage(args: {
-  extensionKeys?: string[]
-}): Promise<ExtensionManagerIpAllocationUsage[] | undefined> {
+    extensionKeys?: string[]
+  }): Promise<ExtensionManagerIpAllocationUsage[] | undefined> {
     const result = await this.connection.exec<{
-  extensionKeys?: string[]
-} & { _this: ObjectReference }, ExtensionManagerIpAllocationUsage[] | undefined>(
+      extensionKeys?: string[]
+    } & { _this: ObjectReference }, ExtensionManagerIpAllocationUsage[] | undefined>(
       "QueryExtensionIpAllocationUsage", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ExtensionManagerIpAllocationUsage[]");
   }
   async queryManagedBy(args: {
-  extensionKey: string
-}): Promise<ManagedEntity[] | undefined> {
+    extensionKey: string
+  }): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<{
-  extensionKey: string
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      extensionKey: string
+    } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryManagedBy", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async registerExtension(args: {
-  extension: Extension
-}): Promise<void> {
+    extension: Extension
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  extension: Extension
-} & { _this: ObjectReference }, void>(
+      extension: Extension
+    } & { _this: ObjectReference }, void>(
       "RegisterExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setCertificate(args: {
-  extensionKey: string;
+    extensionKey: string;
     certificatePem?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  extensionKey: string;
-    certificatePem?: string
-} & { _this: ObjectReference }, void>(
+      extensionKey: string;
+      certificatePem?: string
+    } & { _this: ObjectReference }, void>(
       "SetExtensionCertificate", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setPublicKey(args: {
-  extensionKey: string;
+    extensionKey: string;
     publicKey: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  extensionKey: string;
-    publicKey: string
-} & { _this: ObjectReference }, void>(
+      extensionKey: string;
+      publicKey: string
+    } & { _this: ObjectReference }, void>(
       "SetPublicKey", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterExtension(args: {
-  extensionKey: string
-}): Promise<void> {
+    extensionKey: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  extensionKey: string
-} & { _this: ObjectReference }, void>(
+      extensionKey: string
+    } & { _this: ObjectReference }, void>(
       "UnregisterExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateExtension(args: {
-  extension: Extension
-}): Promise<void> {
+    extension: Extension
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  extension: Extension
-} & { _this: ObjectReference }, void>(
+      extension: Extension
+    } & { _this: ObjectReference }, void>(
       "UpdateExtension", { _this: { attributes: { type: "ExtensionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -16717,77 +16717,77 @@ export class FileManager extends ManagedObject {
     }
   }
   async changeOwner(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     owner: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    owner: string
-} & { _this: ObjectReference }, void>(
+      name: string;
+      datacenter?: Datacenter;
+      owner: string
+    } & { _this: ObjectReference }, void>(
       "ChangeOwner", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async copyFile(args: {
-  sourceName: string;
+    sourceName: string;
     sourceDatacenter?: Datacenter;
     destinationName: string;
     destinationDatacenter?: Datacenter;
     force?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  sourceName: string;
-    sourceDatacenter?: Datacenter;
-    destinationName: string;
-    destinationDatacenter?: Datacenter;
-    force?: boolean
-} & { _this: ObjectReference }, Task>(
+      sourceName: string;
+      sourceDatacenter?: Datacenter;
+      destinationName: string;
+      destinationDatacenter?: Datacenter;
+      force?: boolean
+    } & { _this: ObjectReference }, Task>(
       "CopyDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteFile(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "DeleteDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async makeDirectory(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     createParentDirectories?: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    createParentDirectories?: boolean
-} & { _this: ObjectReference }, void>(
+      name: string;
+      datacenter?: Datacenter;
+      createParentDirectories?: boolean
+    } & { _this: ObjectReference }, void>(
       "MakeDirectory", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async moveFile(args: {
-  sourceName: string;
+    sourceName: string;
     sourceDatacenter?: Datacenter;
     destinationName: string;
     destinationDatacenter?: Datacenter;
     force?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  sourceName: string;
-    sourceDatacenter?: Datacenter;
-    destinationName: string;
-    destinationDatacenter?: Datacenter;
-    force?: boolean
-} & { _this: ObjectReference }, Task>(
+      sourceName: string;
+      sourceDatacenter?: Datacenter;
+      destinationName: string;
+      destinationDatacenter?: Datacenter;
+      force?: boolean
+    } & { _this: ObjectReference }, Task>(
       "MoveDatastoreFile_Task", { _this: { attributes: { type: "FileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -16805,143 +16805,143 @@ export class HealthUpdateManager extends ManagedObject {
     }
   }
   async addFilter(args: {
-  providerId: string;
+    providerId: string;
     filterName: string;
     infoIds?: string[]
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  providerId: string;
-    filterName: string;
-    infoIds?: string[]
-} & { _this: ObjectReference }, string>(
+      providerId: string;
+      filterName: string;
+      infoIds?: string[]
+    } & { _this: ObjectReference }, string>(
       "AddFilter", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async addFilterEntities(args: {
-  filterId: string;
+    filterId: string;
     entities?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  filterId: string;
-    entities?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      filterId: string;
+      entities?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "AddFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async addMonitoredEntities(args: {
-  providerId: string;
+    providerId: string;
     entities?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  providerId: string;
-    entities?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      providerId: string;
+      entities?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "AddMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async hasMonitoredEntity(args: {
-  providerId: string;
+    providerId: string;
     entity: ManagedEntity
-}): Promise<boolean> {
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  providerId: string;
-    entity: ManagedEntity
-} & { _this: ObjectReference }, boolean>(
+      providerId: string;
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, boolean>(
       "HasMonitoredEntity", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async hasProvider(args: {
-  id: string
-}): Promise<boolean> {
+    id: string
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, boolean>(
+      id: string
+    } & { _this: ObjectReference }, boolean>(
       "HasProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async postHealthUpdates(args: {
-  providerId: string;
+    providerId: string;
     updates?: HealthUpdate[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  providerId: string;
-    updates?: HealthUpdate[]
-} & { _this: ObjectReference }, void>(
+      providerId: string;
+      updates?: HealthUpdate[]
+    } & { _this: ObjectReference }, void>(
       "PostHealthUpdates", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryFilterEntities(args: {
-  filterId: string
-}): Promise<ManagedEntity[] | undefined> {
+    filterId: string
+  }): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<{
-  filterId: string
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      filterId: string
+    } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async queryFilterInfoIds(args: {
-  filterId: string
-}): Promise<string[] | undefined> {
+    filterId: string
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  filterId: string
-} & { _this: ObjectReference }, string[] | undefined>(
+      filterId: string
+    } & { _this: ObjectReference }, string[] | undefined>(
       "QueryFilterInfoIds", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryFilterList(args: {
-  providerId: string
-}): Promise<string[] | undefined> {
+    providerId: string
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  providerId: string
-} & { _this: ObjectReference }, string[] | undefined>(
+      providerId: string
+    } & { _this: ObjectReference }, string[] | undefined>(
       "QueryFilterList", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryFilterName(args: {
-  filterId: string
-}): Promise<string> {
+    filterId: string
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  filterId: string
-} & { _this: ObjectReference }, string>(
+      filterId: string
+    } & { _this: ObjectReference }, string>(
       "QueryFilterName", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryHealthUpdateInfos(args: {
-  providerId: string
-}): Promise<HealthUpdateInfo[] | undefined> {
+    providerId: string
+  }): Promise<HealthUpdateInfo[] | undefined> {
     const result = await this.connection.exec<{
-  providerId: string
-} & { _this: ObjectReference }, HealthUpdateInfo[] | undefined>(
+      providerId: string
+    } & { _this: ObjectReference }, HealthUpdateInfo[] | undefined>(
       "QueryHealthUpdateInfos", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HealthUpdateInfo[]");
   }
   async queryHealthUpdates(args: {
-  providerId: string
-}): Promise<HealthUpdate[] | undefined> {
+    providerId: string
+  }): Promise<HealthUpdate[] | undefined> {
     const result = await this.connection.exec<{
-  providerId: string
-} & { _this: ObjectReference }, HealthUpdate[] | undefined>(
+      providerId: string
+    } & { _this: ObjectReference }, HealthUpdate[] | undefined>(
       "QueryHealthUpdates", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HealthUpdate[]");
   }
   async queryMonitoredEntities(args: {
-  providerId: string
-}): Promise<ManagedEntity[] | undefined> {
+    providerId: string
+  }): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<{
-  providerId: string
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      providerId: string
+    } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "QueryMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
@@ -16953,79 +16953,79 @@ export class HealthUpdateManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryProviderName(args: {
-  id: string
-}): Promise<string> {
+    id: string
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, string>(
+      id: string
+    } & { _this: ObjectReference }, string>(
       "QueryProviderName", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryUnmonitoredHosts(args: {
-  providerId: string;
+    providerId: string;
     cluster: ClusterComputeResource
-}): Promise<HostSystem[] | undefined> {
+  }): Promise<HostSystem[] | undefined> {
     const result = await this.connection.exec<{
-  providerId: string;
-    cluster: ClusterComputeResource
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      providerId: string;
+      cluster: ClusterComputeResource
+    } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryUnmonitoredHosts", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async registerProvider(args: {
-  name: string;
+    name: string;
     healthUpdateInfo?: HealthUpdateInfo[]
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  name: string;
-    healthUpdateInfo?: HealthUpdateInfo[]
-} & { _this: ObjectReference }, string>(
+      name: string;
+      healthUpdateInfo?: HealthUpdateInfo[]
+    } & { _this: ObjectReference }, string>(
       "RegisterHealthUpdateProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async removeFilter(args: {
-  filterId: string
-}): Promise<void> {
+    filterId: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  filterId: string
-} & { _this: ObjectReference }, void>(
+      filterId: string
+    } & { _this: ObjectReference }, void>(
       "RemoveFilter", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeFilterEntities(args: {
-  filterId: string;
+    filterId: string;
     entities?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  filterId: string;
-    entities?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      filterId: string;
+      entities?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "RemoveFilterEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeMonitoredEntities(args: {
-  providerId: string;
+    providerId: string;
     entities?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  providerId: string;
-    entities?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      providerId: string;
+      entities?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "RemoveMonitoredEntities", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterProvider(args: {
-  providerId: string
-}): Promise<void> {
+    providerId: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  providerId: string
-} & { _this: ObjectReference }, void>(
+      providerId: string
+    } & { _this: ObjectReference }, void>(
       "UnregisterHealthUpdateProvider", { _this: { attributes: { type: "HealthUpdateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17061,11 +17061,11 @@ export class HistoryCollector extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async setLatestPageSize(args: {
-  maxCount: number
-}): Promise<void> {
+    maxCount: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  maxCount: number
-} & { _this: ObjectReference }, void>(
+      maxCount: number
+    } & { _this: ObjectReference }, void>(
       "SetCollectorPageSize", { _this: { attributes: { type: "HistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17089,11 +17089,11 @@ export class HttpNfcLease extends ManagedObject {
     }
   }
   async abort(args: {
-  fault?: MethodFault
-}): Promise<void> {
+    fault?: MethodFault
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  fault?: MethodFault
-} & { _this: ObjectReference }, void>(
+      fault?: MethodFault
+    } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseAbort", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17111,31 +17111,31 @@ export class HttpNfcLease extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HttpNfcLeaseManifestEntry[]");
   }
   async progress(args: {
-  percent: number
-}): Promise<void> {
+    percent: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  percent: number
-} & { _this: ObjectReference }, void>(
+      percent: number
+    } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseProgress", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async pullFromUrls(args: {
-  files?: HttpNfcLeaseSourceFile[]
-}): Promise<Task> {
+    files?: HttpNfcLeaseSourceFile[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  files?: HttpNfcLeaseSourceFile[]
-} & { _this: ObjectReference }, Task>(
+      files?: HttpNfcLeaseSourceFile[]
+    } & { _this: ObjectReference }, Task>(
       "HttpNfcLeasePullFromUrls_Task", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async setManifestChecksumType(args: {
-  deviceUrlsToChecksumTypes?: KeyValue[]
-}): Promise<void> {
+    deviceUrlsToChecksumTypes?: KeyValue[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  deviceUrlsToChecksumTypes?: KeyValue[]
-} & { _this: ObjectReference }, void>(
+      deviceUrlsToChecksumTypes?: KeyValue[]
+    } & { _this: ObjectReference }, void>(
       "HttpNfcLeaseSetManifestChecksumType", { _this: { attributes: { type: "HttpNfcLease" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17153,97 +17153,97 @@ export class IoFilterManager extends ManagedObject {
     }
   }
   async installIoFilter(args: {
-  vibUrl: string;
+    vibUrl: string;
     compRes: ComputeResource
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  vibUrl: string;
-    compRes: ComputeResource
-} & { _this: ObjectReference }, Task | undefined>(
+      vibUrl: string;
+      compRes: ComputeResource
+    } & { _this: ObjectReference }, Task | undefined>(
       "InstallIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDisksUsingFilter(args: {
-  filterId: string;
+    filterId: string;
     compRes: ComputeResource
-}): Promise<VirtualDiskId[]> {
+  }): Promise<VirtualDiskId[]> {
     const result = await this.connection.exec<{
-  filterId: string;
-    compRes: ComputeResource
-} & { _this: ObjectReference }, VirtualDiskId[]>(
+      filterId: string;
+      compRes: ComputeResource
+    } & { _this: ObjectReference }, VirtualDiskId[]>(
       "QueryDisksUsingFilter", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualDiskId[]");
   }
   async queryIoFilterInfo(args: {
-  compRes: ComputeResource
-}): Promise<ClusterIoFilterInfo[] | undefined> {
+    compRes: ComputeResource
+  }): Promise<ClusterIoFilterInfo[] | undefined> {
     const result = await this.connection.exec<{
-  compRes: ComputeResource
-} & { _this: ObjectReference }, ClusterIoFilterInfo[] | undefined>(
+      compRes: ComputeResource
+    } & { _this: ObjectReference }, ClusterIoFilterInfo[] | undefined>(
       "QueryIoFilterInfo", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterIoFilterInfo[]");
   }
   async queryIssue(args: {
-  filterId: string;
+    filterId: string;
     compRes: ComputeResource
-}): Promise<IoFilterQueryIssueResult> {
+  }): Promise<IoFilterQueryIssueResult> {
     const result = await this.connection.exec<{
-  filterId: string;
-    compRes: ComputeResource
-} & { _this: ObjectReference }, IoFilterQueryIssueResult>(
+      filterId: string;
+      compRes: ComputeResource
+    } & { _this: ObjectReference }, IoFilterQueryIssueResult>(
       "QueryIoFilterIssues", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IoFilterQueryIssueResult");
   }
   async resolveInstallationErrorsOnCluster(args: {
-  filterId: string;
+    filterId: string;
     cluster: ClusterComputeResource
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  filterId: string;
-    cluster: ClusterComputeResource
-} & { _this: ObjectReference }, Task>(
+      filterId: string;
+      cluster: ClusterComputeResource
+    } & { _this: ObjectReference }, Task>(
       "ResolveInstallationErrorsOnCluster_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async resolveInstallationErrorsOnHost(args: {
-  filterId: string;
+    filterId: string;
     host: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  filterId: string;
-    host: HostSystem
-} & { _this: ObjectReference }, Task>(
+      filterId: string;
+      host: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "ResolveInstallationErrorsOnHost_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async uninstallIoFilter(args: {
-  filterId: string;
+    filterId: string;
     compRes: ComputeResource
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  filterId: string;
-    compRes: ComputeResource
-} & { _this: ObjectReference }, Task>(
+      filterId: string;
+      compRes: ComputeResource
+    } & { _this: ObjectReference }, Task>(
       "UninstallIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async upgradeIoFilter(args: {
-  filterId: string;
+    filterId: string;
     compRes: ComputeResource;
     vibUrl: string
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  filterId: string;
-    compRes: ComputeResource;
-    vibUrl: string
-} & { _this: ObjectReference }, Task | undefined>(
+      filterId: string;
+      compRes: ComputeResource;
+      vibUrl: string
+    } & { _this: ObjectReference }, Task | undefined>(
       "UpgradeIoFilter_Task", { _this: { attributes: { type: "IoFilterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -17261,105 +17261,105 @@ export class IpPoolManager extends ManagedObject {
     }
   }
   async allocateIpv4Address(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     poolId: number;
     allocationId: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    poolId: number;
-    allocationId: string
-} & { _this: ObjectReference }, string>(
+      dc: Datacenter;
+      poolId: number;
+      allocationId: string
+    } & { _this: ObjectReference }, string>(
       "AllocateIpv4Address", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async allocateIpv6Address(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     poolId: number;
     allocationId: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    poolId: number;
-    allocationId: string
-} & { _this: ObjectReference }, string>(
+      dc: Datacenter;
+      poolId: number;
+      allocationId: string
+    } & { _this: ObjectReference }, string>(
       "AllocateIpv6Address", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async createIpPool(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     pool: IpPool
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    pool: IpPool
-} & { _this: ObjectReference }, number>(
+      dc: Datacenter;
+      pool: IpPool
+    } & { _this: ObjectReference }, number>(
       "CreateIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async destroyIpPool(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     id: number;
     force: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    id: number;
-    force: boolean
-} & { _this: ObjectReference }, void>(
+      dc: Datacenter;
+      id: number;
+      force: boolean
+    } & { _this: ObjectReference }, void>(
       "DestroyIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryIPAllocations(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     poolId: number;
     extensionKey: string
-}): Promise<IpPoolManagerIpAllocation[]> {
+  }): Promise<IpPoolManagerIpAllocation[]> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    poolId: number;
-    extensionKey: string
-} & { _this: ObjectReference }, IpPoolManagerIpAllocation[]>(
+      dc: Datacenter;
+      poolId: number;
+      extensionKey: string
+    } & { _this: ObjectReference }, IpPoolManagerIpAllocation[]>(
       "QueryIPAllocations", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IpPoolManagerIpAllocation[]");
   }
   async queryIpPools(args: {
-  dc: Datacenter
-}): Promise<IpPool[] | undefined> {
+    dc: Datacenter
+  }): Promise<IpPool[] | undefined> {
     const result = await this.connection.exec<{
-  dc: Datacenter
-} & { _this: ObjectReference }, IpPool[] | undefined>(
+      dc: Datacenter
+    } & { _this: ObjectReference }, IpPool[] | undefined>(
       "QueryIpPools", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IpPool[]");
   }
   async releaseIpAllocation(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     poolId: number;
     allocationId: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    poolId: number;
-    allocationId: string
-} & { _this: ObjectReference }, void>(
+      dc: Datacenter;
+      poolId: number;
+      allocationId: string
+    } & { _this: ObjectReference }, void>(
       "ReleaseIpAllocation", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpPool(args: {
-  dc: Datacenter;
+    dc: Datacenter;
     pool: IpPool
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  dc: Datacenter;
-    pool: IpPool
-} & { _this: ObjectReference }, void>(
+      dc: Datacenter;
+      pool: IpPool
+    } & { _this: ObjectReference }, void>(
       "UpdateIpPool", { _this: { attributes: { type: "IpPoolManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17384,161 +17384,161 @@ export class LicenseManager extends ManagedObject {
     }
   }
   async addLicense(args: {
-  licenseKey: string;
+    licenseKey: string;
     labels?: KeyValue[]
-}): Promise<LicenseManagerLicenseInfo> {
+  }): Promise<LicenseManagerLicenseInfo> {
     const result = await this.connection.exec<{
-  licenseKey: string;
-    labels?: KeyValue[]
-} & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
+      licenseKey: string;
+      labels?: KeyValue[]
+    } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "AddLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async checkFeature(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     featureKey: string
-}): Promise<boolean> {
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    featureKey: string
-} & { _this: ObjectReference }, boolean>(
+      host?: HostSystem;
+      featureKey: string
+    } & { _this: ObjectReference }, boolean>(
       "CheckLicenseFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async configureSource(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     licenseSource: LicenseSource
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    licenseSource: LicenseSource
-} & { _this: ObjectReference }, void>(
+      host?: HostSystem;
+      licenseSource: LicenseSource
+    } & { _this: ObjectReference }, void>(
       "ConfigureLicenseSource", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async decodeLicense(args: {
-  licenseKey: string
-}): Promise<LicenseManagerLicenseInfo> {
+    licenseKey: string
+  }): Promise<LicenseManagerLicenseInfo> {
     const result = await this.connection.exec<{
-  licenseKey: string
-} & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
+      licenseKey: string
+    } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "DecodeLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async disable(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     featureKey: string
-}): Promise<boolean> {
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    featureKey: string
-} & { _this: ObjectReference }, boolean>(
+      host?: HostSystem;
+      featureKey: string
+    } & { _this: ObjectReference }, boolean>(
       "DisableFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async enable(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     featureKey: string
-}): Promise<boolean> {
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    featureKey: string
-} & { _this: ObjectReference }, boolean>(
+      host?: HostSystem;
+      featureKey: string
+    } & { _this: ObjectReference }, boolean>(
       "EnableFeature", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async querySourceAvailability(args: {
-  host?: HostSystem
-}): Promise<LicenseAvailabilityInfo[] | undefined> {
+    host?: HostSystem
+  }): Promise<LicenseAvailabilityInfo[] | undefined> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, LicenseAvailabilityInfo[] | undefined>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, LicenseAvailabilityInfo[] | undefined>(
       "QueryLicenseSourceAvailability", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseAvailabilityInfo[]");
   }
   async queryUsage(args: {
-  host?: HostSystem
-}): Promise<LicenseUsageInfo> {
+    host?: HostSystem
+  }): Promise<LicenseUsageInfo> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, LicenseUsageInfo>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, LicenseUsageInfo>(
       "QueryLicenseUsage", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseUsageInfo");
   }
   async querySupportedFeatures(args: {
-  host?: HostSystem
-}): Promise<LicenseFeatureInfo[] | undefined> {
+    host?: HostSystem
+  }): Promise<LicenseFeatureInfo[] | undefined> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, LicenseFeatureInfo[] | undefined>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, LicenseFeatureInfo[] | undefined>(
       "QuerySupportedFeatures", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseFeatureInfo[]");
   }
   async removeLicense(args: {
-  licenseKey: string
-}): Promise<void> {
+    licenseKey: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  licenseKey: string
-} & { _this: ObjectReference }, void>(
+      licenseKey: string
+    } & { _this: ObjectReference }, void>(
       "RemoveLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeLabel(args: {
-  licenseKey: string;
+    licenseKey: string;
     labelKey: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  licenseKey: string;
-    labelKey: string
-} & { _this: ObjectReference }, void>(
+      licenseKey: string;
+      labelKey: string
+    } & { _this: ObjectReference }, void>(
       "RemoveLicenseLabel", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setEdition(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     featureKey?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    featureKey?: string
-} & { _this: ObjectReference }, void>(
+      host?: HostSystem;
+      featureKey?: string
+    } & { _this: ObjectReference }, void>(
       "SetLicenseEdition", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateLicense(args: {
-  licenseKey: string;
+    licenseKey: string;
     labels?: KeyValue[]
-}): Promise<LicenseManagerLicenseInfo> {
+  }): Promise<LicenseManagerLicenseInfo> {
     const result = await this.connection.exec<{
-  licenseKey: string;
-    labels?: KeyValue[]
-} & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
+      licenseKey: string;
+      labels?: KeyValue[]
+    } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "UpdateLicense", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
   }
   async updateLabel(args: {
-  licenseKey: string;
+    licenseKey: string;
     labelKey: string;
     labelValue: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  licenseKey: string;
-    labelKey: string;
-    labelValue: string
-} & { _this: ObjectReference }, void>(
+      licenseKey: string;
+      labelKey: string;
+      labelValue: string
+    } & { _this: ObjectReference }, void>(
       "UpdateLicenseLabel", { _this: { attributes: { type: "LicenseManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17569,13 +17569,13 @@ export class OverheadMemoryManager extends ManagedObject {
     }
   }
   async lookupVmOverheadMemory(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host: HostSystem
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host: HostSystem
-} & { _this: ObjectReference }, number>(
+      vm: VirtualMachine;
+      host: HostSystem
+    } & { _this: ObjectReference }, number>(
       "LookupVmOverheadMemory", { _this: { attributes: { type: "OverheadMemoryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
@@ -17594,55 +17594,55 @@ export class OvfManager extends ManagedObject {
     }
   }
   async createDescriptor(args: {
-  obj: ManagedEntity;
+    obj: ManagedEntity;
     cdp: OvfCreateDescriptorParams
-}): Promise<OvfCreateDescriptorResult> {
+  }): Promise<OvfCreateDescriptorResult> {
     const result = await this.connection.exec<{
-  obj: ManagedEntity;
-    cdp: OvfCreateDescriptorParams
-} & { _this: ObjectReference }, OvfCreateDescriptorResult>(
+      obj: ManagedEntity;
+      cdp: OvfCreateDescriptorParams
+    } & { _this: ObjectReference }, OvfCreateDescriptorResult>(
       "CreateDescriptor", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "OvfCreateDescriptorResult");
   }
   async createImportSpec(args: {
-  ovfDescriptor: string;
+    ovfDescriptor: string;
     resourcePool: ResourcePool;
     datastore: Datastore;
     cisp: OvfCreateImportSpecParams
-}): Promise<OvfCreateImportSpecResult> {
+  }): Promise<OvfCreateImportSpecResult> {
     const result = await this.connection.exec<{
-  ovfDescriptor: string;
-    resourcePool: ResourcePool;
-    datastore: Datastore;
-    cisp: OvfCreateImportSpecParams
-} & { _this: ObjectReference }, OvfCreateImportSpecResult>(
+      ovfDescriptor: string;
+      resourcePool: ResourcePool;
+      datastore: Datastore;
+      cisp: OvfCreateImportSpecParams
+    } & { _this: ObjectReference }, OvfCreateImportSpecResult>(
       "CreateImportSpec", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "OvfCreateImportSpecResult");
   }
   async parseDescriptor(args: {
-  ovfDescriptor: string;
+    ovfDescriptor: string;
     pdp: OvfParseDescriptorParams
-}): Promise<OvfParseDescriptorResult> {
+  }): Promise<OvfParseDescriptorResult> {
     const result = await this.connection.exec<{
-  ovfDescriptor: string;
-    pdp: OvfParseDescriptorParams
-} & { _this: ObjectReference }, OvfParseDescriptorResult>(
+      ovfDescriptor: string;
+      pdp: OvfParseDescriptorParams
+    } & { _this: ObjectReference }, OvfParseDescriptorResult>(
       "ParseDescriptor", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "OvfParseDescriptorResult");
   }
   async validateHost(args: {
-  ovfDescriptor: string;
+    ovfDescriptor: string;
     host: HostSystem;
     vhp: OvfValidateHostParams
-}): Promise<OvfValidateHostResult> {
+  }): Promise<OvfValidateHostResult> {
     const result = await this.connection.exec<{
-  ovfDescriptor: string;
-    host: HostSystem;
-    vhp: OvfValidateHostParams
-} & { _this: ObjectReference }, OvfValidateHostResult>(
+      ovfDescriptor: string;
+      host: HostSystem;
+      vhp: OvfValidateHostParams
+    } & { _this: ObjectReference }, OvfValidateHostResult>(
       "ValidateHost", { _this: { attributes: { type: "OvfManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "OvfValidateHostResult");
@@ -17662,117 +17662,117 @@ export class PerformanceManager extends ManagedObject {
     }
   }
   async createHistoricalInterval(args: {
-  intervalId: PerfInterval
-}): Promise<void> {
+    intervalId: PerfInterval
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  intervalId: PerfInterval
-} & { _this: ObjectReference }, void>(
+      intervalId: PerfInterval
+    } & { _this: ObjectReference }, void>(
       "CreatePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryAvailableMetric(args: {
-  entity: ManagedObject;
+    entity: ManagedObject;
     beginTime?: Date;
     endTime?: Date;
     intervalId?: number
-}): Promise<PerfMetricId[] | undefined> {
+  }): Promise<PerfMetricId[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedObject;
-    beginTime?: Date;
-    endTime?: Date;
-    intervalId?: number
-} & { _this: ObjectReference }, PerfMetricId[] | undefined>(
+      entity: ManagedObject;
+      beginTime?: Date;
+      endTime?: Date;
+      intervalId?: number
+    } & { _this: ObjectReference }, PerfMetricId[] | undefined>(
       "QueryAvailablePerfMetric", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfMetricId[]");
   }
   async queryStats(args: {
-  querySpec: PerfQuerySpec[]
-}): Promise<PerfEntityMetricBase[] | undefined> {
+    querySpec: PerfQuerySpec[]
+  }): Promise<PerfEntityMetricBase[] | undefined> {
     const result = await this.connection.exec<{
-  querySpec: PerfQuerySpec[]
-} & { _this: ObjectReference }, PerfEntityMetricBase[] | undefined>(
+      querySpec: PerfQuerySpec[]
+    } & { _this: ObjectReference }, PerfEntityMetricBase[] | undefined>(
       "QueryPerf", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfEntityMetricBase[]");
   }
   async queryCompositeStats(args: {
-  querySpec: PerfQuerySpec
-}): Promise<PerfCompositeMetric> {
+    querySpec: PerfQuerySpec
+  }): Promise<PerfCompositeMetric> {
     const result = await this.connection.exec<{
-  querySpec: PerfQuerySpec
-} & { _this: ObjectReference }, PerfCompositeMetric>(
+      querySpec: PerfQuerySpec
+    } & { _this: ObjectReference }, PerfCompositeMetric>(
       "QueryPerfComposite", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfCompositeMetric");
   }
   async queryCounter(args: {
-  counterId: number[]
-}): Promise<PerfCounterInfo[] | undefined> {
+    counterId: number[]
+  }): Promise<PerfCounterInfo[] | undefined> {
     const result = await this.connection.exec<{
-  counterId: number[]
-} & { _this: ObjectReference }, PerfCounterInfo[] | undefined>(
+      counterId: number[]
+    } & { _this: ObjectReference }, PerfCounterInfo[] | undefined>(
       "QueryPerfCounter", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfCounterInfo[]");
   }
   async queryCounterByLevel(args: {
-  level: number
-}): Promise<PerfCounterInfo[]> {
+    level: number
+  }): Promise<PerfCounterInfo[]> {
     const result = await this.connection.exec<{
-  level: number
-} & { _this: ObjectReference }, PerfCounterInfo[]>(
+      level: number
+    } & { _this: ObjectReference }, PerfCounterInfo[]>(
       "QueryPerfCounterByLevel", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfCounterInfo[]");
   }
   async queryProviderSummary(args: {
-  entity: ManagedObject
-}): Promise<PerfProviderSummary> {
+    entity: ManagedObject
+  }): Promise<PerfProviderSummary> {
     const result = await this.connection.exec<{
-  entity: ManagedObject
-} & { _this: ObjectReference }, PerfProviderSummary>(
+      entity: ManagedObject
+    } & { _this: ObjectReference }, PerfProviderSummary>(
       "QueryPerfProviderSummary", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PerfProviderSummary");
   }
   async removeHistoricalInterval(args: {
-  samplePeriod: number
-}): Promise<void> {
+    samplePeriod: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  samplePeriod: number
-} & { _this: ObjectReference }, void>(
+      samplePeriod: number
+    } & { _this: ObjectReference }, void>(
       "RemovePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async resetCounterLevelMapping(args: {
-  counters: number[]
-}): Promise<void> {
+    counters: number[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  counters: number[]
-} & { _this: ObjectReference }, void>(
+      counters: number[]
+    } & { _this: ObjectReference }, void>(
       "ResetCounterLevelMapping", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateCounterLevelMapping(args: {
-  counterLevelMap: PerformanceManagerCounterLevelMapping[]
-}): Promise<void> {
+    counterLevelMap: PerformanceManagerCounterLevelMapping[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  counterLevelMap: PerformanceManagerCounterLevelMapping[]
-} & { _this: ObjectReference }, void>(
+      counterLevelMap: PerformanceManagerCounterLevelMapping[]
+    } & { _this: ObjectReference }, void>(
       "UpdateCounterLevelMapping", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateHistoricalInterval(args: {
-  interval: PerfInterval
-}): Promise<void> {
+    interval: PerfInterval
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  interval: PerfInterval
-} & { _this: ObjectReference }, void>(
+      interval: PerfInterval
+    } & { _this: ObjectReference }, void>(
       "UpdatePerfInterval", { _this: { attributes: { type: "PerformanceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -17790,11 +17790,11 @@ export class ResourcePlanningManager extends ManagedObject {
     }
   }
   async estimateDatabaseSize(args: {
-  dbSizeParam: DatabaseSizeParam
-}): Promise<DatabaseSizeEstimate> {
+    dbSizeParam: DatabaseSizeParam
+  }): Promise<DatabaseSizeEstimate> {
     const result = await this.connection.exec<{
-  dbSizeParam: DatabaseSizeParam
-} & { _this: ObjectReference }, DatabaseSizeEstimate>(
+      dbSizeParam: DatabaseSizeParam
+    } & { _this: ObjectReference }, DatabaseSizeEstimate>(
       "EstimateDatabaseSize", { _this: { attributes: { type: "ResourcePlanningManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DatabaseSizeEstimate");
@@ -17812,123 +17812,123 @@ export class SearchIndex extends ManagedObject {
     }
   }
   async findAllByDnsName(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     dnsName: string;
     vmSearch: boolean
-}): Promise<ManagedEntity[]> {
+  }): Promise<ManagedEntity[]> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    dnsName: string;
-    vmSearch: boolean
-} & { _this: ObjectReference }, ManagedEntity[]>(
+      datacenter?: Datacenter;
+      dnsName: string;
+      vmSearch: boolean
+    } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByDnsName", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findAllByIp(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     ip: string;
     vmSearch: boolean
-}): Promise<ManagedEntity[]> {
+  }): Promise<ManagedEntity[]> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    ip: string;
-    vmSearch: boolean
-} & { _this: ObjectReference }, ManagedEntity[]>(
+      datacenter?: Datacenter;
+      ip: string;
+      vmSearch: boolean
+    } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByIp", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findAllByUuid(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     uuid: string;
     vmSearch: boolean;
     instanceUuid?: boolean
-}): Promise<ManagedEntity[]> {
+  }): Promise<ManagedEntity[]> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    uuid: string;
-    vmSearch: boolean;
-    instanceUuid?: boolean
-} & { _this: ObjectReference }, ManagedEntity[]>(
+      datacenter?: Datacenter;
+      uuid: string;
+      vmSearch: boolean;
+      instanceUuid?: boolean
+    } & { _this: ObjectReference }, ManagedEntity[]>(
       "FindAllByUuid", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async findByDatastorePath(args: {
-  datacenter: Datacenter;
+    datacenter: Datacenter;
     path: string
-}): Promise<VirtualMachine | undefined> {
+  }): Promise<VirtualMachine | undefined> {
     const result = await this.connection.exec<{
-  datacenter: Datacenter;
-    path: string
-} & { _this: ObjectReference }, VirtualMachine | undefined>(
+      datacenter: Datacenter;
+      path: string
+    } & { _this: ObjectReference }, VirtualMachine | undefined>(
       "FindByDatastorePath", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualMachine");
   }
   async findByDnsName(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     dnsName: string;
     vmSearch: boolean
-}): Promise<ManagedEntity | undefined> {
+  }): Promise<ManagedEntity | undefined> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    dnsName: string;
-    vmSearch: boolean
-} & { _this: ObjectReference }, ManagedEntity | undefined>(
+      datacenter?: Datacenter;
+      dnsName: string;
+      vmSearch: boolean
+    } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByDnsName", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByInventoryPath(args: {
-  inventoryPath: string
-}): Promise<ManagedEntity | undefined> {
+    inventoryPath: string
+  }): Promise<ManagedEntity | undefined> {
     const result = await this.connection.exec<{
-  inventoryPath: string
-} & { _this: ObjectReference }, ManagedEntity | undefined>(
+      inventoryPath: string
+    } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByInventoryPath", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByIp(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     ip: string;
     vmSearch: boolean
-}): Promise<ManagedEntity | undefined> {
+  }): Promise<ManagedEntity | undefined> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    ip: string;
-    vmSearch: boolean
-} & { _this: ObjectReference }, ManagedEntity | undefined>(
+      datacenter?: Datacenter;
+      ip: string;
+      vmSearch: boolean
+    } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByIp", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findByUuid(args: {
-  datacenter?: Datacenter;
+    datacenter?: Datacenter;
     uuid: string;
     vmSearch: boolean;
     instanceUuid?: boolean
-}): Promise<ManagedEntity | undefined> {
+  }): Promise<ManagedEntity | undefined> {
     const result = await this.connection.exec<{
-  datacenter?: Datacenter;
-    uuid: string;
-    vmSearch: boolean;
-    instanceUuid?: boolean
-} & { _this: ObjectReference }, ManagedEntity | undefined>(
+      datacenter?: Datacenter;
+      uuid: string;
+      vmSearch: boolean;
+      instanceUuid?: boolean
+    } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindByUuid", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity");
   }
   async findChild(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     name: string
-}): Promise<ManagedEntity | undefined> {
+  }): Promise<ManagedEntity | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    name: string
-} & { _this: ObjectReference }, ManagedEntity | undefined>(
+      entity: ManagedEntity;
+      name: string
+    } & { _this: ObjectReference }, ManagedEntity | undefined>(
       "FindChild", { _this: { attributes: { type: "SearchIndex" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity");
@@ -17946,13 +17946,13 @@ export class ServiceManager extends ManagedObject {
     }
   }
   async queryServiceList(args: {
-  serviceName?: string;
+    serviceName?: string;
     location?: string[]
-}): Promise<ServiceManagerServiceInfo[] | undefined> {
+  }): Promise<ServiceManagerServiceInfo[] | undefined> {
     const result = await this.connection.exec<{
-  serviceName?: string;
-    location?: string[]
-} & { _this: ObjectReference }, ServiceManagerServiceInfo[] | undefined>(
+      serviceName?: string;
+      location?: string[]
+    } & { _this: ObjectReference }, ServiceManagerServiceInfo[] | undefined>(
       "QueryServiceList", { _this: { attributes: { type: "ServiceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ServiceManagerServiceInfo[]");
@@ -17981,103 +17981,103 @@ export class SessionManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "string");
   }
   async acquireGenericServiceTicket(args: {
-  spec: SessionManagerServiceRequestSpec
-}): Promise<SessionManagerGenericServiceTicket> {
+    spec: SessionManagerServiceRequestSpec
+  }): Promise<SessionManagerGenericServiceTicket> {
     const result = await this.connection.exec<{
-  spec: SessionManagerServiceRequestSpec
-} & { _this: ObjectReference }, SessionManagerGenericServiceTicket>(
+      spec: SessionManagerServiceRequestSpec
+    } & { _this: ObjectReference }, SessionManagerGenericServiceTicket>(
       "AcquireGenericServiceTicket", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "SessionManagerGenericServiceTicket");
   }
   async acquireLocalTicket(args: {
-  userName: string
-}): Promise<SessionManagerLocalTicket> {
+    userName: string
+  }): Promise<SessionManagerLocalTicket> {
     const result = await this.connection.exec<{
-  userName: string
-} & { _this: ObjectReference }, SessionManagerLocalTicket>(
+      userName: string
+    } & { _this: ObjectReference }, SessionManagerLocalTicket>(
       "AcquireLocalTicket", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "SessionManagerLocalTicket");
   }
   async cloneSession(args: {
-  cloneTicket: string
-}): Promise<UserSession> {
+    cloneTicket: string
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  cloneTicket: string
-} & { _this: ObjectReference }, UserSession>(
+      cloneTicket: string
+    } & { _this: ObjectReference }, UserSession>(
       "CloneSession", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async impersonateUser(args: {
-  userName: string;
+    userName: string;
     locale?: string
-}): Promise<UserSession> {
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  userName: string;
-    locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      userName: string;
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "ImpersonateUser", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async login(args: {
-  userName: string;
+    userName: string;
     password: string;
     locale?: string
-}): Promise<UserSession> {
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  userName: string;
-    password: string;
-    locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      userName: string;
+      password: string;
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "Login", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginBySSPI(args: {
-  base64Token: string;
+    base64Token: string;
     locale?: string
-}): Promise<UserSession> {
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  base64Token: string;
-    locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      base64Token: string;
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "LoginBySSPI", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginByToken(args: {
-  locale?: string
-}): Promise<UserSession> {
+    locale?: string
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "LoginByToken", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginExtensionByCertificate(args: {
-  extensionKey: string;
+    extensionKey: string;
     locale?: string
-}): Promise<UserSession> {
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  extensionKey: string;
-    locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      extensionKey: string;
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "LoginExtensionByCertificate", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
   }
   async loginExtensionBySubjectName(args: {
-  extensionKey: string;
+    extensionKey: string;
     locale?: string
-}): Promise<UserSession> {
+  }): Promise<UserSession> {
     const result = await this.connection.exec<{
-  extensionKey: string;
-    locale?: string
-} & { _this: ObjectReference }, UserSession>(
+      extensionKey: string;
+      locale?: string
+    } & { _this: ObjectReference }, UserSession>(
       "LoginExtensionBySubjectName", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSession");
@@ -18089,43 +18089,43 @@ export class SessionManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async sessionIsActive(args: {
-  sessionID: string;
+    sessionID: string;
     userName: string
-}): Promise<boolean> {
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  sessionID: string;
-    userName: string
-} & { _this: ObjectReference }, boolean>(
+      sessionID: string;
+      userName: string
+    } & { _this: ObjectReference }, boolean>(
       "SessionIsActive", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async setLocale(args: {
-  locale: string
-}): Promise<void> {
+    locale: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  locale: string
-} & { _this: ObjectReference }, void>(
+      locale: string
+    } & { _this: ObjectReference }, void>(
       "SetLocale", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async terminate(args: {
-  sessionId: string[]
-}): Promise<void> {
+    sessionId: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  sessionId: string[]
-} & { _this: ObjectReference }, void>(
+      sessionId: string[]
+    } & { _this: ObjectReference }, void>(
       "TerminateSession", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateMessage(args: {
-  message: string
-}): Promise<void> {
+    message: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  message: string
-} & { _this: ObjectReference }, void>(
+      message: string
+    } & { _this: ObjectReference }, void>(
       "UpdateServiceMessage", { _this: { attributes: { type: "SessionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18144,11 +18144,11 @@ export class SimpleCommand extends ManagedObject {
     }
   }
   async Execute(args: {
-  arguments?: string[]
-}): Promise<string> {
+    arguments?: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  arguments?: string[]
-} & { _this: ObjectReference }, string>(
+      arguments?: string[]
+    } & { _this: ObjectReference }, string>(
       "ExecuteSimpleCommand", { _this: { attributes: { type: "SimpleCommand" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
@@ -18184,11 +18184,11 @@ export class StorageQueryManager extends ManagedObject {
     }
   }
   async queryHostsWithAttachedLun(args: {
-  lunUuid: string
-}): Promise<HostSystem[] | undefined> {
+    lunUuid: string
+  }): Promise<HostSystem[] | undefined> {
     const result = await this.connection.exec<{
-  lunUuid: string
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      lunUuid: string
+    } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryHostsWithAttachedLun", { _this: { attributes: { type: "StorageQueryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSystem[]");
@@ -18206,121 +18206,121 @@ export class StorageResourceManager extends ManagedObject {
     }
   }
   async applyRecommendationToPod(args: {
-  pod: StoragePod;
+    pod: StoragePod;
     key: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  pod: StoragePod;
-    key: string
-} & { _this: ObjectReference }, Task>(
+      pod: StoragePod;
+      key: string
+    } & { _this: ObjectReference }, Task>(
       "ApplyStorageDrsRecommendationToPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async applyRecommendation(args: {
-  key: string[]
-}): Promise<Task> {
+    key: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  key: string[]
-} & { _this: ObjectReference }, Task>(
+      key: string[]
+    } & { _this: ObjectReference }, Task>(
       "ApplyStorageDrsRecommendation_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async cancelRecommendation(args: {
-  key: string[]
-}): Promise<void> {
+    key: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string[]
-} & { _this: ObjectReference }, void>(
+      key: string[]
+    } & { _this: ObjectReference }, void>(
       "CancelStorageDrsRecommendation", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async ConfigureDatastoreIORM(args: {
-  datastore: Datastore;
+    datastore: Datastore;
     spec: StorageIORMConfigSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  datastore: Datastore;
-    spec: StorageIORMConfigSpec
-} & { _this: ObjectReference }, Task>(
+      datastore: Datastore;
+      spec: StorageIORMConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "ConfigureDatastoreIORM_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async configureStorageDrsForPod(args: {
-  pod: StoragePod;
+    pod: StoragePod;
     spec: StorageDrsConfigSpec;
     modify: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  pod: StoragePod;
-    spec: StorageDrsConfigSpec;
-    modify: boolean
-} & { _this: ObjectReference }, Task>(
+      pod: StoragePod;
+      spec: StorageDrsConfigSpec;
+      modify: boolean
+    } & { _this: ObjectReference }, Task>(
       "ConfigureStorageDrsForPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDatastorePerformanceSummary(args: {
-  datastore: Datastore
-}): Promise<StoragePerformanceSummary[] | undefined> {
+    datastore: Datastore
+  }): Promise<StoragePerformanceSummary[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, StoragePerformanceSummary[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, StoragePerformanceSummary[] | undefined>(
       "QueryDatastorePerformanceSummary", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StoragePerformanceSummary[]");
   }
   async QueryIORMConfigOption(args: {
-  host: HostSystem
-}): Promise<StorageIORMConfigOption> {
+    host: HostSystem
+  }): Promise<StorageIORMConfigOption> {
     const result = await this.connection.exec<{
-  host: HostSystem
-} & { _this: ObjectReference }, StorageIORMConfigOption>(
+      host: HostSystem
+    } & { _this: ObjectReference }, StorageIORMConfigOption>(
       "QueryIORMConfigOption", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StorageIORMConfigOption");
   }
   async recommendDatastores(args: {
-  storageSpec: StoragePlacementSpec
-}): Promise<StoragePlacementResult> {
+    storageSpec: StoragePlacementSpec
+  }): Promise<StoragePlacementResult> {
     const result = await this.connection.exec<{
-  storageSpec: StoragePlacementSpec
-} & { _this: ObjectReference }, StoragePlacementResult>(
+      storageSpec: StoragePlacementSpec
+    } & { _this: ObjectReference }, StoragePlacementResult>(
       "RecommendDatastores", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StoragePlacementResult");
   }
   async refreshRecommendation(args: {
-  pod: StoragePod
-}): Promise<void> {
+    pod: StoragePod
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pod: StoragePod
-} & { _this: ObjectReference }, void>(
+      pod: StoragePod
+    } & { _this: ObjectReference }, void>(
       "RefreshStorageDrsRecommendation", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async refreshRecommendationsForPod(args: {
-  pod: StoragePod
-}): Promise<Task> {
+    pod: StoragePod
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  pod: StoragePod
-} & { _this: ObjectReference }, Task>(
+      pod: StoragePod
+    } & { _this: ObjectReference }, Task>(
       "RefreshStorageDrsRecommendationsForPod_Task", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async validateStoragePodConfig(args: {
-  pod: StoragePod;
+    pod: StoragePod;
     spec: StorageDrsConfigSpec
-}): Promise<MethodFault | undefined> {
+  }): Promise<MethodFault | undefined> {
     const result = await this.connection.exec<{
-  pod: StoragePod;
-    spec: StorageDrsConfigSpec
-} & { _this: ObjectReference }, MethodFault | undefined>(
+      pod: StoragePod;
+      spec: StorageDrsConfigSpec
+    } & { _this: ObjectReference }, MethodFault | undefined>(
       "ValidateStoragePodConfig", { _this: { attributes: { type: "StorageResourceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "MethodFault");
@@ -18338,21 +18338,21 @@ export class TaskHistoryCollector extends HistoryCollector {
     }
   }
   async readNext(args: {
-  maxCount: number
-}): Promise<TaskInfo[] | undefined> {
+    maxCount: number
+  }): Promise<TaskInfo[] | undefined> {
     const result = await this.connection.exec<{
-  maxCount: number
-} & { _this: ObjectReference }, TaskInfo[] | undefined>(
+      maxCount: number
+    } & { _this: ObjectReference }, TaskInfo[] | undefined>(
       "ReadNextTasks", { _this: { attributes: { type: "TaskHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "TaskInfo[]");
   }
   async readPrev(args: {
-  maxCount: number
-}): Promise<TaskInfo[] | undefined> {
+    maxCount: number
+  }): Promise<TaskInfo[] | undefined> {
     const result = await this.connection.exec<{
-  maxCount: number
-} & { _this: ObjectReference }, TaskInfo[] | undefined>(
+      maxCount: number
+    } & { _this: ObjectReference }, TaskInfo[] | undefined>(
       "ReadPreviousTasks", { _this: { attributes: { type: "TaskHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "TaskInfo[]");
@@ -18372,31 +18372,31 @@ export class TaskManager extends ManagedObject {
     }
   }
   async createCollector(args: {
-  filter: TaskFilterSpec
-}): Promise<TaskHistoryCollector> {
+    filter: TaskFilterSpec
+  }): Promise<TaskHistoryCollector> {
     const result = await this.connection.exec<{
-  filter: TaskFilterSpec
-} & { _this: ObjectReference }, TaskHistoryCollector>(
+      filter: TaskFilterSpec
+    } & { _this: ObjectReference }, TaskHistoryCollector>(
       "CreateCollectorForTasks", { _this: { attributes: { type: "TaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "TaskHistoryCollector");
   }
   async createTask(args: {
-  obj: ManagedObject;
+    obj: ManagedObject;
     taskTypeId: string;
     initiatedBy?: string;
     cancelable: boolean;
     parentTaskKey?: string;
     activationId?: string
-}): Promise<TaskInfo> {
+  }): Promise<TaskInfo> {
     const result = await this.connection.exec<{
-  obj: ManagedObject;
-    taskTypeId: string;
-    initiatedBy?: string;
-    cancelable: boolean;
-    parentTaskKey?: string;
-    activationId?: string
-} & { _this: ObjectReference }, TaskInfo>(
+      obj: ManagedObject;
+      taskTypeId: string;
+      initiatedBy?: string;
+      cancelable: boolean;
+      parentTaskKey?: string;
+      activationId?: string
+    } & { _this: ObjectReference }, TaskInfo>(
       "CreateTask", { _this: { attributes: { type: "TaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "TaskInfo");
@@ -18414,23 +18414,23 @@ export class UserDirectory extends ManagedObject {
     }
   }
   async retrieveUserGroups(args: {
-  domain?: string;
+    domain?: string;
     searchStr: string;
     belongsToGroup?: string;
     belongsToUser?: string;
     exactMatch: boolean;
     findUsers: boolean;
     findGroups: boolean
-}): Promise<UserSearchResult[] | undefined> {
+  }): Promise<UserSearchResult[] | undefined> {
     const result = await this.connection.exec<{
-  domain?: string;
-    searchStr: string;
-    belongsToGroup?: string;
-    belongsToUser?: string;
-    exactMatch: boolean;
-    findUsers: boolean;
-    findGroups: boolean
-} & { _this: ObjectReference }, UserSearchResult[] | undefined>(
+      domain?: string;
+      searchStr: string;
+      belongsToGroup?: string;
+      belongsToUser?: string;
+      exactMatch: boolean;
+      findUsers: boolean;
+      findGroups: boolean
+    } & { _this: ObjectReference }, UserSearchResult[] | undefined>(
       "RetrieveUserGroups", { _this: { attributes: { type: "UserDirectory" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserSearchResult[]");
@@ -18461,41 +18461,41 @@ export class VsanUpgradeSystem extends ManagedObject {
     }
   }
   async performUpgradePreflightCheck(args: {
-  cluster: ClusterComputeResource;
+    cluster: ClusterComputeResource;
     downgradeFormat?: boolean
-}): Promise<VsanUpgradeSystemPreflightCheckResult> {
+  }): Promise<VsanUpgradeSystemPreflightCheckResult> {
     const result = await this.connection.exec<{
-  cluster: ClusterComputeResource;
-    downgradeFormat?: boolean
-} & { _this: ObjectReference }, VsanUpgradeSystemPreflightCheckResult>(
+      cluster: ClusterComputeResource;
+      downgradeFormat?: boolean
+    } & { _this: ObjectReference }, VsanUpgradeSystemPreflightCheckResult>(
       "PerformVsanUpgradePreflightCheck", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VsanUpgradeSystemPreflightCheckResult");
   }
   async performUpgrade(args: {
-  cluster: ClusterComputeResource;
+    cluster: ClusterComputeResource;
     performObjectUpgrade?: boolean;
     downgradeFormat?: boolean;
     allowReducedRedundancy?: boolean;
     excludeHosts?: HostSystem[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  cluster: ClusterComputeResource;
-    performObjectUpgrade?: boolean;
-    downgradeFormat?: boolean;
-    allowReducedRedundancy?: boolean;
-    excludeHosts?: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      cluster: ClusterComputeResource;
+      performObjectUpgrade?: boolean;
+      downgradeFormat?: boolean;
+      allowReducedRedundancy?: boolean;
+      excludeHosts?: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "PerformVsanUpgrade_Task", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryUpgradeStatus(args: {
-  cluster: ClusterComputeResource
-}): Promise<VsanUpgradeSystemUpgradeStatus> {
+    cluster: ClusterComputeResource
+  }): Promise<VsanUpgradeSystemUpgradeStatus> {
     const result = await this.connection.exec<{
-  cluster: ClusterComputeResource
-} & { _this: ObjectReference }, VsanUpgradeSystemUpgradeStatus>(
+      cluster: ClusterComputeResource
+    } & { _this: ObjectReference }, VsanUpgradeSystemUpgradeStatus>(
       "QueryVsanUpgradeStatus", { _this: { attributes: { type: "VsanUpgradeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VsanUpgradeSystemUpgradeStatus");
@@ -18513,11 +18513,11 @@ export class Alarm extends ExtensibleManagedObject {
     }
   }
   async reconfigure(args: {
-  spec: AlarmSpec
-}): Promise<void> {
+    spec: AlarmSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: AlarmSpec
-} & { _this: ObjectReference }, void>(
+      spec: AlarmSpec
+    } & { _this: ObjectReference }, void>(
       "ReconfigureAlarm", { _this: { attributes: { type: "Alarm" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18542,35 +18542,35 @@ export class ClusterEVCManager extends ExtensibleManagedObject {
     }
   }
   async checkAddHostEvc(args: {
-  cnxSpec: HostConnectSpec
-}): Promise<Task | undefined> {
+    cnxSpec: HostConnectSpec
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  cnxSpec: HostConnectSpec
-} & { _this: ObjectReference }, Task | undefined>(
+      cnxSpec: HostConnectSpec
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckAddHostEvc_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkConfigureEvc(args: {
-  evcModeKey: string;
+    evcModeKey: string;
     evcGraphicsModeKey?: string
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  evcModeKey: string;
-    evcGraphicsModeKey?: string
-} & { _this: ObjectReference }, Task | undefined>(
+      evcModeKey: string;
+      evcGraphicsModeKey?: string
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckConfigureEvcMode_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async configureEvc(args: {
-  evcModeKey: string;
+    evcModeKey: string;
     evcGraphicsModeKey?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  evcModeKey: string;
-    evcGraphicsModeKey?: string
-} & { _this: ObjectReference }, Task>(
+      evcModeKey: string;
+      evcGraphicsModeKey?: string
+    } & { _this: ObjectReference }, Task>(
       "ConfigureEvcMode_Task", { _this: { attributes: { type: "ClusterEVCManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -18594,55 +18594,55 @@ export class CryptoManager extends ManagedObject {
     }
   }
   async addKey(args: {
-  key: CryptoKeyPlain
-}): Promise<void> {
+    key: CryptoKeyPlain
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: CryptoKeyPlain
-} & { _this: ObjectReference }, void>(
+      key: CryptoKeyPlain
+    } & { _this: ObjectReference }, void>(
       "AddKey", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async addKeys(args: {
-  keys?: CryptoKeyPlain[]
-}): Promise<CryptoKeyResult[] | undefined> {
+    keys?: CryptoKeyPlain[]
+  }): Promise<CryptoKeyResult[] | undefined> {
     const result = await this.connection.exec<{
-  keys?: CryptoKeyPlain[]
-} & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
+      keys?: CryptoKeyPlain[]
+    } & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
       "AddKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoKeyResult[]");
   }
   async listKeys(args: {
-  limit?: number
-}): Promise<CryptoKeyId[] | undefined> {
+    limit?: number
+  }): Promise<CryptoKeyId[] | undefined> {
     const result = await this.connection.exec<{
-  limit?: number
-} & { _this: ObjectReference }, CryptoKeyId[] | undefined>(
+      limit?: number
+    } & { _this: ObjectReference }, CryptoKeyId[] | undefined>(
       "ListKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoKeyId[]");
   }
   async removeKey(args: {
-  key: CryptoKeyId;
+    key: CryptoKeyId;
     force: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: CryptoKeyId;
-    force: boolean
-} & { _this: ObjectReference }, void>(
+      key: CryptoKeyId;
+      force: boolean
+    } & { _this: ObjectReference }, void>(
       "RemoveKey", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeKeys(args: {
-  keys?: CryptoKeyId[];
+    keys?: CryptoKeyId[];
     force: boolean
-}): Promise<CryptoKeyResult[] | undefined> {
+  }): Promise<CryptoKeyResult[] | undefined> {
     const result = await this.connection.exec<{
-  keys?: CryptoKeyId[];
-    force: boolean
-} & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
+      keys?: CryptoKeyId[];
+      force: boolean
+    } & { _this: ObjectReference }, CryptoKeyResult[] | undefined>(
       "RemoveKeys", { _this: { attributes: { type: "CryptoManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoKeyResult[]");
@@ -18660,11 +18660,11 @@ export class CryptoManagerHost extends CryptoManager {
     }
   }
   async changeKey(args: {
-  newKey: CryptoKeyPlain
-}): Promise<Task> {
+    newKey: CryptoKeyPlain
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  newKey: CryptoKeyPlain
-} & { _this: ObjectReference }, Task>(
+      newKey: CryptoKeyPlain
+    } & { _this: ObjectReference }, Task>(
       "ChangeKey_Task", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -18676,11 +18676,11 @@ export class CryptoManagerHost extends CryptoManager {
     return constructHelperObjects(this.connection, result, "void");
   }
   async enable(args: {
-  initialKey: CryptoKeyPlain
-}): Promise<void> {
+    initialKey: CryptoKeyPlain
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  initialKey: CryptoKeyPlain
-} & { _this: ObjectReference }, void>(
+      initialKey: CryptoKeyPlain
+    } & { _this: ObjectReference }, void>(
       "CryptoManagerHostEnable", { _this: { attributes: { type: "CryptoManagerHost" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18717,21 +18717,21 @@ export class EventHistoryCollector extends HistoryCollector {
     }
   }
   async readNext(args: {
-  maxCount: number
-}): Promise<Event[] | undefined> {
+    maxCount: number
+  }): Promise<Event[] | undefined> {
     const result = await this.connection.exec<{
-  maxCount: number
-} & { _this: ObjectReference }, Event[] | undefined>(
+      maxCount: number
+    } & { _this: ObjectReference }, Event[] | undefined>(
       "ReadNextEvents", { _this: { attributes: { type: "EventHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Event[]");
   }
   async readPrev(args: {
-  maxCount: number
-}): Promise<Event[] | undefined> {
+    maxCount: number
+  }): Promise<Event[] | undefined> {
     const result = await this.connection.exec<{
-  maxCount: number
-} & { _this: ObjectReference }, Event[] | undefined>(
+      maxCount: number
+    } & { _this: ObjectReference }, Event[] | undefined>(
       "ReadPreviousEvents", { _this: { attributes: { type: "EventHistoryCollector" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Event[]");
@@ -18751,55 +18751,55 @@ export class EventManager extends ManagedObject {
     }
   }
   async createCollector(args: {
-  filter: EventFilterSpec
-}): Promise<EventHistoryCollector> {
+    filter: EventFilterSpec
+  }): Promise<EventHistoryCollector> {
     const result = await this.connection.exec<{
-  filter: EventFilterSpec
-} & { _this: ObjectReference }, EventHistoryCollector>(
+      filter: EventFilterSpec
+    } & { _this: ObjectReference }, EventHistoryCollector>(
       "CreateCollectorForEvents", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "EventHistoryCollector");
   }
   async logUserEvent(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     msg: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    msg: string
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      msg: string
+    } & { _this: ObjectReference }, void>(
       "LogUserEvent", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async postEvent(args: {
-  eventToPost: Event;
+    eventToPost: Event;
     taskInfo?: TaskInfo
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  eventToPost: Event;
-    taskInfo?: TaskInfo
-} & { _this: ObjectReference }, void>(
+      eventToPost: Event;
+      taskInfo?: TaskInfo
+    } & { _this: ObjectReference }, void>(
       "PostEvent", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async QueryEvent(args: {
-  filter: EventFilterSpec
-}): Promise<Event[] | undefined> {
+    filter: EventFilterSpec
+  }): Promise<Event[] | undefined> {
     const result = await this.connection.exec<{
-  filter: EventFilterSpec
-} & { _this: ObjectReference }, Event[] | undefined>(
+      filter: EventFilterSpec
+    } & { _this: ObjectReference }, Event[] | undefined>(
       "QueryEvents", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Event[]");
   }
   async retrieveArgumentDescription(args: {
-  eventTypeId: string
-}): Promise<EventArgDesc[] | undefined> {
+    eventTypeId: string
+  }): Promise<EventArgDesc[] | undefined> {
     const result = await this.connection.exec<{
-  eventTypeId: string
-} & { _this: ObjectReference }, EventArgDesc[] | undefined>(
+      eventTypeId: string
+    } & { _this: ObjectReference }, EventArgDesc[] | undefined>(
       "RetrieveArgumentDescription", { _this: { attributes: { type: "EventManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "EventArgDesc[]");
@@ -18830,11 +18830,11 @@ export class HostAssignableHardwareManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "VirtualMachineDynamicPassthroughInfo[]");
   }
   async updateConfig(args: {
-  config: HostAssignableHardwareConfig
-}): Promise<void> {
+    config: HostAssignableHardwareConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostAssignableHardwareConfig
-} & { _this: ObjectReference }, void>(
+      config: HostAssignableHardwareConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateAssignableHardwareConfig", { _this: { attributes: { type: "HostAssignableHardwareManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18891,11 +18891,11 @@ export class HostAutoStartManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigure(args: {
-  spec: HostAutoStartManagerConfig
-}): Promise<void> {
+    spec: HostAutoStartManagerConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: HostAutoStartManagerConfig
-} & { _this: ObjectReference }, void>(
+      spec: HostAutoStartManagerConfig
+    } & { _this: ObjectReference }, void>(
       "ReconfigureAutostart", { _this: { attributes: { type: "HostAutoStartManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18919,11 +18919,11 @@ export class HostBootDeviceSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HostBootDeviceInfo");
   }
   async updateBootDevice(args: {
-  key: string
-}): Promise<void> {
+    key: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string
-} & { _this: ObjectReference }, void>(
+      key: string
+    } & { _this: ObjectReference }, void>(
       "UpdateBootDevice", { _this: { attributes: { type: "HostBootDeviceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -18941,11 +18941,11 @@ export class HostCacheConfigurationManager extends ManagedObject {
     }
   }
   async configureCache(args: {
-  spec: HostCacheConfigurationSpec
-}): Promise<Task> {
+    spec: HostCacheConfigurationSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: HostCacheConfigurationSpec
-} & { _this: ObjectReference }, Task>(
+      spec: HostCacheConfigurationSpec
+    } & { _this: ObjectReference }, Task>(
       "ConfigureHostCache_Task", { _this: { attributes: { type: "HostCacheConfigurationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -18963,31 +18963,31 @@ export class HostCertificateManager extends ManagedObject {
     }
   }
   async generateCertificateSigningRequest(args: {
-  useIpAddressAsCommonName: boolean
-}): Promise<string> {
+    useIpAddressAsCommonName: boolean
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  useIpAddressAsCommonName: boolean
-} & { _this: ObjectReference }, string>(
+      useIpAddressAsCommonName: boolean
+    } & { _this: ObjectReference }, string>(
       "GenerateCertificateSigningRequest", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async generateCertificateSigningRequestByDn(args: {
-  distinguishedName: string
-}): Promise<string> {
+    distinguishedName: string
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  distinguishedName: string
-} & { _this: ObjectReference }, string>(
+      distinguishedName: string
+    } & { _this: ObjectReference }, string>(
       "GenerateCertificateSigningRequestByDn", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async installServerCertificate(args: {
-  cert: string
-}): Promise<void> {
+    cert: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cert: string
-} & { _this: ObjectReference }, void>(
+      cert: string
+    } & { _this: ObjectReference }, void>(
       "InstallServerCertificate", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19005,13 +19005,13 @@ export class HostCertificateManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async replaceCACertificatesAndCRLs(args: {
-  caCert: string[];
+    caCert: string[];
     caCrl?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  caCert: string[];
-    caCrl?: string[]
-} & { _this: ObjectReference }, void>(
+      caCert: string[];
+      caCrl?: string[]
+    } & { _this: ObjectReference }, void>(
       "ReplaceCACertificatesAndCRLs", { _this: { attributes: { type: "HostCertificateManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19054,35 +19054,35 @@ export class HostDatastoreBrowser extends ManagedObject {
     }
   }
   async deleteFile(args: {
-  datastorePath: string
-}): Promise<void> {
+    datastorePath: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastorePath: string
-} & { _this: ObjectReference }, void>(
+      datastorePath: string
+    } & { _this: ObjectReference }, void>(
       "DeleteFile", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async searchSubFolders(args: {
-  datastorePath: string;
+    datastorePath: string;
     searchSpec?: HostDatastoreBrowserSearchSpec
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  datastorePath: string;
-    searchSpec?: HostDatastoreBrowserSearchSpec
-} & { _this: ObjectReference }, Task | undefined>(
+      datastorePath: string;
+      searchSpec?: HostDatastoreBrowserSearchSpec
+    } & { _this: ObjectReference }, Task | undefined>(
       "SearchDatastoreSubFolders_Task", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async search(args: {
-  datastorePath: string;
+    datastorePath: string;
     searchSpec?: HostDatastoreBrowserSearchSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  datastorePath: string;
-    searchSpec?: HostDatastoreBrowserSearchSpec
-} & { _this: ObjectReference }, Task>(
+      datastorePath: string;
+      searchSpec?: HostDatastoreBrowserSearchSpec
+    } & { _this: ObjectReference }, Task>(
       "SearchDatastore_Task", { _this: { attributes: { type: "HostDatastoreBrowser" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -19118,21 +19118,21 @@ export class HostDateTimeSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateDateTime(args: {
-  dateTime: Date
-}): Promise<void> {
+    dateTime: Date
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  dateTime: Date
-} & { _this: ObjectReference }, void>(
+      dateTime: Date
+    } & { _this: ObjectReference }, void>(
       "UpdateDateTime", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateConfig(args: {
-  config: HostDateTimeConfig
-}): Promise<void> {
+    config: HostDateTimeConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostDateTimeConfig
-} & { _this: ObjectReference }, void>(
+      config: HostDateTimeConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateDateTimeConfig", { _this: { attributes: { type: "HostDateTimeSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19163,11 +19163,11 @@ export class HostEsxAgentHostManager extends ManagedObject {
     }
   }
   async updateConfig(args: {
-  configInfo: HostEsxAgentHostManagerConfigInfo
-}): Promise<void> {
+    configInfo: HostEsxAgentHostManagerConfigInfo
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  configInfo: HostEsxAgentHostManagerConfigInfo
-} & { _this: ObjectReference }, void>(
+      configInfo: HostEsxAgentHostManagerConfigInfo
+    } & { _this: ObjectReference }, void>(
       "EsxAgentHostManagerUpdateConfig", { _this: { attributes: { type: "HostEsxAgentHostManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19203,11 +19203,11 @@ export class HostFirmwareSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async restoreConfiguration(args: {
-  force: boolean
-}): Promise<void> {
+    force: boolean
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  force: boolean
-} & { _this: ObjectReference }, void>(
+      force: boolean
+    } & { _this: ObjectReference }, void>(
       "RestoreFirmwareConfiguration", { _this: { attributes: { type: "HostFirmwareSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19240,11 +19240,11 @@ export class HostGraphicsManager extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateGraphicsConfig(args: {
-  config: HostGraphicsConfig
-}): Promise<void> {
+    config: HostGraphicsConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostGraphicsConfig
-} & { _this: ObjectReference }, void>(
+      config: HostGraphicsConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateGraphicsConfig", { _this: { attributes: { type: "HostGraphicsManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19298,25 +19298,25 @@ export class HostAccessManager extends ManagedObject {
     }
   }
   async changeAccessMode(args: {
-  principal: string;
+    principal: string;
     isGroup: boolean;
     accessMode: HostAccessMode
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  principal: string;
-    isGroup: boolean;
-    accessMode: HostAccessMode
-} & { _this: ObjectReference }, void>(
+      principal: string;
+      isGroup: boolean;
+      accessMode: HostAccessMode
+    } & { _this: ObjectReference }, void>(
       "ChangeAccessMode", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async changeLockdownMode(args: {
-  mode: HostLockdownMode
-}): Promise<void> {
+    mode: HostLockdownMode
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  mode: HostLockdownMode
-} & { _this: ObjectReference }, void>(
+      mode: HostLockdownMode
+    } & { _this: ObjectReference }, void>(
       "ChangeLockdownMode", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19340,21 +19340,21 @@ export class HostAccessManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HostAccessControlEntry[]");
   }
   async updateLockdownExceptions(args: {
-  users?: string[]
-}): Promise<void> {
+    users?: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  users?: string[]
-} & { _this: ObjectReference }, void>(
+      users?: string[]
+    } & { _this: ObjectReference }, void>(
       "UpdateLockdownExceptions", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateSystemUsers(args: {
-  users?: string[]
-}): Promise<void> {
+    users?: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  users?: string[]
-} & { _this: ObjectReference }, void>(
+      users?: string[]
+    } & { _this: ObjectReference }, void>(
       "UpdateSystemUsers", { _this: { attributes: { type: "HostAccessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19384,11 +19384,11 @@ export class HostImageConfigManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HostImageProfileSummary");
   }
   async updateAcceptanceLevel(args: {
-  newAcceptanceLevel: string
-}): Promise<void> {
+    newAcceptanceLevel: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  newAcceptanceLevel: string
-} & { _this: ObjectReference }, void>(
+      newAcceptanceLevel: string
+    } & { _this: ObjectReference }, void>(
       "UpdateHostImageAcceptanceLevel", { _this: { attributes: { type: "HostImageConfigManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19418,77 +19418,77 @@ export class IscsiManager extends ManagedObject {
     }
   }
   async bindVnic(args: {
-  iScsiHbaName: string;
+    iScsiHbaName: string;
     vnicDevice: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaName: string;
-    vnicDevice: string
-} & { _this: ObjectReference }, void>(
+      iScsiHbaName: string;
+      vnicDevice: string
+    } & { _this: ObjectReference }, void>(
       "BindVnic", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryBoundVnics(args: {
-  iScsiHbaName: string
-}): Promise<IscsiPortInfo[] | undefined> {
+    iScsiHbaName: string
+  }): Promise<IscsiPortInfo[] | undefined> {
     const result = await this.connection.exec<{
-  iScsiHbaName: string
-} & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
+      iScsiHbaName: string
+    } & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
       "QueryBoundVnics", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IscsiPortInfo[]");
   }
   async queryCandidateNics(args: {
-  iScsiHbaName: string
-}): Promise<IscsiPortInfo[] | undefined> {
+    iScsiHbaName: string
+  }): Promise<IscsiPortInfo[] | undefined> {
     const result = await this.connection.exec<{
-  iScsiHbaName: string
-} & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
+      iScsiHbaName: string
+    } & { _this: ObjectReference }, IscsiPortInfo[] | undefined>(
       "QueryCandidateNics", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IscsiPortInfo[]");
   }
   async queryMigrationDependencies(args: {
-  pnicDevice: string[]
-}): Promise<IscsiMigrationDependency> {
+    pnicDevice: string[]
+  }): Promise<IscsiMigrationDependency> {
     const result = await this.connection.exec<{
-  pnicDevice: string[]
-} & { _this: ObjectReference }, IscsiMigrationDependency>(
+      pnicDevice: string[]
+    } & { _this: ObjectReference }, IscsiMigrationDependency>(
       "QueryMigrationDependencies", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IscsiMigrationDependency");
   }
   async queryPnicStatus(args: {
-  pnicDevice: string
-}): Promise<IscsiStatus> {
+    pnicDevice: string
+  }): Promise<IscsiStatus> {
     const result = await this.connection.exec<{
-  pnicDevice: string
-} & { _this: ObjectReference }, IscsiStatus>(
+      pnicDevice: string
+    } & { _this: ObjectReference }, IscsiStatus>(
       "QueryPnicStatus", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IscsiStatus");
   }
   async queryVnicStatus(args: {
-  vnicDevice: string
-}): Promise<IscsiStatus> {
+    vnicDevice: string
+  }): Promise<IscsiStatus> {
     const result = await this.connection.exec<{
-  vnicDevice: string
-} & { _this: ObjectReference }, IscsiStatus>(
+      vnicDevice: string
+    } & { _this: ObjectReference }, IscsiStatus>(
       "QueryVnicStatus", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "IscsiStatus");
   }
   async unbindVnic(args: {
-  iScsiHbaName: string;
+    iScsiHbaName: string;
     vnicDevice: string;
     force: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaName: string;
-    vnicDevice: string;
-    force: boolean
-} & { _this: ObjectReference }, void>(
+      iScsiHbaName: string;
+      vnicDevice: string;
+      force: boolean
+    } & { _this: ObjectReference }, void>(
       "UnbindVnic", { _this: { attributes: { type: "IscsiManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19506,11 +19506,11 @@ export class HostKernelModuleSystem extends ManagedObject {
     }
   }
   async queryConfiguredModuleOptionString(args: {
-  name: string
-}): Promise<string> {
+    name: string
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, string>(
+      name: string
+    } & { _this: ObjectReference }, string>(
       "QueryConfiguredModuleOptionString", { _this: { attributes: { type: "HostKernelModuleSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
@@ -19522,13 +19522,13 @@ export class HostKernelModuleSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "KernelModuleInfo[]");
   }
   async updateModuleOptionString(args: {
-  name: string;
+    name: string;
     options: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    options: string
-} & { _this: ObjectReference }, void>(
+      name: string;
+      options: string
+    } & { _this: ObjectReference }, void>(
       "UpdateModuleOptionString", { _this: { attributes: { type: "HostKernelModuleSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19546,89 +19546,89 @@ export class HostLocalAccountManager extends ManagedObject {
     }
   }
   async assignUserToGroup(args: {
-  user: string;
+    user: string;
     group: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: string;
-    group: string
-} & { _this: ObjectReference }, void>(
+      user: string;
+      group: string
+    } & { _this: ObjectReference }, void>(
       "AssignUserToGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async changePassword(args: {
-  user: string;
+    user: string;
     oldPassword: string;
     newPassword: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: string;
-    oldPassword: string;
-    newPassword: string
-} & { _this: ObjectReference }, void>(
+      user: string;
+      oldPassword: string;
+      newPassword: string
+    } & { _this: ObjectReference }, void>(
       "ChangePassword", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async createGroup(args: {
-  group: HostAccountSpec
-}): Promise<void> {
+    group: HostAccountSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  group: HostAccountSpec
-} & { _this: ObjectReference }, void>(
+      group: HostAccountSpec
+    } & { _this: ObjectReference }, void>(
       "CreateGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async createUser(args: {
-  user: HostAccountSpec
-}): Promise<void> {
+    user: HostAccountSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: HostAccountSpec
-} & { _this: ObjectReference }, void>(
+      user: HostAccountSpec
+    } & { _this: ObjectReference }, void>(
       "CreateUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeGroup(args: {
-  groupName: string
-}): Promise<void> {
+    groupName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  groupName: string
-} & { _this: ObjectReference }, void>(
+      groupName: string
+    } & { _this: ObjectReference }, void>(
       "RemoveGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeUser(args: {
-  userName: string
-}): Promise<void> {
+    userName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  userName: string
-} & { _this: ObjectReference }, void>(
+      userName: string
+    } & { _this: ObjectReference }, void>(
       "RemoveUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unassignUserFromGroup(args: {
-  user: string;
+    user: string;
     group: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: string;
-    group: string
-} & { _this: ObjectReference }, void>(
+      user: string;
+      group: string
+    } & { _this: ObjectReference }, void>(
       "UnassignUserFromGroup", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateUser(args: {
-  user: HostAccountSpec
-}): Promise<void> {
+    user: HostAccountSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: HostAccountSpec
-} & { _this: ObjectReference }, void>(
+      user: HostAccountSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateUser", { _this: { attributes: { type: "HostLocalAccountManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19660,21 +19660,21 @@ export class HostMemorySystem extends ExtensibleManagedObject {
     }
   }
   async reconfigureServiceConsoleReservation(args: {
-  cfgBytes: number
-}): Promise<void> {
+    cfgBytes: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cfgBytes: number
-} & { _this: ObjectReference }, void>(
+      cfgBytes: number
+    } & { _this: ObjectReference }, void>(
       "ReconfigureServiceConsoleReservation", { _this: { attributes: { type: "HostMemorySystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigureVirtualMachineReservation(args: {
-  spec: VirtualMachineMemoryReservationSpec
-}): Promise<void> {
+    spec: VirtualMachineMemoryReservationSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: VirtualMachineMemoryReservationSpec
-} & { _this: ObjectReference }, void>(
+      spec: VirtualMachineMemoryReservationSpec
+    } & { _this: ObjectReference }, void>(
       "ReconfigureVirtualMachineReservation", { _this: { attributes: { type: "HostMemorySystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19705,21 +19705,21 @@ export class HostNvdimmSystem extends ManagedObject {
     }
   }
   async createNamespace(args: {
-  createSpec: NvdimmNamespaceCreateSpec
-}): Promise<Task> {
+    createSpec: NvdimmNamespaceCreateSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  createSpec: NvdimmNamespaceCreateSpec
-} & { _this: ObjectReference }, Task>(
+      createSpec: NvdimmNamespaceCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateNvdimmNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createPMemNamespace(args: {
-  createSpec: NvdimmPMemNamespaceCreateSpec
-}): Promise<Task> {
+    createSpec: NvdimmPMemNamespaceCreateSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  createSpec: NvdimmPMemNamespaceCreateSpec
-} & { _this: ObjectReference }, Task>(
+      createSpec: NvdimmPMemNamespaceCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateNvdimmPMemNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -19731,11 +19731,11 @@ export class HostNvdimmSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteNamespace(args: {
-  deleteSpec: NvdimmNamespaceDeleteSpec
-}): Promise<Task> {
+    deleteSpec: NvdimmNamespaceDeleteSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  deleteSpec: NvdimmNamespaceDeleteSpec
-} & { _this: ObjectReference }, Task>(
+      deleteSpec: NvdimmNamespaceDeleteSpec
+    } & { _this: ObjectReference }, Task>(
       "DeleteNvdimmNamespace_Task", { _this: { attributes: { type: "HostNvdimmSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -19753,109 +19753,109 @@ export class HostPatchManager extends ManagedObject {
     }
   }
   async Check(args: {
-  metaUrls?: string[];
+    metaUrls?: string[];
     bundleUrls?: string[];
     spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  metaUrls?: string[];
-    bundleUrls?: string[];
-    spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task>(
+      metaUrls?: string[];
+      bundleUrls?: string[];
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task>(
       "CheckHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async InstallV2(args: {
-  metaUrls?: string[];
+    metaUrls?: string[];
     bundleUrls?: string[];
     vibUrls?: string[];
     spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  metaUrls?: string[];
-    bundleUrls?: string[];
-    vibUrls?: string[];
-    spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task>(
+      metaUrls?: string[];
+      bundleUrls?: string[];
+      vibUrls?: string[];
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task>(
       "InstallHostPatchV2_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async Install(args: {
-  repository: HostPatchManagerLocator;
+    repository: HostPatchManagerLocator;
     updateID: string;
     force?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  repository: HostPatchManagerLocator;
-    updateID: string;
-    force?: boolean
-} & { _this: ObjectReference }, Task>(
+      repository: HostPatchManagerLocator;
+      updateID: string;
+      force?: boolean
+    } & { _this: ObjectReference }, Task>(
       "InstallHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async Query(args: {
-  spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task> {
+    spec?: HostPatchManagerPatchManagerOperationSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task>(
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task>(
       "QueryHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async ScanV2(args: {
-  metaUrls?: string[];
+    metaUrls?: string[];
     bundleUrls?: string[];
     spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  metaUrls?: string[];
-    bundleUrls?: string[];
-    spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task | undefined>(
+      metaUrls?: string[];
+      bundleUrls?: string[];
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task | undefined>(
       "ScanHostPatchV2_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async Scan(args: {
-  repository: HostPatchManagerLocator;
+    repository: HostPatchManagerLocator;
     updateID?: string[]
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  repository: HostPatchManagerLocator;
-    updateID?: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      repository: HostPatchManagerLocator;
+      updateID?: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "ScanHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async Stage(args: {
-  metaUrls?: string[];
+    metaUrls?: string[];
     bundleUrls?: string[];
     vibUrls?: string[];
     spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  metaUrls?: string[];
-    bundleUrls?: string[];
-    vibUrls?: string[];
-    spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task>(
+      metaUrls?: string[];
+      bundleUrls?: string[];
+      vibUrls?: string[];
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task>(
       "StageHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async Uninstall(args: {
-  bulletinIds?: string[];
+    bulletinIds?: string[];
     spec?: HostPatchManagerPatchManagerOperationSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  bulletinIds?: string[];
-    spec?: HostPatchManagerPatchManagerOperationSpec
-} & { _this: ObjectReference }, Task>(
+      bulletinIds?: string[];
+      spec?: HostPatchManagerPatchManagerOperationSpec
+    } & { _this: ObjectReference }, Task>(
       "UninstallHostPatch_Task", { _this: { attributes: { type: "HostPatchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -19880,11 +19880,11 @@ export class HostPciPassthruSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async updatePassthruConfig(args: {
-  config: HostPciPassthruConfig[]
-}): Promise<void> {
+    config: HostPciPassthruConfig[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostPciPassthruConfig[]
-} & { _this: ObjectReference }, void>(
+      config: HostPciPassthruConfig[]
+    } & { _this: ObjectReference }, void>(
       "UpdatePassthruConfig", { _this: { attributes: { type: "HostPciPassthruSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19903,11 +19903,11 @@ export class HostPowerSystem extends ManagedObject {
     }
   }
   async configurePolicy(args: {
-  key: number
-}): Promise<void> {
+    key: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: number
-} & { _this: ObjectReference }, void>(
+      key: number
+    } & { _this: ObjectReference }, void>(
       "ConfigurePowerPolicy", { _this: { attributes: { type: "HostPowerSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19931,53 +19931,53 @@ export class HostServiceSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async restart(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "RestartService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async start(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "StartService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async stop(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "StopService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async uninstall(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "UninstallService", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updatePolicy(args: {
-  id: string;
+    id: string;
     policy: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string;
-    policy: string
-} & { _this: ObjectReference }, void>(
+      id: string;
+      policy: string
+    } & { _this: ObjectReference }, void>(
       "UpdateServicePolicy", { _this: { attributes: { type: "HostServiceSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -19996,11 +19996,11 @@ export class HostSnmpSystem extends ManagedObject {
     }
   }
   async reconfigureSnmpAgent(args: {
-  spec: HostSnmpConfigSpec
-}): Promise<void> {
+    spec: HostSnmpConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: HostSnmpConfigSpec
-} & { _this: ObjectReference }, void>(
+      spec: HostSnmpConfigSpec
+    } & { _this: ObjectReference }, void>(
       "ReconfigureSnmpAgent", { _this: { attributes: { type: "HostSnmpSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20031,21 +20031,21 @@ export class HostVMotionSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async selectVnic(args: {
-  device: string
-}): Promise<void> {
+    device: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string
-} & { _this: ObjectReference }, void>(
+      device: string
+    } & { _this: ObjectReference }, void>(
       "SelectVnic", { _this: { attributes: { type: "HostVMotionSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpConfig(args: {
-  ipConfig: HostIpConfig
-}): Promise<void> {
+    ipConfig: HostIpConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  ipConfig: HostIpConfig
-} & { _this: ObjectReference }, void>(
+      ipConfig: HostIpConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateIpConfig", { _this: { attributes: { type: "HostVMotionSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20063,35 +20063,35 @@ export class HostVirtualNicManager extends ExtensibleManagedObject {
     }
   }
   async deselectVnic(args: {
-  nicType: string;
+    nicType: string;
     device: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  nicType: string;
-    device: string
-} & { _this: ObjectReference }, void>(
+      nicType: string;
+      device: string
+    } & { _this: ObjectReference }, void>(
       "DeselectVnicForNicType", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryNetConfig(args: {
-  nicType: string
-}): Promise<VirtualNicManagerNetConfig | undefined> {
+    nicType: string
+  }): Promise<VirtualNicManagerNetConfig | undefined> {
     const result = await this.connection.exec<{
-  nicType: string
-} & { _this: ObjectReference }, VirtualNicManagerNetConfig | undefined>(
+      nicType: string
+    } & { _this: ObjectReference }, VirtualNicManagerNetConfig | undefined>(
       "QueryNetConfig", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualNicManagerNetConfig");
   }
   async selectVnic(args: {
-  nicType: string;
+    nicType: string;
     device: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  nicType: string;
-    device: string
-} & { _this: ObjectReference }, void>(
+      nicType: string;
+      device: string
+    } & { _this: ObjectReference }, void>(
       "SelectVnicForNicType", { _this: { attributes: { type: "HostVirtualNicManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20109,165 +20109,165 @@ export class HostVsanInternalSystem extends ManagedObject {
     }
   }
   async abdicateDomOwnership(args: {
-  uuids: string[]
-}): Promise<string[] | undefined> {
+    uuids: string[]
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  uuids: string[]
-} & { _this: ObjectReference }, string[] | undefined>(
+      uuids: string[]
+    } & { _this: ObjectReference }, string[] | undefined>(
       "AbdicateDomOwnership", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async canProvisionObjects(args: {
-  npbs: VsanNewPolicyBatch[];
+    npbs: VsanNewPolicyBatch[];
     ignoreSatisfiability?: boolean
-}): Promise<VsanPolicySatisfiability[]> {
+  }): Promise<VsanPolicySatisfiability[]> {
     const result = await this.connection.exec<{
-  npbs: VsanNewPolicyBatch[];
-    ignoreSatisfiability?: boolean
-} & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
+      npbs: VsanNewPolicyBatch[];
+      ignoreSatisfiability?: boolean
+    } & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
       "CanProvisionObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VsanPolicySatisfiability[]");
   }
   async deleteVsanObjects(args: {
-  uuids: string[];
+    uuids: string[];
     force?: boolean
-}): Promise<HostVsanInternalSystemDeleteVsanObjectsResult[]> {
+  }): Promise<HostVsanInternalSystemDeleteVsanObjectsResult[]> {
     const result = await this.connection.exec<{
-  uuids: string[];
-    force?: boolean
-} & { _this: ObjectReference }, HostVsanInternalSystemDeleteVsanObjectsResult[]>(
+      uuids: string[];
+      force?: boolean
+    } & { _this: ObjectReference }, HostVsanInternalSystemDeleteVsanObjectsResult[]>(
       "DeleteVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVsanInternalSystemDeleteVsanObjectsResult[]");
   }
   async getVsanObjExtAttrs(args: {
-  uuids: string[]
-}): Promise<string> {
+    uuids: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  uuids: string[]
-} & { _this: ObjectReference }, string>(
+      uuids: string[]
+    } & { _this: ObjectReference }, string>(
       "GetVsanObjExtAttrs", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryCmmds(args: {
-  queries: HostVsanInternalSystemCmmdsQuery[]
-}): Promise<string> {
+    queries: HostVsanInternalSystemCmmdsQuery[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  queries: HostVsanInternalSystemCmmdsQuery[]
-} & { _this: ObjectReference }, string>(
+      queries: HostVsanInternalSystemCmmdsQuery[]
+    } & { _this: ObjectReference }, string>(
       "QueryCmmds", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryObjectsOnPhysicalVsanDisk(args: {
-  disks: string[]
-}): Promise<string> {
+    disks: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  disks: string[]
-} & { _this: ObjectReference }, string>(
+      disks: string[]
+    } & { _this: ObjectReference }, string>(
       "QueryObjectsOnPhysicalVsanDisk", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryPhysicalVsanDisks(args: {
-  props?: string[]
-}): Promise<string> {
+    props?: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  props?: string[]
-} & { _this: ObjectReference }, string>(
+      props?: string[]
+    } & { _this: ObjectReference }, string>(
       "QueryPhysicalVsanDisks", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async querySyncingVsanObjects(args: {
-  uuids?: string[]
-}): Promise<string> {
+    uuids?: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  uuids?: string[]
-} & { _this: ObjectReference }, string>(
+      uuids?: string[]
+    } & { _this: ObjectReference }, string>(
       "QuerySyncingVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryVsanObjectUuidsByFilter(args: {
-  uuids?: string[];
+    uuids?: string[];
     limit?: number;
     version?: number
-}): Promise<string[] | undefined> {
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  uuids?: string[];
-    limit?: number;
-    version?: number
-} & { _this: ObjectReference }, string[] | undefined>(
+      uuids?: string[];
+      limit?: number;
+      version?: number
+    } & { _this: ObjectReference }, string[] | undefined>(
       "QueryVsanObjectUuidsByFilter", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async queryVsanObjects(args: {
-  uuids?: string[]
-}): Promise<string> {
+    uuids?: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  uuids?: string[]
-} & { _this: ObjectReference }, string>(
+      uuids?: string[]
+    } & { _this: ObjectReference }, string>(
       "QueryVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async queryVsanStatistics(args: {
-  labels: string[]
-}): Promise<string> {
+    labels: string[]
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  labels: string[]
-} & { _this: ObjectReference }, string>(
+      labels: string[]
+    } & { _this: ObjectReference }, string>(
       "QueryVsanStatistics", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async reconfigurationSatisfiable(args: {
-  pcbs: VsanPolicyChangeBatch[];
+    pcbs: VsanPolicyChangeBatch[];
     ignoreSatisfiability?: boolean
-}): Promise<VsanPolicySatisfiability[]> {
+  }): Promise<VsanPolicySatisfiability[]> {
     const result = await this.connection.exec<{
-  pcbs: VsanPolicyChangeBatch[];
-    ignoreSatisfiability?: boolean
-} & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
+      pcbs: VsanPolicyChangeBatch[];
+      ignoreSatisfiability?: boolean
+    } & { _this: ObjectReference }, VsanPolicySatisfiability[]>(
       "ReconfigurationSatisfiable", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VsanPolicySatisfiability[]");
   }
   async reconfigureDomObject(args: {
-  uuid: string;
+    uuid: string;
     policy: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  uuid: string;
-    policy: string
-} & { _this: ObjectReference }, void>(
+      uuid: string;
+      policy: string
+    } & { _this: ObjectReference }, void>(
       "ReconfigureDomObject", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async runVsanPhysicalDiskDiagnostics(args: {
-  disks?: string[]
-}): Promise<HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]> {
+    disks?: string[]
+  }): Promise<HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]> {
     const result = await this.connection.exec<{
-  disks?: string[]
-} & { _this: ObjectReference }, HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]>(
+      disks?: string[]
+    } & { _this: ObjectReference }, HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]>(
       "RunVsanPhysicalDiskDiagnostics", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVsanInternalSystemVsanPhysicalDiskDiagnosticsResult[]");
   }
   async upgradeVsanObjects(args: {
-  uuids: string[];
+    uuids: string[];
     newVersion: number
-}): Promise<HostVsanInternalSystemVsanObjectOperationResult[] | undefined> {
+  }): Promise<HostVsanInternalSystemVsanObjectOperationResult[] | undefined> {
     const result = await this.connection.exec<{
-  uuids: string[];
-    newVersion: number
-} & { _this: ObjectReference }, HostVsanInternalSystemVsanObjectOperationResult[] | undefined>(
+      uuids: string[];
+      newVersion: number
+    } & { _this: ObjectReference }, HostVsanInternalSystemVsanObjectOperationResult[] | undefined>(
       "UpgradeVsanObjects", { _this: { attributes: { type: "HostVsanInternalSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVsanInternalSystemVsanObjectOperationResult[]");
@@ -20285,43 +20285,43 @@ export class HostVsanSystem extends ManagedObject {
     }
   }
   async addDisks(args: {
-  disk: HostScsiDisk[]
-}): Promise<Task | undefined> {
+    disk: HostScsiDisk[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  disk: HostScsiDisk[]
-} & { _this: ObjectReference }, Task | undefined>(
+      disk: HostScsiDisk[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "AddDisks_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async evacuateNode(args: {
-  maintenanceSpec: HostMaintenanceSpec;
+    maintenanceSpec: HostMaintenanceSpec;
     timeout: number
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  maintenanceSpec: HostMaintenanceSpec;
-    timeout: number
-} & { _this: ObjectReference }, Task>(
+      maintenanceSpec: HostMaintenanceSpec;
+      timeout: number
+    } & { _this: ObjectReference }, Task>(
       "EvacuateVsanNode_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async initializeDisks(args: {
-  mapping: VsanHostDiskMapping[]
-}): Promise<Task | undefined> {
+    mapping: VsanHostDiskMapping[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  mapping: VsanHostDiskMapping[]
-} & { _this: ObjectReference }, Task | undefined>(
+      mapping: VsanHostDiskMapping[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "InitializeDisks_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryDisksForVsan(args: {
-  canonicalName?: string[]
-}): Promise<VsanHostDiskResult[] | undefined> {
+    canonicalName?: string[]
+  }): Promise<VsanHostDiskResult[] | undefined> {
     const result = await this.connection.exec<{
-  canonicalName?: string[]
-} & { _this: ObjectReference }, VsanHostDiskResult[] | undefined>(
+      canonicalName?: string[]
+    } & { _this: ObjectReference }, VsanHostDiskResult[] | undefined>(
       "QueryDisksForVsan", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VsanHostDiskResult[]");
@@ -20339,49 +20339,49 @@ export class HostVsanSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async removeDiskMapping(args: {
-  mapping: VsanHostDiskMapping[];
+    mapping: VsanHostDiskMapping[];
     maintenanceSpec?: HostMaintenanceSpec;
     timeout?: number
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  mapping: VsanHostDiskMapping[];
-    maintenanceSpec?: HostMaintenanceSpec;
-    timeout?: number
-} & { _this: ObjectReference }, Task | undefined>(
+      mapping: VsanHostDiskMapping[];
+      maintenanceSpec?: HostMaintenanceSpec;
+      timeout?: number
+    } & { _this: ObjectReference }, Task | undefined>(
       "RemoveDiskMapping_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async removeDisk(args: {
-  disk: HostScsiDisk[];
+    disk: HostScsiDisk[];
     maintenanceSpec?: HostMaintenanceSpec;
     timeout?: number
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  disk: HostScsiDisk[];
-    maintenanceSpec?: HostMaintenanceSpec;
-    timeout?: number
-} & { _this: ObjectReference }, Task | undefined>(
+      disk: HostScsiDisk[];
+      maintenanceSpec?: HostMaintenanceSpec;
+      timeout?: number
+    } & { _this: ObjectReference }, Task | undefined>(
       "RemoveDisk_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async unmountDiskMapping(args: {
-  mapping: VsanHostDiskMapping[]
-}): Promise<Task> {
+    mapping: VsanHostDiskMapping[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  mapping: VsanHostDiskMapping[]
-} & { _this: ObjectReference }, Task>(
+      mapping: VsanHostDiskMapping[]
+    } & { _this: ObjectReference }, Task>(
       "UnmountDiskMapping_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async update(args: {
-  config: VsanHostConfigInfo
-}): Promise<Task> {
+    config: VsanHostConfigInfo
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  config: VsanHostConfigInfo
-} & { _this: ObjectReference }, Task>(
+      config: VsanHostConfigInfo
+    } & { _this: ObjectReference }, Task>(
       "UpdateVsan_Task", { _this: { attributes: { type: "HostVsanSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -20400,21 +20400,21 @@ export class OptionManager extends ManagedObject {
     }
   }
   async queryView(args: {
-  name?: string
-}): Promise<OptionValue[] | undefined> {
+    name?: string
+  }): Promise<OptionValue[] | undefined> {
     const result = await this.connection.exec<{
-  name?: string
-} & { _this: ObjectReference }, OptionValue[] | undefined>(
+      name?: string
+    } & { _this: ObjectReference }, OptionValue[] | undefined>(
       "QueryOptions", { _this: { attributes: { type: "OptionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "OptionValue[]");
   }
   async updateValues(args: {
-  changedValue: OptionValue[]
-}): Promise<void> {
+    changedValue: OptionValue[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  changedValue: OptionValue[]
-} & { _this: ObjectReference }, void>(
+      changedValue: OptionValue[]
+    } & { _this: ObjectReference }, void>(
       "UpdateOptions", { _this: { attributes: { type: "OptionManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20432,49 +20432,49 @@ export class ProfileComplianceManager extends ManagedObject {
     }
   }
   async checkCompliance(args: {
-  profile?: Profile[];
+    profile?: Profile[];
     entity?: ManagedEntity[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  profile?: Profile[];
-    entity?: ManagedEntity[]
-} & { _this: ObjectReference }, Task>(
+      profile?: Profile[];
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, Task>(
       "CheckCompliance_Task", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async clearComplianceStatus(args: {
-  profile?: Profile[];
+    profile?: Profile[];
     entity?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  profile?: Profile[];
-    entity?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      profile?: Profile[];
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "ClearComplianceStatus", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryComplianceStatus(args: {
-  profile?: Profile[];
+    profile?: Profile[];
     entity?: ManagedEntity[]
-}): Promise<ComplianceResult[] | undefined> {
+  }): Promise<ComplianceResult[] | undefined> {
     const result = await this.connection.exec<{
-  profile?: Profile[];
-    entity?: ManagedEntity[]
-} & { _this: ObjectReference }, ComplianceResult[] | undefined>(
+      profile?: Profile[];
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, ComplianceResult[] | undefined>(
       "QueryComplianceStatus", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ComplianceResult[]");
   }
   async queryExpressionMetadata(args: {
-  expressionName?: string[];
+    expressionName?: string[];
     profile?: Profile
-}): Promise<ProfileExpressionMetadata[] | undefined> {
+  }): Promise<ProfileExpressionMetadata[] | undefined> {
     const result = await this.connection.exec<{
-  expressionName?: string[];
-    profile?: Profile
-} & { _this: ObjectReference }, ProfileExpressionMetadata[] | undefined>(
+      expressionName?: string[];
+      profile?: Profile
+    } & { _this: ObjectReference }, ProfileExpressionMetadata[] | undefined>(
       "QueryExpressionMetadata", { _this: { attributes: { type: "ProfileComplianceManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ProfileExpressionMetadata[]");
@@ -20498,21 +20498,21 @@ export class Profile extends ManagedObject {
     }
   }
   async associateEntities(args: {
-  entity: ManagedEntity[]
-}): Promise<void> {
+    entity: ManagedEntity[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "AssociateProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async checkCompliance(args: {
-  entity?: ManagedEntity[]
-}): Promise<Task> {
+    entity?: ManagedEntity[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity[]
-} & { _this: ObjectReference }, Task>(
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, Task>(
       "CheckProfileCompliance_Task", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -20524,11 +20524,11 @@ export class Profile extends ManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async dissociateEntities(args: {
-  entity?: ManagedEntity[]
-}): Promise<void> {
+    entity?: ManagedEntity[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "DissociateProfile", { _this: { attributes: { type: "Profile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20558,33 +20558,33 @@ export class ProfileManager extends ManagedObject {
     }
   }
   async createProfile(args: {
-  createSpec: ProfileCreateSpec
-}): Promise<Profile> {
+    createSpec: ProfileCreateSpec
+  }): Promise<Profile> {
     const result = await this.connection.exec<{
-  createSpec: ProfileCreateSpec
-} & { _this: ObjectReference }, Profile>(
+      createSpec: ProfileCreateSpec
+    } & { _this: ObjectReference }, Profile>(
       "CreateProfile", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Profile");
   }
   async findAssociatedProfile(args: {
-  entity: ManagedEntity
-}): Promise<Profile[] | undefined> {
+    entity: ManagedEntity
+  }): Promise<Profile[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity
-} & { _this: ObjectReference }, Profile[] | undefined>(
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, Profile[] | undefined>(
       "FindAssociatedProfile", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Profile[]");
   }
   async queryPolicyMetadata(args: {
-  policyName?: string[];
+    policyName?: string[];
     profile?: Profile
-}): Promise<ProfilePolicyMetadata[] | undefined> {
+  }): Promise<ProfilePolicyMetadata[] | undefined> {
     const result = await this.connection.exec<{
-  policyName?: string[];
-    profile?: Profile
-} & { _this: ObjectReference }, ProfilePolicyMetadata[] | undefined>(
+      policyName?: string[];
+      profile?: Profile
+    } & { _this: ObjectReference }, ProfilePolicyMetadata[] | undefined>(
       "QueryPolicyMetadata", { _this: { attributes: { type: "ProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ProfilePolicyMetadata[]");
@@ -20602,11 +20602,11 @@ export class ClusterProfile extends Profile {
     }
   }
   async update(args: {
-  config: ClusterProfileConfigSpec
-}): Promise<void> {
+    config: ClusterProfileConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: ClusterProfileConfigSpec
-} & { _this: ObjectReference }, void>(
+      config: ClusterProfileConfigSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateClusterProfile", { _this: { attributes: { type: "ClusterProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20637,71 +20637,71 @@ export class HostSpecificationManager extends ManagedObject {
     }
   }
   async deleteHostSpecification(args: {
-  host: HostSystem
-}): Promise<void> {
+    host: HostSystem
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host: HostSystem
-} & { _this: ObjectReference }, void>(
+      host: HostSystem
+    } & { _this: ObjectReference }, void>(
       "DeleteHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteHostSubSpecification(args: {
-  host: HostSystem;
+    host: HostSystem;
     subSpecName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    subSpecName: string
-} & { _this: ObjectReference }, void>(
+      host: HostSystem;
+      subSpecName: string
+    } & { _this: ObjectReference }, void>(
       "DeleteHostSubSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async getUpdatedHosts(args: {
-  startChangeID?: string;
+    startChangeID?: string;
     endChangeID?: string
-}): Promise<HostSystem[] | undefined> {
+  }): Promise<HostSystem[] | undefined> {
     const result = await this.connection.exec<{
-  startChangeID?: string;
-    endChangeID?: string
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      startChangeID?: string;
+      endChangeID?: string
+    } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "HostSpecGetUpdatedHosts", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async retrieveHostSpecification(args: {
-  host: HostSystem;
+    host: HostSystem;
     fromHost: boolean
-}): Promise<HostSpecification> {
+  }): Promise<HostSpecification> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    fromHost: boolean
-} & { _this: ObjectReference }, HostSpecification>(
+      host: HostSystem;
+      fromHost: boolean
+    } & { _this: ObjectReference }, HostSpecification>(
       "RetrieveHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSpecification");
   }
   async updateHostSpecification(args: {
-  host: HostSystem;
+    host: HostSystem;
     hostSpec: HostSpecification
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    hostSpec: HostSpecification
-} & { _this: ObjectReference }, void>(
+      host: HostSystem;
+      hostSpec: HostSpecification
+    } & { _this: ObjectReference }, void>(
       "UpdateHostSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateHostSubSpecification(args: {
-  host: HostSystem;
+    host: HostSystem;
     hostSubSpec: HostSubSpecification
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    hostSubSpec: HostSubSpecification
-} & { _this: ObjectReference }, void>(
+      host: HostSystem;
+      hostSubSpec: HostSubSpecification
+    } & { _this: ObjectReference }, void>(
       "UpdateHostSubSpecification", { _this: { attributes: { type: "HostSpecificationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20719,11 +20719,11 @@ export class ScheduledTask extends ExtensibleManagedObject {
     }
   }
   async reconfigure(args: {
-  spec: ScheduledTaskSpec
-}): Promise<void> {
+    spec: ScheduledTaskSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: ScheduledTaskSpec
-} & { _this: ObjectReference }, void>(
+      spec: ScheduledTaskSpec
+    } & { _this: ObjectReference }, void>(
       "ReconfigureScheduledTask", { _this: { attributes: { type: "ScheduledTask" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20754,45 +20754,45 @@ export class ScheduledTaskManager extends ManagedObject {
     }
   }
   async createObjectScheduledTask(args: {
-  obj: ManagedObject;
+    obj: ManagedObject;
     spec: ScheduledTaskSpec
-}): Promise<ScheduledTask> {
+  }): Promise<ScheduledTask> {
     const result = await this.connection.exec<{
-  obj: ManagedObject;
-    spec: ScheduledTaskSpec
-} & { _this: ObjectReference }, ScheduledTask>(
+      obj: ManagedObject;
+      spec: ScheduledTaskSpec
+    } & { _this: ObjectReference }, ScheduledTask>(
       "CreateObjectScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ScheduledTask");
   }
   async create(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     spec: ScheduledTaskSpec
-}): Promise<ScheduledTask> {
+  }): Promise<ScheduledTask> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    spec: ScheduledTaskSpec
-} & { _this: ObjectReference }, ScheduledTask>(
+      entity: ManagedEntity;
+      spec: ScheduledTaskSpec
+    } & { _this: ObjectReference }, ScheduledTask>(
       "CreateScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ScheduledTask");
   }
   async retrieveEntityScheduledTask(args: {
-  entity?: ManagedEntity
-}): Promise<ScheduledTask[] | undefined> {
+    entity?: ManagedEntity
+  }): Promise<ScheduledTask[] | undefined> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity
-} & { _this: ObjectReference }, ScheduledTask[] | undefined>(
+      entity?: ManagedEntity
+    } & { _this: ObjectReference }, ScheduledTask[] | undefined>(
       "RetrieveEntityScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ScheduledTask[]");
   }
   async retrieveObjectScheduledTask(args: {
-  obj?: ManagedObject
-}): Promise<ScheduledTask[] | undefined> {
+    obj?: ManagedObject
+  }): Promise<ScheduledTask[] | undefined> {
     const result = await this.connection.exec<{
-  obj?: ManagedObject
-} & { _this: ObjectReference }, ScheduledTask[] | undefined>(
+      obj?: ManagedObject
+    } & { _this: ObjectReference }, ScheduledTask[] | undefined>(
       "RetrieveObjectScheduledTask", { _this: { attributes: { type: "ScheduledTaskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ScheduledTask[]");
@@ -20810,11 +20810,11 @@ export class TenantTenantManager extends ManagedObject {
     }
   }
   async markServiceProviderEntities(args: {
-  entity?: ManagedEntity[]
-}): Promise<void> {
+    entity?: ManagedEntity[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "MarkServiceProviderEntities", { _this: { attributes: { type: "TenantTenantManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20826,11 +20826,11 @@ export class TenantTenantManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async unmarkServiceProviderEntities(args: {
-  entity?: ManagedEntity[]
-}): Promise<void> {
+    entity?: ManagedEntity[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      entity?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "UnmarkServiceProviderEntities", { _this: { attributes: { type: "TenantTenantManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -20848,45 +20848,45 @@ export class FailoverClusterConfigurator extends ManagedObject {
     }
   }
   async configure(args: {
-  configSpec: VchaClusterConfigSpec
-}): Promise<Task> {
+    configSpec: VchaClusterConfigSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  configSpec: VchaClusterConfigSpec
-} & { _this: ObjectReference }, Task>(
+      configSpec: VchaClusterConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "configureVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createPassiveNode(args: {
-  passiveDeploymentSpec: PassiveNodeDeploymentSpec;
+    passiveDeploymentSpec: PassiveNodeDeploymentSpec;
     sourceVcSpec: SourceNodeSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  passiveDeploymentSpec: PassiveNodeDeploymentSpec;
-    sourceVcSpec: SourceNodeSpec
-} & { _this: ObjectReference }, Task>(
+      passiveDeploymentSpec: PassiveNodeDeploymentSpec;
+      sourceVcSpec: SourceNodeSpec
+    } & { _this: ObjectReference }, Task>(
       "createPassiveNode_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createWitnessNode(args: {
-  witnessDeploymentSpec: NodeDeploymentSpec;
+    witnessDeploymentSpec: NodeDeploymentSpec;
     sourceVcSpec: SourceNodeSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  witnessDeploymentSpec: NodeDeploymentSpec;
-    sourceVcSpec: SourceNodeSpec
-} & { _this: ObjectReference }, Task>(
+      witnessDeploymentSpec: NodeDeploymentSpec;
+      sourceVcSpec: SourceNodeSpec
+    } & { _this: ObjectReference }, Task>(
       "createWitnessNode_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deploy(args: {
-  deploymentSpec: VchaClusterDeploymentSpec
-}): Promise<Task> {
+    deploymentSpec: VchaClusterDeploymentSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  deploymentSpec: VchaClusterDeploymentSpec
-} & { _this: ObjectReference }, Task>(
+      deploymentSpec: VchaClusterDeploymentSpec
+    } & { _this: ObjectReference }, Task>(
       "deployVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -20904,11 +20904,11 @@ export class FailoverClusterConfigurator extends ManagedObject {
     return constructHelperObjects(this.connection, result, "VchaClusterConfigInfo");
   }
   async prepare(args: {
-  networkSpec: VchaClusterNetworkSpec
-}): Promise<Task> {
+    networkSpec: VchaClusterNetworkSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  networkSpec: VchaClusterNetworkSpec
-} & { _this: ObjectReference }, Task>(
+      networkSpec: VchaClusterNetworkSpec
+    } & { _this: ObjectReference }, Task>(
       "prepareVcha_Task", { _this: { attributes: { type: "FailoverClusterConfigurator" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -20938,21 +20938,21 @@ export class FailoverClusterManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "string");
   }
   async initiateFailover(args: {
-  planned: boolean
-}): Promise<Task> {
+    planned: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  planned: boolean
-} & { _this: ObjectReference }, Task>(
+      planned: boolean
+    } & { _this: ObjectReference }, Task>(
       "initiateFailover_Task", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async setClusterMode(args: {
-  mode: string
-}): Promise<Task> {
+    mode: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  mode: string
-} & { _this: ObjectReference }, Task>(
+      mode: string
+    } & { _this: ObjectReference }, Task>(
       "setClusterMode_Task", { _this: { attributes: { type: "FailoverClusterManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -20988,15 +20988,15 @@ export class ViewManager extends ManagedObject {
     }
   }
   async createContainerView(args: {
-  container: ManagedEntity;
+    container: ManagedEntity;
     type?: string[];
     recursive: boolean
-}): Promise<ContainerView> {
+  }): Promise<ContainerView> {
     const result = await this.connection.exec<{
-  container: ManagedEntity;
-    type?: string[];
-    recursive: boolean
-} & { _this: ObjectReference }, ContainerView>(
+      container: ManagedEntity;
+      type?: string[];
+      recursive: boolean
+    } & { _this: ObjectReference }, ContainerView>(
       "CreateContainerView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ContainerView");
@@ -21008,21 +21008,21 @@ export class ViewManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "InventoryView");
   }
   async createListView(args: {
-  obj?: ManagedObject[]
-}): Promise<ListView> {
+    obj?: ManagedObject[]
+  }): Promise<ListView> {
     const result = await this.connection.exec<{
-  obj?: ManagedObject[]
-} & { _this: ObjectReference }, ListView>(
+      obj?: ManagedObject[]
+    } & { _this: ObjectReference }, ListView>(
       "CreateListView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ListView");
   }
   async createListViewFromView(args: {
-  view: View
-}): Promise<ListView> {
+    view: View
+  }): Promise<ListView> {
     const result = await this.connection.exec<{
-  view: View
-} & { _this: ObjectReference }, ListView>(
+      view: View
+    } & { _this: ObjectReference }, ListView>(
       "CreateListViewFromView", { _this: { attributes: { type: "ViewManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ListView");
@@ -21040,41 +21040,41 @@ export class VirtualMachineGuestCustomizationManager extends ManagedObject {
     }
   }
   async abortCustomization(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication
+    } & { _this: ObjectReference }, Task>(
       "AbortCustomization_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async customize(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     spec: CustomizationSpec;
     configParams?: OptionValue[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    spec: CustomizationSpec;
-    configParams?: OptionValue[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      spec: CustomizationSpec;
+      configParams?: OptionValue[]
+    } & { _this: ObjectReference }, Task>(
       "CustomizeGuest_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async startNetwork(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication
+    } & { _this: ObjectReference }, Task>(
       "StartGuestNetwork_Task", { _this: { attributes: { type: "VirtualMachineGuestCustomizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -21100,37 +21100,37 @@ export class VirtualMachineSnapshot extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async remove(args: {
-  removeChildren: boolean;
+    removeChildren: boolean;
     consolidate?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  removeChildren: boolean;
-    consolidate?: boolean
-} & { _this: ObjectReference }, Task>(
+      removeChildren: boolean;
+      consolidate?: boolean
+    } & { _this: ObjectReference }, Task>(
       "RemoveSnapshot_Task", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async rename(args: {
-  name?: string;
+    name?: string;
     description?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name?: string;
-    description?: string
-} & { _this: ObjectReference }, void>(
+      name?: string;
+      description?: string
+    } & { _this: ObjectReference }, void>(
       "RenameSnapshot", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async revert(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     suppressPowerOn?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    suppressPowerOn?: boolean
-} & { _this: ObjectReference }, Task>(
+      host?: HostSystem;
+      suppressPowerOn?: boolean
+    } & { _this: ObjectReference }, Task>(
       "RevertToSnapshot_Task", { _this: { attributes: { type: "VirtualMachineSnapshot" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -21148,51 +21148,51 @@ export class VirtualMachineCompatibilityChecker extends ManagedObject {
     }
   }
   async checkCompatibility(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host?: HostSystem;
     pool?: ResourcePool;
     testType?: string[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host?: HostSystem;
-    pool?: ResourcePool;
-    testType?: string[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      host?: HostSystem;
+      pool?: ResourcePool;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task>(
       "CheckCompatibility_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkPowerOn(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host?: HostSystem;
     pool?: ResourcePool;
     testType?: string[]
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host?: HostSystem;
-    pool?: ResourcePool;
-    testType?: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      vm: VirtualMachine;
+      host?: HostSystem;
+      pool?: ResourcePool;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckPowerOn_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkVmConfig(args: {
-  spec: VirtualMachineConfigSpec;
+    spec: VirtualMachineConfigSpec;
     vm?: VirtualMachine;
     host?: HostSystem;
     pool?: ResourcePool;
     testType?: string[]
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  spec: VirtualMachineConfigSpec;
-    vm?: VirtualMachine;
-    host?: HostSystem;
-    pool?: ResourcePool;
-    testType?: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      spec: VirtualMachineConfigSpec;
+      vm?: VirtualMachine;
+      host?: HostSystem;
+      pool?: ResourcePool;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckVmConfig_Task", { _this: { attributes: { type: "VirtualMachineCompatibilityChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -21210,81 +21210,81 @@ export class GuestAliasManager extends ManagedObject {
     }
   }
   async addAlias(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     username: string;
     mapCert: boolean;
     base64Cert: string;
     aliasInfo: GuestAuthAliasInfo
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    username: string;
-    mapCert: boolean;
-    base64Cert: string;
-    aliasInfo: GuestAuthAliasInfo
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      username: string;
+      mapCert: boolean;
+      base64Cert: string;
+      aliasInfo: GuestAuthAliasInfo
+    } & { _this: ObjectReference }, void>(
       "AddGuestAlias", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async listAliases(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     username: string
-}): Promise<GuestAliases[] | undefined> {
+  }): Promise<GuestAliases[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    username: string
-} & { _this: ObjectReference }, GuestAliases[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      username: string
+    } & { _this: ObjectReference }, GuestAliases[] | undefined>(
       "ListGuestAliases", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestAliases[]");
   }
   async listMappedAliases(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication
-}): Promise<GuestMappedAliases[] | undefined> {
+  }): Promise<GuestMappedAliases[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication
-} & { _this: ObjectReference }, GuestMappedAliases[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication
+    } & { _this: ObjectReference }, GuestMappedAliases[] | undefined>(
       "ListGuestMappedAliases", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestMappedAliases[]");
   }
   async removeAlias(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     username: string;
     base64Cert: string;
     subject: GuestAuthSubject
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    username: string;
-    base64Cert: string;
-    subject: GuestAuthSubject
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      username: string;
+      base64Cert: string;
+      subject: GuestAuthSubject
+    } & { _this: ObjectReference }, void>(
       "RemoveGuestAlias", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeAliasByCert(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     username: string;
     base64Cert: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    username: string;
-    base64Cert: string
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      username: string;
+      base64Cert: string
+    } & { _this: ObjectReference }, void>(
       "RemoveGuestAliasByCert", { _this: { attributes: { type: "GuestAliasManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21302,39 +21302,39 @@ export class GuestAuthManager extends ManagedObject {
     }
   }
   async acquireCredentials(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     requestedAuth: GuestAuthentication;
     sessionID?: number
-}): Promise<GuestAuthentication> {
+  }): Promise<GuestAuthentication> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    requestedAuth: GuestAuthentication;
-    sessionID?: number
-} & { _this: ObjectReference }, GuestAuthentication>(
+      vm: VirtualMachine;
+      requestedAuth: GuestAuthentication;
+      sessionID?: number
+    } & { _this: ObjectReference }, GuestAuthentication>(
       "AcquireCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestAuthentication");
   }
   async releaseCredentials(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication
+    } & { _this: ObjectReference }, void>(
       "ReleaseCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async validateCredentials(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication
+    } & { _this: ObjectReference }, void>(
       "ValidateCredentialsInGuest", { _this: { attributes: { type: "GuestAuthManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21352,187 +21352,187 @@ export class GuestFileManager extends ManagedObject {
     }
   }
   async changeFileAttributes(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     guestFilePath: string;
     fileAttributes: GuestFileAttributes
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    guestFilePath: string;
-    fileAttributes: GuestFileAttributes
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      guestFilePath: string;
+      fileAttributes: GuestFileAttributes
+    } & { _this: ObjectReference }, void>(
       "ChangeFileAttributesInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async createTemporaryDirectory(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     prefix: string;
     suffix: string;
     directoryPath?: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    prefix: string;
-    suffix: string;
-    directoryPath?: string
-} & { _this: ObjectReference }, string>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      prefix: string;
+      suffix: string;
+      directoryPath?: string
+    } & { _this: ObjectReference }, string>(
       "CreateTemporaryDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async createTemporaryFile(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     prefix: string;
     suffix: string;
     directoryPath?: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    prefix: string;
-    suffix: string;
-    directoryPath?: string
-} & { _this: ObjectReference }, string>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      prefix: string;
+      suffix: string;
+      directoryPath?: string
+    } & { _this: ObjectReference }, string>(
       "CreateTemporaryFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async deleteDirectory(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     directoryPath: string;
     recursive: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    directoryPath: string;
-    recursive: boolean
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      directoryPath: string;
+      recursive: boolean
+    } & { _this: ObjectReference }, void>(
       "DeleteDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteFile(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     filePath: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    filePath: string
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      filePath: string
+    } & { _this: ObjectReference }, void>(
       "DeleteFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async initiateFileTransferFromGuest(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     guestFilePath: string
-}): Promise<FileTransferInformation> {
+  }): Promise<FileTransferInformation> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    guestFilePath: string
-} & { _this: ObjectReference }, FileTransferInformation>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      guestFilePath: string
+    } & { _this: ObjectReference }, FileTransferInformation>(
       "InitiateFileTransferFromGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "FileTransferInformation");
   }
   async initiateFileTransferToGuest(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     guestFilePath: string;
     fileAttributes: GuestFileAttributes;
     fileSize: number;
     overwrite: boolean
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    guestFilePath: string;
-    fileAttributes: GuestFileAttributes;
-    fileSize: number;
-    overwrite: boolean
-} & { _this: ObjectReference }, string>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      guestFilePath: string;
+      fileAttributes: GuestFileAttributes;
+      fileSize: number;
+      overwrite: boolean
+    } & { _this: ObjectReference }, string>(
       "InitiateFileTransferToGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async listFiles(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     filePath: string;
     index?: number;
     maxResults?: number;
     matchPattern?: string
-}): Promise<GuestListFileInfo> {
+  }): Promise<GuestListFileInfo> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    filePath: string;
-    index?: number;
-    maxResults?: number;
-    matchPattern?: string
-} & { _this: ObjectReference }, GuestListFileInfo>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      filePath: string;
+      index?: number;
+      maxResults?: number;
+      matchPattern?: string
+    } & { _this: ObjectReference }, GuestListFileInfo>(
       "ListFilesInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestListFileInfo");
   }
   async makeDirectory(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     directoryPath: string;
     createParentDirectories: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    directoryPath: string;
-    createParentDirectories: boolean
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      directoryPath: string;
+      createParentDirectories: boolean
+    } & { _this: ObjectReference }, void>(
       "MakeDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async moveDirectory(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     srcDirectoryPath: string;
     dstDirectoryPath: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    srcDirectoryPath: string;
-    dstDirectoryPath: string
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      srcDirectoryPath: string;
+      dstDirectoryPath: string
+    } & { _this: ObjectReference }, void>(
       "MoveDirectoryInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async moveFile(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     srcFilePath: string;
     dstFilePath: string;
     overwrite: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    srcFilePath: string;
-    dstFilePath: string;
-    overwrite: boolean
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      srcFilePath: string;
+      dstFilePath: string;
+      overwrite: boolean
+    } & { _this: ObjectReference }, void>(
       "MoveFileInGuest", { _this: { attributes: { type: "GuestFileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21567,57 +21567,57 @@ export class GuestProcessManager extends ManagedObject {
     }
   }
   async listProcesses(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     pids?: number[]
-}): Promise<GuestProcessInfo[] | undefined> {
+  }): Promise<GuestProcessInfo[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    pids?: number[]
-} & { _this: ObjectReference }, GuestProcessInfo[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      pids?: number[]
+    } & { _this: ObjectReference }, GuestProcessInfo[] | undefined>(
       "ListProcessesInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestProcessInfo[]");
   }
   async readEnvironmentVariable(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     names?: string[]
-}): Promise<string[] | undefined> {
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    names?: string[]
-} & { _this: ObjectReference }, string[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      names?: string[]
+    } & { _this: ObjectReference }, string[] | undefined>(
       "ReadEnvironmentVariableInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async startProgram(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     spec: GuestProgramSpec
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    spec: GuestProgramSpec
-} & { _this: ObjectReference }, number>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      spec: GuestProgramSpec
+    } & { _this: ObjectReference }, number>(
       "StartProgramInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async terminateProcess(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     pid: number
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    pid: number
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      pid: number
+    } & { _this: ObjectReference }, void>(
       "TerminateProcessInGuest", { _this: { attributes: { type: "GuestProcessManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21635,99 +21635,99 @@ export class GuestWindowsRegistryManager extends ManagedObject {
     }
   }
   async createRegistryKey(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     keyName: GuestRegKeyNameSpec;
     isVolatile: boolean;
     classType?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    keyName: GuestRegKeyNameSpec;
-    isVolatile: boolean;
-    classType?: string
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      keyName: GuestRegKeyNameSpec;
+      isVolatile: boolean;
+      classType?: string
+    } & { _this: ObjectReference }, void>(
       "CreateRegistryKeyInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteRegistryKey(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     keyName: GuestRegKeyNameSpec;
     recursive: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    keyName: GuestRegKeyNameSpec;
-    recursive: boolean
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      keyName: GuestRegKeyNameSpec;
+      recursive: boolean
+    } & { _this: ObjectReference }, void>(
       "DeleteRegistryKeyInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteRegistryValue(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     valueName: GuestRegValueNameSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    valueName: GuestRegValueNameSpec
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      valueName: GuestRegValueNameSpec
+    } & { _this: ObjectReference }, void>(
       "DeleteRegistryValueInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async listRegistryKeys(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     keyName: GuestRegKeyNameSpec;
     recursive: boolean;
     matchPattern?: string
-}): Promise<GuestRegKeyRecordSpec[] | undefined> {
+  }): Promise<GuestRegKeyRecordSpec[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    keyName: GuestRegKeyNameSpec;
-    recursive: boolean;
-    matchPattern?: string
-} & { _this: ObjectReference }, GuestRegKeyRecordSpec[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      keyName: GuestRegKeyNameSpec;
+      recursive: boolean;
+      matchPattern?: string
+    } & { _this: ObjectReference }, GuestRegKeyRecordSpec[] | undefined>(
       "ListRegistryKeysInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestRegKeyRecordSpec[]");
   }
   async listRegistryValues(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     keyName: GuestRegKeyNameSpec;
     expandStrings: boolean;
     matchPattern?: string
-}): Promise<GuestRegValueSpec[] | undefined> {
+  }): Promise<GuestRegValueSpec[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    keyName: GuestRegKeyNameSpec;
-    expandStrings: boolean;
-    matchPattern?: string
-} & { _this: ObjectReference }, GuestRegValueSpec[] | undefined>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      keyName: GuestRegKeyNameSpec;
+      expandStrings: boolean;
+      matchPattern?: string
+    } & { _this: ObjectReference }, GuestRegValueSpec[] | undefined>(
       "ListRegistryValuesInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "GuestRegValueSpec[]");
   }
   async setRegistryValue(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     auth: GuestAuthentication;
     value: GuestRegValueSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    auth: GuestAuthentication;
-    value: GuestRegValueSpec
-} & { _this: ObjectReference }, void>(
+      vm: VirtualMachine;
+      auth: GuestAuthentication;
+      value: GuestRegValueSpec
+    } & { _this: ObjectReference }, void>(
       "SetRegistryValueInGuest", { _this: { attributes: { type: "GuestWindowsRegistryManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21760,117 +21760,117 @@ export class AuthorizationManager extends ManagedObject {
     }
   }
   async addRole(args: {
-  name: string;
+    name: string;
     privIds?: string[]
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  name: string;
-    privIds?: string[]
-} & { _this: ObjectReference }, number>(
+      name: string;
+      privIds?: string[]
+    } & { _this: ObjectReference }, number>(
       "AddAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async fetchUserPrivilegeOnEntities(args: {
-  entities: ManagedEntity[];
+    entities: ManagedEntity[];
     userName: string
-}): Promise<UserPrivilegeResult[] | undefined> {
+  }): Promise<UserPrivilegeResult[] | undefined> {
     const result = await this.connection.exec<{
-  entities: ManagedEntity[];
-    userName: string
-} & { _this: ObjectReference }, UserPrivilegeResult[] | undefined>(
+      entities: ManagedEntity[];
+      userName: string
+    } & { _this: ObjectReference }, UserPrivilegeResult[] | undefined>(
       "FetchUserPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "UserPrivilegeResult[]");
   }
   async hasPrivilegeOnEntities(args: {
-  entity: ManagedEntity[];
+    entity: ManagedEntity[];
     sessionId: string;
     privId?: string[]
-}): Promise<EntityPrivilege[] | undefined> {
+  }): Promise<EntityPrivilege[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity[];
-    sessionId: string;
-    privId?: string[]
-} & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
+      entity: ManagedEntity[];
+      sessionId: string;
+      privId?: string[]
+    } & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
       "HasPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "EntityPrivilege[]");
   }
   async hasPrivilegeOnEntity(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     sessionId: string;
     privId?: string[]
-}): Promise<boolean[] | undefined> {
+  }): Promise<boolean[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    sessionId: string;
-    privId?: string[]
-} & { _this: ObjectReference }, boolean[] | undefined>(
+      entity: ManagedEntity;
+      sessionId: string;
+      privId?: string[]
+    } & { _this: ObjectReference }, boolean[] | undefined>(
       "HasPrivilegeOnEntity", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean[]");
   }
   async hasUserPrivilegeOnEntities(args: {
-  entities: ManagedObject[];
+    entities: ManagedObject[];
     userName: string;
     privId?: string[]
-}): Promise<EntityPrivilege[] | undefined> {
+  }): Promise<EntityPrivilege[] | undefined> {
     const result = await this.connection.exec<{
-  entities: ManagedObject[];
-    userName: string;
-    privId?: string[]
-} & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
+      entities: ManagedObject[];
+      userName: string;
+      privId?: string[]
+    } & { _this: ObjectReference }, EntityPrivilege[] | undefined>(
       "HasUserPrivilegeOnEntities", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "EntityPrivilege[]");
   }
   async mergePermissions(args: {
-  srcRoleId: number;
+    srcRoleId: number;
     dstRoleId: number
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  srcRoleId: number;
-    dstRoleId: number
-} & { _this: ObjectReference }, void>(
+      srcRoleId: number;
+      dstRoleId: number
+    } & { _this: ObjectReference }, void>(
       "MergePermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeRole(args: {
-  roleId: number;
+    roleId: number;
     failIfUsed: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  roleId: number;
-    failIfUsed: boolean
-} & { _this: ObjectReference }, void>(
+      roleId: number;
+      failIfUsed: boolean
+    } & { _this: ObjectReference }, void>(
       "RemoveAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeEntityPermission(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     user: string;
     isGroup: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    user: string;
-    isGroup: boolean
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      user: string;
+      isGroup: boolean
+    } & { _this: ObjectReference }, void>(
       "RemoveEntityPermission", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async resetEntityPermissions(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     permission?: Permission[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    permission?: Permission[]
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      permission?: Permission[]
+    } & { _this: ObjectReference }, void>(
       "ResetEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21882,49 +21882,49 @@ export class AuthorizationManager extends ManagedObject {
     return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async retrieveEntityPermissions(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     inherited: boolean
-}): Promise<Permission[] | undefined> {
+  }): Promise<Permission[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    inherited: boolean
-} & { _this: ObjectReference }, Permission[] | undefined>(
+      entity: ManagedEntity;
+      inherited: boolean
+    } & { _this: ObjectReference }, Permission[] | undefined>(
       "RetrieveEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async retrieveRolePermissions(args: {
-  roleId: number
-}): Promise<Permission[] | undefined> {
+    roleId: number
+  }): Promise<Permission[] | undefined> {
     const result = await this.connection.exec<{
-  roleId: number
-} & { _this: ObjectReference }, Permission[] | undefined>(
+      roleId: number
+    } & { _this: ObjectReference }, Permission[] | undefined>(
       "RetrieveRolePermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Permission[]");
   }
   async setEntityPermissions(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     permission?: Permission[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    permission?: Permission[]
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      permission?: Permission[]
+    } & { _this: ObjectReference }, void>(
       "SetEntityPermissions", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateRole(args: {
-  roleId: number;
+    roleId: number;
     newName: string;
     privIds?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  roleId: number;
-    newName: string;
-    privIds?: string[]
-} & { _this: ObjectReference }, void>(
+      roleId: number;
+      newName: string;
+      privIds?: string[]
+    } & { _this: ObjectReference }, void>(
       "UpdateAuthorizationRole", { _this: { attributes: { type: "AuthorizationManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -21942,35 +21942,35 @@ export class LicenseAssignmentManager extends ManagedObject {
     }
   }
   async queryAssignedLicenses(args: {
-  entityId?: string
-}): Promise<LicenseAssignmentManagerLicenseAssignment[] | undefined> {
+    entityId?: string
+  }): Promise<LicenseAssignmentManagerLicenseAssignment[] | undefined> {
     const result = await this.connection.exec<{
-  entityId?: string
-} & { _this: ObjectReference }, LicenseAssignmentManagerLicenseAssignment[] | undefined>(
+      entityId?: string
+    } & { _this: ObjectReference }, LicenseAssignmentManagerLicenseAssignment[] | undefined>(
       "QueryAssignedLicenses", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseAssignmentManagerLicenseAssignment[]");
   }
   async removeAssignedLicense(args: {
-  entityId: string
-}): Promise<void> {
+    entityId: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entityId: string
-} & { _this: ObjectReference }, void>(
+      entityId: string
+    } & { _this: ObjectReference }, void>(
       "RemoveAssignedLicense", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateAssignedLicense(args: {
-  entity: string;
+    entity: string;
     licenseKey: string;
     entityDisplayName?: string
-}): Promise<LicenseManagerLicenseInfo> {
+  }): Promise<LicenseManagerLicenseInfo> {
     const result = await this.connection.exec<{
-  entity: string;
-    licenseKey: string;
-    entityDisplayName?: string
-} & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
+      entity: string;
+      licenseKey: string;
+      entityDisplayName?: string
+    } & { _this: ObjectReference }, LicenseManagerLicenseInfo>(
       "UpdateAssignedLicense", { _this: { attributes: { type: "LicenseAssignmentManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "LicenseManagerLicenseInfo");
@@ -22013,11 +22013,11 @@ export class ManagedEntity extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async rename(args: {
-  newName: string
-}): Promise<Task> {
+    newName: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  newName: string
-} & { _this: ObjectReference }, Task>(
+      newName: string
+    } & { _this: ObjectReference }, Task>(
       "Rename_Task", { _this: { attributes: { type: "ManagedEntity" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22076,41 +22076,41 @@ export class ResourcePool extends ManagedEntity {
     }
   }
   async createVm(args: {
-  config: VirtualMachineConfigSpec;
+    config: VirtualMachineConfigSpec;
     host?: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  config: VirtualMachineConfigSpec;
-    host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      config: VirtualMachineConfigSpec;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "CreateChildVM_Task", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createResourcePool(args: {
-  name: string;
+    name: string;
     spec: ResourceConfigSpec
-}): Promise<ResourcePool> {
+  }): Promise<ResourcePool> {
     const result = await this.connection.exec<{
-  name: string;
-    spec: ResourceConfigSpec
-} & { _this: ObjectReference }, ResourcePool>(
+      name: string;
+      spec: ResourceConfigSpec
+    } & { _this: ObjectReference }, ResourcePool>(
       "CreateResourcePool", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ResourcePool");
   }
   async createVApp(args: {
-  name: string;
+    name: string;
     resSpec: ResourceConfigSpec;
     configSpec: VAppConfigSpec;
     vmFolder?: Folder
-}): Promise<VirtualApp> {
+  }): Promise<VirtualApp> {
     const result = await this.connection.exec<{
-  name: string;
-    resSpec: ResourceConfigSpec;
-    configSpec: VAppConfigSpec;
-    vmFolder?: Folder
-} & { _this: ObjectReference }, VirtualApp>(
+      name: string;
+      resSpec: ResourceConfigSpec;
+      configSpec: VAppConfigSpec;
+      vmFolder?: Folder
+    } & { _this: ObjectReference }, VirtualApp>(
       "CreateVApp", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualApp");
@@ -22122,25 +22122,25 @@ export class ResourcePool extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async importVApp(args: {
-  spec: ImportSpec;
+    spec: ImportSpec;
     folder?: Folder;
     host?: HostSystem
-}): Promise<HttpNfcLease> {
+  }): Promise<HttpNfcLease> {
     const result = await this.connection.exec<{
-  spec: ImportSpec;
-    folder?: Folder;
-    host?: HostSystem
-} & { _this: ObjectReference }, HttpNfcLease>(
+      spec: ImportSpec;
+      folder?: Folder;
+      host?: HostSystem
+    } & { _this: ObjectReference }, HttpNfcLease>(
       "ImportVApp", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async moveInto(args: {
-  list: ManagedEntity[]
-}): Promise<void> {
+    list: ManagedEntity[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  list: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      list: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "MoveIntoResourcePool", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -22158,37 +22158,37 @@ export class ResourcePool extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async registerVm(args: {
-  path: string;
+    path: string;
     name?: string;
     host?: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  path: string;
-    name?: string;
-    host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      path: string;
+      name?: string;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "RegisterChildVM_Task", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateChildResourceConfiguration(args: {
-  spec: ResourceConfigSpec[]
-}): Promise<void> {
+    spec: ResourceConfigSpec[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: ResourceConfigSpec[]
-} & { _this: ObjectReference }, void>(
+      spec: ResourceConfigSpec[]
+    } & { _this: ObjectReference }, void>(
       "UpdateChildResourceConfiguration", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateConfig(args: {
-  name?: string;
+    name?: string;
     config?: ResourceConfigSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name?: string;
-    config?: ResourceConfigSpec
-} & { _this: ObjectReference }, void>(
+      name?: string;
+      config?: ResourceConfigSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateConfig", { _this: { attributes: { type: "ResourcePool" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -22212,35 +22212,35 @@ export class Task extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async UpdateDescription(args: {
-  description: LocalizableMessage
-}): Promise<void> {
+    description: LocalizableMessage
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  description: LocalizableMessage
-} & { _this: ObjectReference }, void>(
+      description: LocalizableMessage
+    } & { _this: ObjectReference }, void>(
       "SetTaskDescription", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setState(args: {
-  state: TaskInfoState;
+    state: TaskInfoState;
     result?: any;
     fault?: MethodFault
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  state: TaskInfoState;
-    result?: any;
-    fault?: MethodFault
-} & { _this: ObjectReference }, void>(
+      state: TaskInfoState;
+      result?: any;
+      fault?: MethodFault
+    } & { _this: ObjectReference }, void>(
       "SetTaskState", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async UpdateProgress(args: {
-  percentDone: number
-}): Promise<void> {
+    percentDone: number
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  percentDone: number
-} & { _this: ObjectReference }, void>(
+      percentDone: number
+    } & { _this: ObjectReference }, void>(
       "UpdateProgress", { _this: { attributes: { type: "Task" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -22263,15 +22263,15 @@ export class VirtualApp extends ResourcePool {
     }
   }
   async clone(args: {
-  name: string;
+    name: string;
     target: ResourcePool;
     spec: VAppCloneSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    target: ResourcePool;
-    spec: VAppCloneSpec
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      target: ResourcePool;
+      spec: VAppCloneSpec
+    } & { _this: ObjectReference }, Task>(
       "CloneVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22283,11 +22283,11 @@ export class VirtualApp extends ResourcePool {
     return constructHelperObjects(this.connection, result, "HttpNfcLease");
   }
   async powerOff(args: {
-  force: boolean
-}): Promise<Task> {
+    force: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  force: boolean
-} & { _this: ObjectReference }, Task>(
+      force: boolean
+    } & { _this: ObjectReference }, Task>(
       "PowerOffVApp_Task", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22305,23 +22305,23 @@ export class VirtualApp extends ResourcePool {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateLinkedChildren(args: {
-  addChangeSet?: VirtualAppLinkInfo[];
+    addChangeSet?: VirtualAppLinkInfo[];
     removeSet?: ManagedEntity[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  addChangeSet?: VirtualAppLinkInfo[];
-    removeSet?: ManagedEntity[]
-} & { _this: ObjectReference }, void>(
+      addChangeSet?: VirtualAppLinkInfo[];
+      removeSet?: ManagedEntity[]
+    } & { _this: ObjectReference }, void>(
       "UpdateLinkedChildren", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVAppConfig(args: {
-  spec: VAppConfigSpec
-}): Promise<void> {
+    spec: VAppConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: VAppConfigSpec
-} & { _this: ObjectReference }, void>(
+      spec: VAppConfigSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateVAppConfig", { _this: { attributes: { type: "VirtualApp" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -22345,221 +22345,221 @@ export class VirtualDiskManager extends ManagedObject {
     }
   }
   async copyVirtualDisk(args: {
-  sourceName: string;
+    sourceName: string;
     sourceDatacenter?: Datacenter;
     destName: string;
     destDatacenter?: Datacenter;
     destSpec?: VirtualDiskSpec;
     force?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  sourceName: string;
-    sourceDatacenter?: Datacenter;
-    destName: string;
-    destDatacenter?: Datacenter;
-    destSpec?: VirtualDiskSpec;
-    force?: boolean
-} & { _this: ObjectReference }, Task>(
+      sourceName: string;
+      sourceDatacenter?: Datacenter;
+      destName: string;
+      destDatacenter?: Datacenter;
+      destSpec?: VirtualDiskSpec;
+      force?: boolean
+    } & { _this: ObjectReference }, Task>(
       "CopyVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     spec: VirtualDiskSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    spec: VirtualDiskSpec
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter;
+      spec: VirtualDiskSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async defragmentVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "DefragmentVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "DeleteVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async eagerZeroVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "EagerZeroVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async extendVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     newCapacityKb: number;
     eagerZero?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    newCapacityKb: number;
-    eagerZero?: boolean
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter;
+      newCapacityKb: number;
+      eagerZero?: boolean
+    } & { _this: ObjectReference }, Task>(
       "ExtendVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async importUnmanagedSnapshot(args: {
-  vdisk: string;
+    vdisk: string;
     datacenter?: Datacenter;
     vvolId: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vdisk: string;
-    datacenter?: Datacenter;
-    vvolId: string
-} & { _this: ObjectReference }, void>(
+      vdisk: string;
+      datacenter?: Datacenter;
+      vvolId: string
+    } & { _this: ObjectReference }, void>(
       "ImportUnmanagedSnapshot", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async inflateVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "InflateVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async moveVirtualDisk(args: {
-  sourceName: string;
+    sourceName: string;
     sourceDatacenter?: Datacenter;
     destName: string;
     destDatacenter?: Datacenter;
     force?: boolean;
     profile?: VirtualMachineProfileSpec[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  sourceName: string;
-    sourceDatacenter?: Datacenter;
-    destName: string;
-    destDatacenter?: Datacenter;
-    force?: boolean;
-    profile?: VirtualMachineProfileSpec[]
-} & { _this: ObjectReference }, Task>(
+      sourceName: string;
+      sourceDatacenter?: Datacenter;
+      destName: string;
+      destDatacenter?: Datacenter;
+      force?: boolean;
+      profile?: VirtualMachineProfileSpec[]
+    } & { _this: ObjectReference }, Task>(
       "MoveVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryVirtualDiskFragmentation(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, number>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, number>(
       "QueryVirtualDiskFragmentation", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async queryVirtualDiskGeometry(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<HostDiskDimensionsChs> {
+  }): Promise<HostDiskDimensionsChs> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, HostDiskDimensionsChs>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, HostDiskDimensionsChs>(
       "QueryVirtualDiskGeometry", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiskDimensionsChs");
   }
   async queryVirtualDiskUuid(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, string>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, string>(
       "QueryVirtualDiskUuid", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async releaseManagedSnapshot(args: {
-  vdisk: string;
+    vdisk: string;
     datacenter?: Datacenter
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vdisk: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, void>(
+      vdisk: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, void>(
       "ReleaseManagedSnapshot", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setVirtualDiskUuid(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     uuid: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    uuid: string
-} & { _this: ObjectReference }, void>(
+      name: string;
+      datacenter?: Datacenter;
+      uuid: string
+    } & { _this: ObjectReference }, void>(
       "SetVirtualDiskUuid", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async shrinkVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter;
     copy?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter;
-    copy?: boolean
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter;
+      copy?: boolean
+    } & { _this: ObjectReference }, Task>(
       "ShrinkVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async zeroFillVirtualDisk(args: {
-  name: string;
+    name: string;
     datacenter?: Datacenter
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    datacenter?: Datacenter
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      datacenter?: Datacenter
+    } & { _this: ObjectReference }, Task>(
       "ZeroFillVirtualDisk_Task", { _this: { attributes: { type: "VirtualDiskManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22599,75 +22599,75 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "VirtualMachineMksTicket");
   }
   async acquireTicket(args: {
-  ticketType: string
-}): Promise<VirtualMachineTicket> {
+    ticketType: string
+  }): Promise<VirtualMachineTicket> {
     const result = await this.connection.exec<{
-  ticketType: string
-} & { _this: ObjectReference }, VirtualMachineTicket>(
+      ticketType: string
+    } & { _this: ObjectReference }, VirtualMachineTicket>(
       "AcquireTicket", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualMachineTicket");
   }
   async answer(args: {
-  questionId: string;
+    questionId: string;
     answerChoice: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  questionId: string;
-    answerChoice: string
-} & { _this: ObjectReference }, void>(
+      questionId: string;
+      answerChoice: string
+    } & { _this: ObjectReference }, void>(
       "AnswerVM", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async applyEvcMode(args: {
-  mask?: HostFeatureMask[];
+    mask?: HostFeatureMask[];
     completeMasks?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  mask?: HostFeatureMask[];
-    completeMasks?: boolean
-} & { _this: ObjectReference }, Task>(
+      mask?: HostFeatureMask[];
+      completeMasks?: boolean
+    } & { _this: ObjectReference }, Task>(
       "ApplyEvcModeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async attachDisk(args: {
-  diskId: ID;
+    diskId: ID;
     datastore: Datastore;
     controllerKey?: number;
     unitNumber?: number
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  diskId: ID;
-    datastore: Datastore;
-    controllerKey?: number;
-    unitNumber?: number
-} & { _this: ObjectReference }, Task>(
+      diskId: ID;
+      datastore: Datastore;
+      controllerKey?: number;
+      unitNumber?: number
+    } & { _this: ObjectReference }, Task>(
       "AttachDisk_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkCustomizationSpec(args: {
-  spec: CustomizationSpec
-}): Promise<void> {
+    spec: CustomizationSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: CustomizationSpec
-} & { _this: ObjectReference }, void>(
+      spec: CustomizationSpec
+    } & { _this: ObjectReference }, void>(
       "CheckCustomizationSpec", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async clone(args: {
-  folder: Folder;
+    folder: Folder;
     name: string;
     spec: VirtualMachineCloneSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  folder: Folder;
-    name: string;
-    spec: VirtualMachineCloneSpec
-} & { _this: ObjectReference }, Task>(
+      folder: Folder;
+      name: string;
+      spec: VirtualMachineCloneSpec
+    } & { _this: ObjectReference }, Task>(
       "CloneVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22685,55 +22685,55 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSecondaryEx(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     spec?: FaultToleranceConfigSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    spec?: FaultToleranceConfigSpec
-} & { _this: ObjectReference }, Task>(
+      host?: HostSystem;
+      spec?: FaultToleranceConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateSecondaryVMEx_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSecondary(args: {
-  host?: HostSystem
-}): Promise<Task> {
+    host?: HostSystem
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "CreateSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshotEx(args: {
-  name: string;
+    name: string;
     description?: string;
     memory: boolean;
     quiesceSpec?: VirtualMachineGuestQuiesceSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    description?: string;
-    memory: boolean;
-    quiesceSpec?: VirtualMachineGuestQuiesceSpec
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      description?: string;
+      memory: boolean;
+      quiesceSpec?: VirtualMachineGuestQuiesceSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateSnapshotEx_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
-  name: string;
+    name: string;
     description?: string;
     memory: boolean;
     quiesce: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    description?: string;
-    memory: boolean;
-    quiesce: boolean
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      description?: string;
+      memory: boolean;
+      quiesce: boolean
+    } & { _this: ObjectReference }, Task>(
       "CreateSnapshot_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22745,11 +22745,11 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async customize(args: {
-  spec: CustomizationSpec
-}): Promise<Task> {
+    spec: CustomizationSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: CustomizationSpec
-} & { _this: ObjectReference }, Task>(
+      spec: CustomizationSpec
+    } & { _this: ObjectReference }, Task>(
       "CustomizeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22761,43 +22761,43 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async detachDisk(args: {
-  diskId: ID
-}): Promise<Task> {
+    diskId: ID
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  diskId: ID
-} & { _this: ObjectReference }, Task>(
+      diskId: ID
+    } & { _this: ObjectReference }, Task>(
       "DetachDisk_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async disableSecondary(args: {
-  vm: VirtualMachine
-}): Promise<Task> {
+    vm: VirtualMachine
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine
+    } & { _this: ObjectReference }, Task>(
       "DisableSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async dropConnections(args: {
-  listOfConnections?: VirtualMachineConnection[]
-}): Promise<boolean> {
+    listOfConnections?: VirtualMachineConnection[]
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  listOfConnections?: VirtualMachineConnection[]
-} & { _this: ObjectReference }, boolean>(
+      listOfConnections?: VirtualMachineConnection[]
+    } & { _this: ObjectReference }, boolean>(
       "DropConnections", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async enableSecondary(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host?: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "EnableSecondaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22821,21 +22821,21 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "string");
   }
   async instantClone(args: {
-  spec: VirtualMachineInstantCloneSpec
-}): Promise<Task> {
+    spec: VirtualMachineInstantCloneSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: VirtualMachineInstantCloneSpec
-} & { _this: ObjectReference }, Task>(
+      spec: VirtualMachineInstantCloneSpec
+    } & { _this: ObjectReference }, Task>(
       "InstantClone_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async makePrimary(args: {
-  vm: VirtualMachine
-}): Promise<Task> {
+    vm: VirtualMachine
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine
+    } & { _this: ObjectReference }, Task>(
       "MakePrimaryVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22847,29 +22847,29 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async markAsVirtualMachine(args: {
-  pool: ResourcePool;
+    pool: ResourcePool;
     host?: HostSystem
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pool: ResourcePool;
-    host?: HostSystem
-} & { _this: ObjectReference }, void>(
+      pool: ResourcePool;
+      host?: HostSystem
+    } & { _this: ObjectReference }, void>(
       "MarkAsVirtualMachine", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async migrate(args: {
-  pool?: ResourcePool;
+    pool?: ResourcePool;
     host?: HostSystem;
     priority: VirtualMachineMovePriority;
     state?: VirtualMachinePowerState
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  pool?: ResourcePool;
-    host?: HostSystem;
-    priority: VirtualMachineMovePriority;
-    state?: VirtualMachinePowerState
-} & { _this: ObjectReference }, Task>(
+      pool?: ResourcePool;
+      host?: HostSystem;
+      priority: VirtualMachineMovePriority;
+      state?: VirtualMachinePowerState
+    } & { _this: ObjectReference }, Task>(
       "MigrateVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22887,49 +22887,49 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async powerOn(args: {
-  host?: HostSystem
-}): Promise<Task> {
+    host?: HostSystem
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "PowerOnVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async promoteDisks(args: {
-  unlink: boolean;
+    unlink: boolean;
     disks?: VirtualDisk[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  unlink: boolean;
-    disks?: VirtualDisk[]
-} & { _this: ObjectReference }, Task>(
+      unlink: boolean;
+      disks?: VirtualDisk[]
+    } & { _this: ObjectReference }, Task>(
       "PromoteDisks_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async putUsbScanCodes(args: {
-  spec: UsbScanCodeSpec
-}): Promise<number> {
+    spec: UsbScanCodeSpec
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  spec: UsbScanCodeSpec
-} & { _this: ObjectReference }, number>(
+      spec: UsbScanCodeSpec
+    } & { _this: ObjectReference }, number>(
       "PutUsbScanCodes", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async queryChangedDiskAreas(args: {
-  snapshot?: VirtualMachineSnapshot;
+    snapshot?: VirtualMachineSnapshot;
     deviceKey: number;
     startOffset: number;
     changeId: string
-}): Promise<DiskChangeInfo> {
+  }): Promise<DiskChangeInfo> {
     const result = await this.connection.exec<{
-  snapshot?: VirtualMachineSnapshot;
-    deviceKey: number;
-    startOffset: number;
-    changeId: string
-} & { _this: ObjectReference }, DiskChangeInfo>(
+      snapshot?: VirtualMachineSnapshot;
+      deviceKey: number;
+      startOffset: number;
+      changeId: string
+    } & { _this: ObjectReference }, DiskChangeInfo>(
       "QueryChangedDiskAreas", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DiskChangeInfo");
@@ -22947,11 +22947,11 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "MethodFault[]");
   }
   async queryFaultToleranceCompatibilityEx(args: {
-  forLegacyFt?: boolean
-}): Promise<MethodFault[] | undefined> {
+    forLegacyFt?: boolean
+  }): Promise<MethodFault[] | undefined> {
     const result = await this.connection.exec<{
-  forLegacyFt?: boolean
-} & { _this: ObjectReference }, MethodFault[] | undefined>(
+      forLegacyFt?: boolean
+    } & { _this: ObjectReference }, MethodFault[] | undefined>(
       "QueryFaultToleranceCompatibilityEx", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "MethodFault[]");
@@ -22969,11 +22969,11 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async reconfigure(args: {
-  spec: VirtualMachineConfigSpec
-}): Promise<Task> {
+    spec: VirtualMachineConfigSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: VirtualMachineConfigSpec
-} & { _this: ObjectReference }, Task>(
+      spec: VirtualMachineConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "ReconfigVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -22985,23 +22985,23 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async relocate(args: {
-  spec: VirtualMachineRelocateSpec;
+    spec: VirtualMachineRelocateSpec;
     priority?: VirtualMachineMovePriority
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: VirtualMachineRelocateSpec;
-    priority?: VirtualMachineMovePriority
-} & { _this: ObjectReference }, Task>(
+      spec: VirtualMachineRelocateSpec;
+      priority?: VirtualMachineMovePriority
+    } & { _this: ObjectReference }, Task>(
       "RelocateVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async removeAllSnapshots(args: {
-  consolidate?: boolean
-}): Promise<Task> {
+    consolidate?: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  consolidate?: boolean
-} & { _this: ObjectReference }, Task>(
+      consolidate?: boolean
+    } & { _this: ObjectReference }, Task>(
       "RemoveAllSnapshots_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23019,13 +23019,13 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async revertToCurrentSnapshot(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     suppressPowerOn?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    suppressPowerOn?: boolean
-} & { _this: ObjectReference }, Task>(
+      host?: HostSystem;
+      suppressPowerOn?: boolean
+    } & { _this: ObjectReference }, Task>(
       "RevertToCurrentSnapshot_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23037,23 +23037,23 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async setDisplayTopology(args: {
-  displays: VirtualMachineDisplayTopology[]
-}): Promise<void> {
+    displays: VirtualMachineDisplayTopology[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  displays: VirtualMachineDisplayTopology[]
-} & { _this: ObjectReference }, void>(
+      displays: VirtualMachineDisplayTopology[]
+    } & { _this: ObjectReference }, void>(
       "SetDisplayTopology", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setScreenResolution(args: {
-  width: number;
+    width: number;
     height: number
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  width: number;
-    height: number
-} & { _this: ObjectReference }, void>(
+      width: number;
+      height: number
+    } & { _this: ObjectReference }, void>(
       "SetScreenResolution", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -23071,23 +23071,23 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async startRecording(args: {
-  name: string;
+    name: string;
     description?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  name: string;
-    description?: string
-} & { _this: ObjectReference }, Task>(
+      name: string;
+      description?: string
+    } & { _this: ObjectReference }, Task>(
       "StartRecording_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async startReplaying(args: {
-  replaySnapshot: VirtualMachineSnapshot
-}): Promise<Task> {
+    replaySnapshot: VirtualMachineSnapshot
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  replaySnapshot: VirtualMachineSnapshot
-} & { _this: ObjectReference }, Task>(
+      replaySnapshot: VirtualMachineSnapshot
+    } & { _this: ObjectReference }, Task>(
       "StartReplaying_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23111,11 +23111,11 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async terminateFaultTolerantVM(args: {
-  vm?: VirtualMachine
-}): Promise<Task> {
+    vm?: VirtualMachine
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm?: VirtualMachine
-} & { _this: ObjectReference }, Task>(
+      vm?: VirtualMachine
+    } & { _this: ObjectReference }, Task>(
       "TerminateFaultTolerantVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23145,31 +23145,31 @@ export class VirtualMachine extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async upgradeTools(args: {
-  installerOptions?: string
-}): Promise<Task> {
+    installerOptions?: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  installerOptions?: string
-} & { _this: ObjectReference }, Task>(
+      installerOptions?: string
+    } & { _this: ObjectReference }, Task>(
       "UpgradeTools_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async upgradeVirtualHardware(args: {
-  version?: string
-}): Promise<Task> {
+    version?: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  version?: string
-} & { _this: ObjectReference }, Task>(
+      version?: string
+    } & { _this: ObjectReference }, Task>(
       "UpgradeVM_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async reloadFromPath(args: {
-  configurationPath: string
-}): Promise<Task> {
+    configurationPath: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  configurationPath: string
-} & { _this: ObjectReference }, Task>(
+      configurationPath: string
+    } & { _this: ObjectReference }, Task>(
       "reloadVirtualMachineFromPath_Task", { _this: { attributes: { type: "VirtualMachine" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23188,101 +23188,101 @@ export class AlarmManager extends ManagedObject {
     }
   }
   async acknowledgeAlarm(args: {
-  alarm: Alarm;
+    alarm: Alarm;
     entity: ManagedEntity
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  alarm: Alarm;
-    entity: ManagedEntity
-} & { _this: ObjectReference }, void>(
+      alarm: Alarm;
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, void>(
       "AcknowledgeAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async getAlarmActionsEnabled(args: {
-  entity: ManagedEntity
-}): Promise<boolean> {
+    entity: ManagedEntity
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity
-} & { _this: ObjectReference }, boolean>(
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, boolean>(
       "AreAlarmActionsEnabled", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async clearTriggeredAlarms(args: {
-  filter: AlarmFilterSpec
-}): Promise<void> {
+    filter: AlarmFilterSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  filter: AlarmFilterSpec
-} & { _this: ObjectReference }, void>(
+      filter: AlarmFilterSpec
+    } & { _this: ObjectReference }, void>(
       "ClearTriggeredAlarms", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async create(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     spec: AlarmSpec
-}): Promise<Alarm> {
+  }): Promise<Alarm> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    spec: AlarmSpec
-} & { _this: ObjectReference }, Alarm>(
+      entity: ManagedEntity;
+      spec: AlarmSpec
+    } & { _this: ObjectReference }, Alarm>(
       "CreateAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Alarm");
   }
   async disableAlarm(args: {
-  alarm: Alarm;
+    alarm: Alarm;
     entity: ManagedEntity
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  alarm: Alarm;
-    entity: ManagedEntity
-} & { _this: ObjectReference }, void>(
+      alarm: Alarm;
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, void>(
       "DisableAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async enableAlarm(args: {
-  alarm: Alarm;
+    alarm: Alarm;
     entity: ManagedEntity
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  alarm: Alarm;
-    entity: ManagedEntity
-} & { _this: ObjectReference }, void>(
+      alarm: Alarm;
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, void>(
       "EnableAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setAlarmActionsEnabled(args: {
-  entity: ManagedEntity;
+    entity: ManagedEntity;
     enabled: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity;
-    enabled: boolean
-} & { _this: ObjectReference }, void>(
+      entity: ManagedEntity;
+      enabled: boolean
+    } & { _this: ObjectReference }, void>(
       "EnableAlarmActions", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async getAlarm(args: {
-  entity?: ManagedEntity
-}): Promise<Alarm[] | undefined> {
+    entity?: ManagedEntity
+  }): Promise<Alarm[] | undefined> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity
-} & { _this: ObjectReference }, Alarm[] | undefined>(
+      entity?: ManagedEntity
+    } & { _this: ObjectReference }, Alarm[] | undefined>(
       "GetAlarm", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Alarm[]");
   }
   async getAlarmState(args: {
-  entity: ManagedEntity
-}): Promise<AlarmState[] | undefined> {
+    entity: ManagedEntity
+  }): Promise<AlarmState[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity
-} & { _this: ObjectReference }, AlarmState[] | undefined>(
+      entity: ManagedEntity
+    } & { _this: ObjectReference }, AlarmState[] | undefined>(
       "GetAlarmState", { _this: { attributes: { type: "AlarmManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "AlarmState[]");
@@ -23302,21 +23302,21 @@ export class DistributedVirtualPortgroup extends Network {
     }
   }
   async rollback(args: {
-  entityBackup?: EntityBackupConfig
-}): Promise<Task | undefined> {
+    entityBackup?: EntityBackupConfig
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  entityBackup?: EntityBackupConfig
-} & { _this: ObjectReference }, Task | undefined>(
+      entityBackup?: EntityBackupConfig
+    } & { _this: ObjectReference }, Task | undefined>(
       "DVPortgroupRollback_Task", { _this: { attributes: { type: "DistributedVirtualPortgroup" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigure(args: {
-  spec: DVPortgroupConfigSpec
-}): Promise<Task> {
+    spec: DVPortgroupConfigSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DVPortgroupConfigSpec
-} & { _this: ObjectReference }, Task>(
+      spec: DVPortgroupConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualPortgroup" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23334,267 +23334,267 @@ export class CryptoManagerKmip extends CryptoManager {
     }
   }
   async generateClientCsr(args: {
-  cluster: KeyProviderId
-}): Promise<string> {
+    cluster: KeyProviderId
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId
-} & { _this: ObjectReference }, string>(
+      cluster: KeyProviderId
+    } & { _this: ObjectReference }, string>(
       "GenerateClientCsr", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async generateKey(args: {
-  keyProvider?: KeyProviderId
-}): Promise<CryptoKeyResult> {
+    keyProvider?: KeyProviderId
+  }): Promise<CryptoKeyResult> {
     const result = await this.connection.exec<{
-  keyProvider?: KeyProviderId
-} & { _this: ObjectReference }, CryptoKeyResult>(
+      keyProvider?: KeyProviderId
+    } & { _this: ObjectReference }, CryptoKeyResult>(
       "GenerateKey", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoKeyResult");
   }
   async generateSelfSignedClientCert(args: {
-  cluster: KeyProviderId
-}): Promise<string> {
+    cluster: KeyProviderId
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId
-} & { _this: ObjectReference }, string>(
+      cluster: KeyProviderId
+    } & { _this: ObjectReference }, string>(
       "GenerateSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async getDefaultKmsCluster(args: {
-  entity?: ManagedEntity;
+    entity?: ManagedEntity;
     defaultsToParent?: boolean
-}): Promise<KeyProviderId | undefined> {
+  }): Promise<KeyProviderId | undefined> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity;
-    defaultsToParent?: boolean
-} & { _this: ObjectReference }, KeyProviderId | undefined>(
+      entity?: ManagedEntity;
+      defaultsToParent?: boolean
+    } & { _this: ObjectReference }, KeyProviderId | undefined>(
       "GetDefaultKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "KeyProviderId");
   }
   async IsKmsClusterActive(args: {
-  cluster?: KeyProviderId
-}): Promise<boolean> {
+    cluster?: KeyProviderId
+  }): Promise<boolean> {
     const result = await this.connection.exec<{
-  cluster?: KeyProviderId
-} & { _this: ObjectReference }, boolean>(
+      cluster?: KeyProviderId
+    } & { _this: ObjectReference }, boolean>(
       "IsKmsClusterActive", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "boolean");
   }
   async listKmipServers(args: {
-  limit?: number
-}): Promise<KmipClusterInfo[] | undefined> {
+    limit?: number
+  }): Promise<KmipClusterInfo[] | undefined> {
     const result = await this.connection.exec<{
-  limit?: number
-} & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
+      limit?: number
+    } & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
       "ListKmipServers", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "KmipClusterInfo[]");
   }
   async listKmsClusters(args: {
-  includeKmsServers?: boolean;
+    includeKmsServers?: boolean;
     managementTypeFilter?: number;
     statusFilter?: number
-}): Promise<KmipClusterInfo[] | undefined> {
+  }): Promise<KmipClusterInfo[] | undefined> {
     const result = await this.connection.exec<{
-  includeKmsServers?: boolean;
-    managementTypeFilter?: number;
-    statusFilter?: number
-} & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
+      includeKmsServers?: boolean;
+      managementTypeFilter?: number;
+      statusFilter?: number
+    } & { _this: ObjectReference }, KmipClusterInfo[] | undefined>(
       "ListKmsClusters", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "KmipClusterInfo[]");
   }
   async markDefault(args: {
-  clusterId: KeyProviderId
-}): Promise<void> {
+    clusterId: KeyProviderId
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  clusterId: KeyProviderId
-} & { _this: ObjectReference }, void>(
+      clusterId: KeyProviderId
+    } & { _this: ObjectReference }, void>(
       "MarkDefault", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryCryptoKeyStatus(args: {
-  keyIds?: CryptoKeyId[];
+    keyIds?: CryptoKeyId[];
     checkKeyBitMap: number
-}): Promise<CryptoManagerKmipCryptoKeyStatus[] | undefined> {
+  }): Promise<CryptoManagerKmipCryptoKeyStatus[] | undefined> {
     const result = await this.connection.exec<{
-  keyIds?: CryptoKeyId[];
-    checkKeyBitMap: number
-} & { _this: ObjectReference }, CryptoManagerKmipCryptoKeyStatus[] | undefined>(
+      keyIds?: CryptoKeyId[];
+      checkKeyBitMap: number
+    } & { _this: ObjectReference }, CryptoManagerKmipCryptoKeyStatus[] | undefined>(
       "QueryCryptoKeyStatus", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoManagerKmipCryptoKeyStatus[]");
   }
   async registerKmipServer(args: {
-  server: KmipServerSpec
-}): Promise<void> {
+    server: KmipServerSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  server: KmipServerSpec
-} & { _this: ObjectReference }, void>(
+      server: KmipServerSpec
+    } & { _this: ObjectReference }, void>(
       "RegisterKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async registerKmsCluster(args: {
-  clusterId: KeyProviderId;
+    clusterId: KeyProviderId;
     managementType?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  clusterId: KeyProviderId;
-    managementType?: string
-} & { _this: ObjectReference }, void>(
+      clusterId: KeyProviderId;
+      managementType?: string
+    } & { _this: ObjectReference }, void>(
       "RegisterKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeKmipServer(args: {
-  clusterId: KeyProviderId;
+    clusterId: KeyProviderId;
     serverName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  clusterId: KeyProviderId;
-    serverName: string
-} & { _this: ObjectReference }, void>(
+      clusterId: KeyProviderId;
+      serverName: string
+    } & { _this: ObjectReference }, void>(
       "RemoveKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveClientCert(args: {
-  cluster: KeyProviderId
-}): Promise<string> {
+    cluster: KeyProviderId
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId
-} & { _this: ObjectReference }, string>(
+      cluster: KeyProviderId
+    } & { _this: ObjectReference }, string>(
       "RetrieveClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveClientCsr(args: {
-  cluster: KeyProviderId
-}): Promise<string> {
+    cluster: KeyProviderId
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId
-} & { _this: ObjectReference }, string>(
+      cluster: KeyProviderId
+    } & { _this: ObjectReference }, string>(
       "RetrieveClientCsr", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveKmipServerCert(args: {
-  keyProvider: KeyProviderId;
+    keyProvider: KeyProviderId;
     server: KmipServerInfo
-}): Promise<CryptoManagerKmipServerCertInfo> {
+  }): Promise<CryptoManagerKmipServerCertInfo> {
     const result = await this.connection.exec<{
-  keyProvider: KeyProviderId;
-    server: KmipServerInfo
-} & { _this: ObjectReference }, CryptoManagerKmipServerCertInfo>(
+      keyProvider: KeyProviderId;
+      server: KmipServerInfo
+    } & { _this: ObjectReference }, CryptoManagerKmipServerCertInfo>(
       "RetrieveKmipServerCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "CryptoManagerKmipServerCertInfo");
   }
   async retrieveKmipServersStatus(args: {
-  clusters?: KmipClusterInfo[]
-}): Promise<Task | undefined> {
+    clusters?: KmipClusterInfo[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  clusters?: KmipClusterInfo[]
-} & { _this: ObjectReference }, Task | undefined>(
+      clusters?: KmipClusterInfo[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "RetrieveKmipServersStatus_Task", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveSelfSignedClientCert(args: {
-  cluster: KeyProviderId
-}): Promise<string> {
+    cluster: KeyProviderId
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId
-} & { _this: ObjectReference }, string>(
+      cluster: KeyProviderId
+    } & { _this: ObjectReference }, string>(
       "RetrieveSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async setDefaultKmsCluster(args: {
-  entity?: ManagedEntity;
+    entity?: ManagedEntity;
     clusterId?: KeyProviderId
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  entity?: ManagedEntity;
-    clusterId?: KeyProviderId
-} & { _this: ObjectReference }, void>(
+      entity?: ManagedEntity;
+      clusterId?: KeyProviderId
+    } & { _this: ObjectReference }, void>(
       "SetDefaultKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unregisterKmsCluster(args: {
-  clusterId: KeyProviderId
-}): Promise<void> {
+    clusterId: KeyProviderId
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  clusterId: KeyProviderId
-} & { _this: ObjectReference }, void>(
+      clusterId: KeyProviderId
+    } & { _this: ObjectReference }, void>(
       "UnregisterKmsCluster", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateKmipServer(args: {
-  server: KmipServerSpec
-}): Promise<void> {
+    server: KmipServerSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  server: KmipServerSpec
-} & { _this: ObjectReference }, void>(
+      server: KmipServerSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateKmipServer", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateKmsSignedCsrClientCert(args: {
-  cluster: KeyProviderId;
+    cluster: KeyProviderId;
     certificate: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId;
-    certificate: string
-} & { _this: ObjectReference }, void>(
+      cluster: KeyProviderId;
+      certificate: string
+    } & { _this: ObjectReference }, void>(
       "UpdateKmsSignedCsrClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateSelfSignedClientCert(args: {
-  cluster: KeyProviderId;
+    cluster: KeyProviderId;
     certificate: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId;
-    certificate: string
-} & { _this: ObjectReference }, void>(
+      cluster: KeyProviderId;
+      certificate: string
+    } & { _this: ObjectReference }, void>(
       "UpdateSelfSignedClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async uploadClientCert(args: {
-  cluster: KeyProviderId;
+    cluster: KeyProviderId;
     certificate: string;
     privateKey: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId;
-    certificate: string;
-    privateKey: string
-} & { _this: ObjectReference }, void>(
+      cluster: KeyProviderId;
+      certificate: string;
+      privateKey: string
+    } & { _this: ObjectReference }, void>(
       "UploadClientCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async uploadKmipServerCert(args: {
-  cluster: KeyProviderId;
+    cluster: KeyProviderId;
     certificate: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cluster: KeyProviderId;
-    certificate: string
-} & { _this: ObjectReference }, void>(
+      cluster: KeyProviderId;
+      certificate: string
+    } & { _this: ObjectReference }, void>(
       "UploadKmipServerCert", { _this: { attributes: { type: "CryptoManagerKmip" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -23624,59 +23624,59 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
     return constructHelperObjects(this.connection, result, "void");
   }
   async importCertificateForCAM(args: {
-  certPath: string;
+    certPath: string;
     camServer: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  certPath: string;
-    camServer: string
-} & { _this: ObjectReference }, Task>(
+      certPath: string;
+      camServer: string
+    } & { _this: ObjectReference }, Task>(
       "ImportCertificateForCAM_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async installSmartCardTrustAnchor(args: {
-  cert: string
-}): Promise<void> {
+    cert: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cert: string
-} & { _this: ObjectReference }, void>(
+      cert: string
+    } & { _this: ObjectReference }, void>(
       "InstallSmartCardTrustAnchor", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async joinDomainWithCAM(args: {
-  domainName: string;
+    domainName: string;
     camServer: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  domainName: string;
-    camServer: string
-} & { _this: ObjectReference }, Task>(
+      domainName: string;
+      camServer: string
+    } & { _this: ObjectReference }, Task>(
       "JoinDomainWithCAM_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async joinDomain(args: {
-  domainName: string;
+    domainName: string;
     userName: string;
     password: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  domainName: string;
-    userName: string;
-    password: string
-} & { _this: ObjectReference }, Task>(
+      domainName: string;
+      userName: string;
+      password: string
+    } & { _this: ObjectReference }, Task>(
       "JoinDomain_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async leaveCurrentDomain(args: {
-  force: boolean
-}): Promise<Task> {
+    force: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  force: boolean
-} & { _this: ObjectReference }, Task>(
+      force: boolean
+    } & { _this: ObjectReference }, Task>(
       "LeaveCurrentDomain_Task", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -23688,35 +23688,35 @@ export class HostActiveDirectoryAuthentication extends HostDirectoryStore {
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async removeSmartCardTrustAnchor(args: {
-  issuer: string;
+    issuer: string;
     serial: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  issuer: string;
-    serial: string
-} & { _this: ObjectReference }, void>(
+      issuer: string;
+      serial: string
+    } & { _this: ObjectReference }, void>(
       "RemoveSmartCardTrustAnchor", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeSmartCardTrustAnchorByFingerprint(args: {
-  fingerprint: string;
+    fingerprint: string;
     digest: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  fingerprint: string;
-    digest: string
-} & { _this: ObjectReference }, void>(
+      fingerprint: string;
+      digest: string
+    } & { _this: ObjectReference }, void>(
       "RemoveSmartCardTrustAnchorByFingerprint", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async replaceSmartCardTrustAnchors(args: {
-  certs?: string[]
-}): Promise<void> {
+    certs?: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  certs?: string[]
-} & { _this: ObjectReference }, void>(
+      certs?: string[]
+    } & { _this: ObjectReference }, void>(
       "ReplaceSmartCardTrustAnchors", { _this: { attributes: { type: "HostActiveDirectoryAuthentication" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -23735,109 +23735,109 @@ export class HostDatastoreSystem extends ManagedObject {
     }
   }
   async configureDatastorePrincipal(args: {
-  userName: string;
+    userName: string;
     password?: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  userName: string;
-    password?: string
-} & { _this: ObjectReference }, void>(
+      userName: string;
+      password?: string
+    } & { _this: ObjectReference }, void>(
       "ConfigureDatastorePrincipal", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async createLocalDatastore(args: {
-  name: string;
+    name: string;
     path: string
-}): Promise<Datastore> {
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  name: string;
-    path: string
-} & { _this: ObjectReference }, Datastore>(
+      name: string;
+      path: string
+    } & { _this: ObjectReference }, Datastore>(
       "CreateLocalDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createNasDatastore(args: {
-  spec: HostNasVolumeSpec
-}): Promise<Datastore> {
+    spec: HostNasVolumeSpec
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  spec: HostNasVolumeSpec
-} & { _this: ObjectReference }, Datastore>(
+      spec: HostNasVolumeSpec
+    } & { _this: ObjectReference }, Datastore>(
       "CreateNasDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createVmfsDatastore(args: {
-  spec: VmfsDatastoreCreateSpec
-}): Promise<Datastore> {
+    spec: VmfsDatastoreCreateSpec
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  spec: VmfsDatastoreCreateSpec
-} & { _this: ObjectReference }, Datastore>(
+      spec: VmfsDatastoreCreateSpec
+    } & { _this: ObjectReference }, Datastore>(
       "CreateVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async createVvolDatastore(args: {
-  spec: HostDatastoreSystemVvolDatastoreSpec
-}): Promise<Datastore> {
+    spec: HostDatastoreSystemVvolDatastoreSpec
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  spec: HostDatastoreSystemVvolDatastoreSpec
-} & { _this: ObjectReference }, Datastore>(
+      spec: HostDatastoreSystemVvolDatastoreSpec
+    } & { _this: ObjectReference }, Datastore>(
       "CreateVvolDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async disableClusteredVmdkSupport(args: {
-  datastore: Datastore
-}): Promise<void> {
+    datastore: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, void>(
       "DisableClusteredVmdkSupport", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async enableClusteredVmdkSupport(args: {
-  datastore: Datastore
-}): Promise<void> {
+    datastore: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, void>(
       "EnableClusteredVmdkSupport", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async expandVmfsDatastore(args: {
-  datastore: Datastore;
+    datastore: Datastore;
     spec: VmfsDatastoreExpandSpec
-}): Promise<Datastore> {
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  datastore: Datastore;
-    spec: VmfsDatastoreExpandSpec
-} & { _this: ObjectReference }, Datastore>(
+      datastore: Datastore;
+      spec: VmfsDatastoreExpandSpec
+    } & { _this: ObjectReference }, Datastore>(
       "ExpandVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async extendVmfsDatastore(args: {
-  datastore: Datastore;
+    datastore: Datastore;
     spec: VmfsDatastoreExtendSpec
-}): Promise<Datastore> {
+  }): Promise<Datastore> {
     const result = await this.connection.exec<{
-  datastore: Datastore;
-    spec: VmfsDatastoreExtendSpec
-} & { _this: ObjectReference }, Datastore>(
+      datastore: Datastore;
+      spec: VmfsDatastoreExtendSpec
+    } & { _this: ObjectReference }, Datastore>(
       "ExtendVmfsDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datastore");
   }
   async queryAvailableDisksForVmfs(args: {
-  datastore?: Datastore
-}): Promise<HostScsiDisk[] | undefined> {
+    datastore?: Datastore
+  }): Promise<HostScsiDisk[] | undefined> {
     const result = await this.connection.exec<{
-  datastore?: Datastore
-} & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
+      datastore?: Datastore
+    } & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
       "QueryAvailableDisksForVmfs", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostScsiDisk[]");
@@ -23849,77 +23849,77 @@ export class HostDatastoreSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HostUnresolvedVmfsVolume[]");
   }
   async queryVmfsDatastoreCreateOptions(args: {
-  devicePath: string;
+    devicePath: string;
     vmfsMajorVersion?: number
-}): Promise<VmfsDatastoreOption[] | undefined> {
+  }): Promise<VmfsDatastoreOption[] | undefined> {
     const result = await this.connection.exec<{
-  devicePath: string;
-    vmfsMajorVersion?: number
-} & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
+      devicePath: string;
+      vmfsMajorVersion?: number
+    } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreCreateOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async queryVmfsDatastoreExpandOptions(args: {
-  datastore: Datastore
-}): Promise<VmfsDatastoreOption[] | undefined> {
+    datastore: Datastore
+  }): Promise<VmfsDatastoreOption[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreExpandOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async queryVmfsDatastoreExtendOptions(args: {
-  datastore: Datastore;
+    datastore: Datastore;
     devicePath: string;
     suppressExpandCandidates?: boolean
-}): Promise<VmfsDatastoreOption[] | undefined> {
+  }): Promise<VmfsDatastoreOption[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore;
-    devicePath: string;
-    suppressExpandCandidates?: boolean
-} & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
+      datastore: Datastore;
+      devicePath: string;
+      suppressExpandCandidates?: boolean
+    } & { _this: ObjectReference }, VmfsDatastoreOption[] | undefined>(
       "QueryVmfsDatastoreExtendOptions", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VmfsDatastoreOption[]");
   }
   async removeDatastore(args: {
-  datastore: Datastore
-}): Promise<void> {
+    datastore: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, void>(
       "RemoveDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeDatastoreEx(args: {
-  datastore: Datastore[]
-}): Promise<Task> {
+    datastore: Datastore[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  datastore: Datastore[]
-} & { _this: ObjectReference }, Task>(
+      datastore: Datastore[]
+    } & { _this: ObjectReference }, Task>(
       "RemoveDatastoreEx_Task", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async resignatureUnresolvedVmfsVolume(args: {
-  resolutionSpec: HostUnresolvedVmfsResignatureSpec
-}): Promise<Task | undefined> {
+    resolutionSpec: HostUnresolvedVmfsResignatureSpec
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  resolutionSpec: HostUnresolvedVmfsResignatureSpec
-} & { _this: ObjectReference }, Task | undefined>(
+      resolutionSpec: HostUnresolvedVmfsResignatureSpec
+    } & { _this: ObjectReference }, Task | undefined>(
       "ResignatureUnresolvedVmfsVolume_Task", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateLocalSwapDatastore(args: {
-  datastore?: Datastore
-}): Promise<void> {
+    datastore?: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore?: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore?: Datastore
+    } & { _this: ObjectReference }, void>(
       "UpdateLocalSwapDatastore", { _this: { attributes: { type: "HostDatastoreSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -23937,21 +23937,21 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
     }
   }
   async disableRuleset(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "DisableRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async enableRuleset(args: {
-  id: string
-}): Promise<void> {
+    id: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string
-} & { _this: ObjectReference }, void>(
+      id: string
+    } & { _this: ObjectReference }, void>(
       "EnableRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -23963,23 +23963,23 @@ export class HostFirewallSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateDefaultPolicy(args: {
-  defaultPolicy: HostFirewallDefaultPolicy
-}): Promise<void> {
+    defaultPolicy: HostFirewallDefaultPolicy
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  defaultPolicy: HostFirewallDefaultPolicy
-} & { _this: ObjectReference }, void>(
+      defaultPolicy: HostFirewallDefaultPolicy
+    } & { _this: ObjectReference }, void>(
       "UpdateDefaultPolicy", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateRuleset(args: {
-  id: string;
+    id: string;
     spec: HostFirewallRulesetRulesetSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: string;
-    spec: HostFirewallRulesetRulesetSpec
-} & { _this: ObjectReference }, void>(
+      id: string;
+      spec: HostFirewallRulesetRulesetSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateRuleset", { _this: { attributes: { type: "HostFirewallSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -24003,57 +24003,57 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
     }
   }
   async addPortGroup(args: {
-  portgrp: HostPortGroupSpec
-}): Promise<void> {
+    portgrp: HostPortGroupSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  portgrp: HostPortGroupSpec
-} & { _this: ObjectReference }, void>(
+      portgrp: HostPortGroupSpec
+    } & { _this: ObjectReference }, void>(
       "AddPortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async addServiceConsoleVirtualNic(args: {
-  portgroup: string;
+    portgroup: string;
     nic: HostVirtualNicSpec
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  portgroup: string;
-    nic: HostVirtualNicSpec
-} & { _this: ObjectReference }, string>(
+      portgroup: string;
+      nic: HostVirtualNicSpec
+    } & { _this: ObjectReference }, string>(
       "AddServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async addVirtualNic(args: {
-  portgroup: string;
+    portgroup: string;
     nic: HostVirtualNicSpec
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  portgroup: string;
-    nic: HostVirtualNicSpec
-} & { _this: ObjectReference }, string>(
+      portgroup: string;
+      nic: HostVirtualNicSpec
+    } & { _this: ObjectReference }, string>(
       "AddVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async addVirtualSwitch(args: {
-  vswitchName: string;
+    vswitchName: string;
     spec?: HostVirtualSwitchSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vswitchName: string;
-    spec?: HostVirtualSwitchSpec
-} & { _this: ObjectReference }, void>(
+      vswitchName: string;
+      spec?: HostVirtualSwitchSpec
+    } & { _this: ObjectReference }, void>(
       "AddVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async queryNetworkHint(args: {
-  device?: string[]
-}): Promise<PhysicalNicHintInfo[] | undefined> {
+    device?: string[]
+  }): Promise<PhysicalNicHintInfo[] | undefined> {
     const result = await this.connection.exec<{
-  device?: string[]
-} & { _this: ObjectReference }, PhysicalNicHintInfo[] | undefined>(
+      device?: string[]
+    } & { _this: ObjectReference }, PhysicalNicHintInfo[] | undefined>(
       "QueryNetworkHint", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PhysicalNicHintInfo[]");
@@ -24065,163 +24065,163 @@ export class HostNetworkSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async removePortGroup(args: {
-  pgName: string
-}): Promise<void> {
+    pgName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pgName: string
-} & { _this: ObjectReference }, void>(
+      pgName: string
+    } & { _this: ObjectReference }, void>(
       "RemovePortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeServiceConsoleVirtualNic(args: {
-  device: string
-}): Promise<void> {
+    device: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string
-} & { _this: ObjectReference }, void>(
+      device: string
+    } & { _this: ObjectReference }, void>(
       "RemoveServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeVirtualNic(args: {
-  device: string
-}): Promise<void> {
+    device: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string
-} & { _this: ObjectReference }, void>(
+      device: string
+    } & { _this: ObjectReference }, void>(
       "RemoveVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeVirtualSwitch(args: {
-  vswitchName: string
-}): Promise<void> {
+    vswitchName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vswitchName: string
-} & { _this: ObjectReference }, void>(
+      vswitchName: string
+    } & { _this: ObjectReference }, void>(
       "RemoveVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async restartServiceConsoleVirtualNic(args: {
-  device: string
-}): Promise<void> {
+    device: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string
-} & { _this: ObjectReference }, void>(
+      device: string
+    } & { _this: ObjectReference }, void>(
       "RestartServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateConsoleIpRouteConfig(args: {
-  config: HostIpRouteConfig
-}): Promise<void> {
+    config: HostIpRouteConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostIpRouteConfig
-} & { _this: ObjectReference }, void>(
+      config: HostIpRouteConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateConsoleIpRouteConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateDnsConfig(args: {
-  config: HostDnsConfig
-}): Promise<void> {
+    config: HostDnsConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostDnsConfig
-} & { _this: ObjectReference }, void>(
+      config: HostDnsConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateDnsConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpRouteConfig(args: {
-  config: HostIpRouteConfig
-}): Promise<void> {
+    config: HostIpRouteConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostIpRouteConfig
-} & { _this: ObjectReference }, void>(
+      config: HostIpRouteConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateIpRouteConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpRouteTableConfig(args: {
-  config: HostIpRouteTableConfig
-}): Promise<void> {
+    config: HostIpRouteTableConfig
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostIpRouteTableConfig
-} & { _this: ObjectReference }, void>(
+      config: HostIpRouteTableConfig
+    } & { _this: ObjectReference }, void>(
       "UpdateIpRouteTableConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateNetworkConfig(args: {
-  config: HostNetworkConfig;
+    config: HostNetworkConfig;
     changeMode: string
-}): Promise<HostNetworkConfigResult> {
+  }): Promise<HostNetworkConfigResult> {
     const result = await this.connection.exec<{
-  config: HostNetworkConfig;
-    changeMode: string
-} & { _this: ObjectReference }, HostNetworkConfigResult>(
+      config: HostNetworkConfig;
+      changeMode: string
+    } & { _this: ObjectReference }, HostNetworkConfigResult>(
       "UpdateNetworkConfig", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostNetworkConfigResult");
   }
   async updatePhysicalNicLinkSpeed(args: {
-  device: string;
+    device: string;
     linkSpeed?: PhysicalNicLinkInfo
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string;
-    linkSpeed?: PhysicalNicLinkInfo
-} & { _this: ObjectReference }, void>(
+      device: string;
+      linkSpeed?: PhysicalNicLinkInfo
+    } & { _this: ObjectReference }, void>(
       "UpdatePhysicalNicLinkSpeed", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updatePortGroup(args: {
-  pgName: string;
+    pgName: string;
     portgrp: HostPortGroupSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pgName: string;
-    portgrp: HostPortGroupSpec
-} & { _this: ObjectReference }, void>(
+      pgName: string;
+      portgrp: HostPortGroupSpec
+    } & { _this: ObjectReference }, void>(
       "UpdatePortGroup", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateServiceConsoleVirtualNic(args: {
-  device: string;
+    device: string;
     nic: HostVirtualNicSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string;
-    nic: HostVirtualNicSpec
-} & { _this: ObjectReference }, void>(
+      device: string;
+      nic: HostVirtualNicSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateServiceConsoleVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVirtualNic(args: {
-  device: string;
+    device: string;
     nic: HostVirtualNicSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  device: string;
-    nic: HostVirtualNicSpec
-} & { _this: ObjectReference }, void>(
+      device: string;
+      nic: HostVirtualNicSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateVirtualNic", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVirtualSwitch(args: {
-  vswitchName: string;
+    vswitchName: string;
     spec: HostVirtualSwitchSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vswitchName: string;
-    spec: HostVirtualSwitchSpec
-} & { _this: ObjectReference }, void>(
+      vswitchName: string;
+      spec: HostVirtualSwitchSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateVirtualSwitch", { _this: { attributes: { type: "HostNetworkSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -24239,41 +24239,41 @@ export class HostVFlashManager extends ManagedObject {
     }
   }
   async configureVFlashResourceEx(args: {
-  devicePath?: string[]
-}): Promise<Task | undefined> {
+    devicePath?: string[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  devicePath?: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      devicePath?: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "ConfigureVFlashResourceEx_Task", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async configureHostVFlashCache(args: {
-  spec: HostVFlashManagerVFlashCacheConfigSpec
-}): Promise<void> {
+    spec: HostVFlashManagerVFlashCacheConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: HostVFlashManagerVFlashCacheConfigSpec
-} & { _this: ObjectReference }, void>(
+      spec: HostVFlashManagerVFlashCacheConfigSpec
+    } & { _this: ObjectReference }, void>(
       "HostConfigVFlashCache", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async configureVFlashResource(args: {
-  spec: HostVFlashManagerVFlashResourceConfigSpec
-}): Promise<void> {
+    spec: HostVFlashManagerVFlashResourceConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: HostVFlashManagerVFlashResourceConfigSpec
-} & { _this: ObjectReference }, void>(
+      spec: HostVFlashManagerVFlashResourceConfigSpec
+    } & { _this: ObjectReference }, void>(
       "HostConfigureVFlashResource", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async getVFlashModuleDefaultConfig(args: {
-  vFlashModule: string
-}): Promise<VirtualDiskVFlashCacheConfigInfo> {
+    vFlashModule: string
+  }): Promise<VirtualDiskVFlashCacheConfigInfo> {
     const result = await this.connection.exec<{
-  vFlashModule: string
-} & { _this: ObjectReference }, VirtualDiskVFlashCacheConfigInfo>(
+      vFlashModule: string
+    } & { _this: ObjectReference }, VirtualDiskVFlashCacheConfigInfo>(
       "HostGetVFlashModuleDefaultConfig", { _this: { attributes: { type: "HostVFlashManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VirtualDiskVFlashCacheConfigInfo");
@@ -24300,13 +24300,13 @@ export class HostProfile extends Profile {
     }
   }
   async execute(args: {
-  host: HostSystem;
+    host: HostSystem;
     deferredParam?: ProfileDeferredPolicyOptionParameter[]
-}): Promise<ProfileExecuteResult> {
+  }): Promise<ProfileExecuteResult> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    deferredParam?: ProfileDeferredPolicyOptionParameter[]
-} & { _this: ObjectReference }, ProfileExecuteResult>(
+      host: HostSystem;
+      deferredParam?: ProfileDeferredPolicyOptionParameter[]
+    } & { _this: ObjectReference }, ProfileExecuteResult>(
       "ExecuteHostProfile", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ProfileExecuteResult");
@@ -24318,21 +24318,21 @@ export class HostProfile extends Profile {
     return constructHelperObjects(this.connection, result, "void");
   }
   async update(args: {
-  config: HostProfileConfigSpec
-}): Promise<void> {
+    config: HostProfileConfigSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  config: HostProfileConfigSpec
-} & { _this: ObjectReference }, void>(
+      config: HostProfileConfigSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateHostProfile", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateReferenceHost(args: {
-  host?: HostSystem
-}): Promise<void> {
+    host?: HostSystem
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  host?: HostSystem
-} & { _this: ObjectReference }, void>(
+      host?: HostSystem
+    } & { _this: ObjectReference }, void>(
       "UpdateReferenceHost", { _this: { attributes: { type: "HostProfile" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -24350,233 +24350,233 @@ export class HostProfileManager extends ProfileManager {
     }
   }
   async applyEntitiesConfiguration(args: {
-  applyConfigSpecs?: ApplyHostProfileConfigurationSpec[]
-}): Promise<Task | undefined> {
+    applyConfigSpecs?: ApplyHostProfileConfigurationSpec[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  applyConfigSpecs?: ApplyHostProfileConfigurationSpec[]
-} & { _this: ObjectReference }, Task | undefined>(
+      applyConfigSpecs?: ApplyHostProfileConfigurationSpec[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "ApplyEntitiesConfig_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async applyHostConfiguration(args: {
-  host: HostSystem;
+    host: HostSystem;
     configSpec: HostConfigSpec;
     userInput?: ProfileDeferredPolicyOptionParameter[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    configSpec: HostConfigSpec;
-    userInput?: ProfileDeferredPolicyOptionParameter[]
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem;
+      configSpec: HostConfigSpec;
+      userInput?: ProfileDeferredPolicyOptionParameter[]
+    } & { _this: ObjectReference }, Task>(
       "ApplyHostConfig_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkAnswerFileStatus(args: {
-  host: HostSystem[]
-}): Promise<Task | undefined> {
+    host: HostSystem[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task | undefined>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckAnswerFileStatus_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async compositeProfile(args: {
-  source: Profile;
+    source: Profile;
     targets?: Profile[];
     toBeMerged?: HostApplyProfile;
     toBeReplacedWith?: HostApplyProfile;
     toBeDeleted?: HostApplyProfile;
     enableStatusToBeCopied?: HostApplyProfile
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  source: Profile;
-    targets?: Profile[];
-    toBeMerged?: HostApplyProfile;
-    toBeReplacedWith?: HostApplyProfile;
-    toBeDeleted?: HostApplyProfile;
-    enableStatusToBeCopied?: HostApplyProfile
-} & { _this: ObjectReference }, Task | undefined>(
+      source: Profile;
+      targets?: Profile[];
+      toBeMerged?: HostApplyProfile;
+      toBeReplacedWith?: HostApplyProfile;
+      toBeDeleted?: HostApplyProfile;
+      enableStatusToBeCopied?: HostApplyProfile
+    } & { _this: ObjectReference }, Task | undefined>(
       "CompositeHostProfile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDefaultProfile(args: {
-  profileType: string;
+    profileType: string;
     profileTypeName?: string;
     profile?: Profile
-}): Promise<ApplyProfile> {
+  }): Promise<ApplyProfile> {
     const result = await this.connection.exec<{
-  profileType: string;
-    profileTypeName?: string;
-    profile?: Profile
-} & { _this: ObjectReference }, ApplyProfile>(
+      profileType: string;
+      profileTypeName?: string;
+      profile?: Profile
+    } & { _this: ObjectReference }, ApplyProfile>(
       "CreateDefaultProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ApplyProfile");
   }
   async exportAnswerFile(args: {
-  host: HostSystem
-}): Promise<Task> {
+    host: HostSystem
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "ExportAnswerFile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async generateConfigTaskList(args: {
-  configSpec: HostConfigSpec;
+    configSpec: HostConfigSpec;
     host: HostSystem
-}): Promise<HostProfileManagerConfigTaskList> {
+  }): Promise<HostProfileManagerConfigTaskList> {
     const result = await this.connection.exec<{
-  configSpec: HostConfigSpec;
-    host: HostSystem
-} & { _this: ObjectReference }, HostProfileManagerConfigTaskList>(
+      configSpec: HostConfigSpec;
+      host: HostSystem
+    } & { _this: ObjectReference }, HostProfileManagerConfigTaskList>(
       "GenerateConfigTaskList", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostProfileManagerConfigTaskList");
   }
   async generateHostConfigTaskSpec(args: {
-  hostsInfo?: StructuredCustomizations[]
-}): Promise<Task | undefined> {
+    hostsInfo?: StructuredCustomizations[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  hostsInfo?: StructuredCustomizations[]
-} & { _this: ObjectReference }, Task | undefined>(
+      hostsInfo?: StructuredCustomizations[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "GenerateHostConfigTaskSpec_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async generateTaskList(args: {
-  configSpec: HostConfigSpec;
+    configSpec: HostConfigSpec;
     host: HostSystem
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  configSpec: HostConfigSpec;
-    host: HostSystem
-} & { _this: ObjectReference }, Task | undefined>(
+      configSpec: HostConfigSpec;
+      host: HostSystem
+    } & { _this: ObjectReference }, Task | undefined>(
       "GenerateHostProfileTaskList_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryAnswerFileStatus(args: {
-  host: HostSystem[]
-}): Promise<AnswerFileStatusResult[] | undefined> {
+    host: HostSystem[]
+  }): Promise<AnswerFileStatusResult[] | undefined> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, AnswerFileStatusResult[] | undefined>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, AnswerFileStatusResult[] | undefined>(
       "QueryAnswerFileStatus", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "AnswerFileStatusResult[]");
   }
   async queryProfileMetadata(args: {
-  profileName?: string[];
+    profileName?: string[];
     profile?: Profile
-}): Promise<ProfileMetadata[] | undefined> {
+  }): Promise<ProfileMetadata[] | undefined> {
     const result = await this.connection.exec<{
-  profileName?: string[];
-    profile?: Profile
-} & { _this: ObjectReference }, ProfileMetadata[] | undefined>(
+      profileName?: string[];
+      profile?: Profile
+    } & { _this: ObjectReference }, ProfileMetadata[] | undefined>(
       "QueryHostProfileMetadata", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ProfileMetadata[]");
   }
   async queryProfileStructure(args: {
-  profile?: Profile
-}): Promise<ProfileProfileStructure> {
+    profile?: Profile
+  }): Promise<ProfileProfileStructure> {
     const result = await this.connection.exec<{
-  profile?: Profile
-} & { _this: ObjectReference }, ProfileProfileStructure>(
+      profile?: Profile
+    } & { _this: ObjectReference }, ProfileProfileStructure>(
       "QueryProfileStructure", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ProfileProfileStructure");
   }
   async retrieveAnswerFile(args: {
-  host: HostSystem
-}): Promise<AnswerFile | undefined> {
+    host: HostSystem
+  }): Promise<AnswerFile | undefined> {
     const result = await this.connection.exec<{
-  host: HostSystem
-} & { _this: ObjectReference }, AnswerFile | undefined>(
+      host: HostSystem
+    } & { _this: ObjectReference }, AnswerFile | undefined>(
       "RetrieveAnswerFile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "AnswerFile");
   }
   async retrieveAnswerFileForProfile(args: {
-  host: HostSystem;
+    host: HostSystem;
     applyProfile: HostApplyProfile
-}): Promise<AnswerFile | undefined> {
+  }): Promise<AnswerFile | undefined> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    applyProfile: HostApplyProfile
-} & { _this: ObjectReference }, AnswerFile | undefined>(
+      host: HostSystem;
+      applyProfile: HostApplyProfile
+    } & { _this: ObjectReference }, AnswerFile | undefined>(
       "RetrieveAnswerFileForProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "AnswerFile");
   }
   async retrieveHostCustomizations(args: {
-  hosts?: HostSystem[]
-}): Promise<StructuredCustomizations[] | undefined> {
+    hosts?: HostSystem[]
+  }): Promise<StructuredCustomizations[] | undefined> {
     const result = await this.connection.exec<{
-  hosts?: HostSystem[]
-} & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
+      hosts?: HostSystem[]
+    } & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
       "RetrieveHostCustomizations", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StructuredCustomizations[]");
   }
   async retrieveHostCustomizationsForProfile(args: {
-  hosts?: HostSystem[];
+    hosts?: HostSystem[];
     applyProfile: HostApplyProfile
-}): Promise<StructuredCustomizations[] | undefined> {
+  }): Promise<StructuredCustomizations[] | undefined> {
     const result = await this.connection.exec<{
-  hosts?: HostSystem[];
-    applyProfile: HostApplyProfile
-} & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
+      hosts?: HostSystem[];
+      applyProfile: HostApplyProfile
+    } & { _this: ObjectReference }, StructuredCustomizations[] | undefined>(
       "RetrieveHostCustomizationsForProfile", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StructuredCustomizations[]");
   }
   async updateAnswerFile(args: {
-  host: HostSystem;
+    host: HostSystem;
     configSpec: AnswerFileCreateSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    configSpec: AnswerFileCreateSpec
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem;
+      configSpec: AnswerFileCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "UpdateAnswerFile_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateHostCustomizations(args: {
-  hostToConfigSpecMap?: HostProfileManagerHostToConfigSpecMap[]
-}): Promise<Task | undefined> {
+    hostToConfigSpecMap?: HostProfileManagerHostToConfigSpecMap[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  hostToConfigSpecMap?: HostProfileManagerHostToConfigSpecMap[]
-} & { _this: ObjectReference }, Task | undefined>(
+      hostToConfigSpecMap?: HostProfileManagerHostToConfigSpecMap[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "UpdateHostCustomizations_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async validateComposition(args: {
-  source: Profile;
+    source: Profile;
     targets?: Profile[];
     toBeMerged?: HostApplyProfile;
     toReplaceWith?: HostApplyProfile;
     toBeDeleted?: HostApplyProfile;
     enableStatusToBeCopied?: HostApplyProfile;
     errorOnly?: boolean
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  source: Profile;
-    targets?: Profile[];
-    toBeMerged?: HostApplyProfile;
-    toReplaceWith?: HostApplyProfile;
-    toBeDeleted?: HostApplyProfile;
-    enableStatusToBeCopied?: HostApplyProfile;
-    errorOnly?: boolean
-} & { _this: ObjectReference }, Task | undefined>(
+      source: Profile;
+      targets?: Profile[];
+      toBeMerged?: HostApplyProfile;
+      toReplaceWith?: HostApplyProfile;
+      toBeDeleted?: HostApplyProfile;
+      enableStatusToBeCopied?: HostApplyProfile;
+      errorOnly?: boolean
+    } & { _this: ObjectReference }, Task | undefined>(
       "ValidateHostProfileComposition_Task", { _this: { attributes: { type: "HostProfileManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -24607,77 +24607,77 @@ export class VirtualMachineProvisioningChecker extends ManagedObject {
     }
   }
   async checkClone(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     folder: Folder;
     name: string;
     spec: VirtualMachineCloneSpec;
     testType?: string[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    folder: Folder;
-    name: string;
-    spec: VirtualMachineCloneSpec;
-    testType?: string[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      folder: Folder;
+      name: string;
+      spec: VirtualMachineCloneSpec;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task>(
       "CheckClone_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkInstantClone(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     spec: VirtualMachineInstantCloneSpec;
     testType?: string[]
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    spec: VirtualMachineInstantCloneSpec;
-    testType?: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      vm: VirtualMachine;
+      spec: VirtualMachineInstantCloneSpec;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "CheckInstantClone_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkMigrate(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host?: HostSystem;
     pool?: ResourcePool;
     state?: VirtualMachinePowerState;
     testType?: string[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host?: HostSystem;
-    pool?: ResourcePool;
-    state?: VirtualMachinePowerState;
-    testType?: string[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      host?: HostSystem;
+      pool?: ResourcePool;
+      state?: VirtualMachinePowerState;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task>(
       "CheckMigrate_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async checkRelocate(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     spec: VirtualMachineRelocateSpec;
     testType?: string[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    spec: VirtualMachineRelocateSpec;
-    testType?: string[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine;
+      spec: VirtualMachineRelocateSpec;
+      testType?: string[]
+    } & { _this: ObjectReference }, Task>(
       "CheckRelocate_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryVMotionCompatibilityEx(args: {
-  vm: VirtualMachine[];
+    vm: VirtualMachine[];
     host: HostSystem[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine[];
-    host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine[];
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "QueryVMotionCompatibilityEx_Task", { _this: { attributes: { type: "VirtualMachineProvisioningChecker" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -24695,319 +24695,319 @@ export class HostVStorageObjectManager extends VStorageObjectManagerBase {
     }
   }
   async clearVStorageObjectControlFlags(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     controlFlags?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    controlFlags?: string[]
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      controlFlags?: string[]
+    } & { _this: ObjectReference }, void>(
       "HostClearVStorageObjectControlFlags", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async cloneVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     spec: VslmCloneSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    spec: VslmCloneSpec
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      spec: VslmCloneSpec
+    } & { _this: ObjectReference }, Task>(
       "HostCloneVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDisk(args: {
-  spec: VslmCreateSpec
-}): Promise<Task> {
+    spec: VslmCreateSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: VslmCreateSpec
-} & { _this: ObjectReference }, Task>(
+      spec: VslmCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "HostCreateDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "HostDeleteVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async extendDisk(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     newCapacityInMB: number
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    newCapacityInMB: number
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      newCapacityInMB: number
+    } & { _this: ObjectReference }, Task>(
       "HostExtendDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async inflateDisk(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "HostInflateDisk_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async listVStorageObject(args: {
-  datastore: Datastore
-}): Promise<ID[] | undefined> {
+    datastore: Datastore
+  }): Promise<ID[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, ID[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, ID[] | undefined>(
       "HostListVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ID[]");
   }
   async reconcileDatastoreInventory(args: {
-  datastore: Datastore
-}): Promise<Task> {
+    datastore: Datastore
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "HostReconcileDatastoreInventory_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async registerDisk(args: {
-  path: string;
+    path: string;
     name?: string
-}): Promise<VStorageObject> {
+  }): Promise<VStorageObject> {
     const result = await this.connection.exec<{
-  path: string;
-    name?: string
-} & { _this: ObjectReference }, VStorageObject>(
+      path: string;
+      name?: string
+    } & { _this: ObjectReference }, VStorageObject>(
       "HostRegisterDisk", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async relocateVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     spec: VslmRelocateSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    spec: VslmRelocateSpec
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      spec: VslmRelocateSpec
+    } & { _this: ObjectReference }, Task>(
       "HostRelocateVStorageObject_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async renameVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     name: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    name: string
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      name: string
+    } & { _this: ObjectReference }, void>(
       "HostRenameVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveVStorageInfrastructureObjectPolicy(args: {
-  datastore: Datastore
-}): Promise<vslmInfrastructureObjectPolicy[] | undefined> {
+    datastore: Datastore
+  }): Promise<vslmInfrastructureObjectPolicy[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
       "HostRetrieveVStorageInfrastructureObjectPolicy", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "vslmInfrastructureObjectPolicy[]");
   }
   async retrieveVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObject> {
+  }): Promise<VStorageObject> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObject>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObject>(
       "HostRetrieveVStorageObject", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async retrieveVStorageObjectMetadata(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId?: ID;
     prefix?: string
-}): Promise<KeyValue[] | undefined> {
+  }): Promise<KeyValue[] | undefined> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId?: ID;
-    prefix?: string
-} & { _this: ObjectReference }, KeyValue[] | undefined>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId?: ID;
+      prefix?: string
+    } & { _this: ObjectReference }, KeyValue[] | undefined>(
       "HostRetrieveVStorageObjectMetadata", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "KeyValue[]");
   }
   async retrieveVStorageObjectMetadataValue(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId?: ID;
     key: string
-}): Promise<string> {
+  }): Promise<string> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId?: ID;
-    key: string
-} & { _this: ObjectReference }, string>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId?: ID;
+      key: string
+    } & { _this: ObjectReference }, string>(
       "HostRetrieveVStorageObjectMetadataValue", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string");
   }
   async retrieveVStorageObjectState(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObjectStateInfo> {
+  }): Promise<VStorageObjectStateInfo> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObjectStateInfo>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObjectStateInfo>(
       "HostRetrieveVStorageObjectState", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectStateInfo");
   }
   async scheduleReconcileDatastoreInventory(args: {
-  datastore: Datastore
-}): Promise<void> {
+    datastore: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, void>(
       "HostScheduleReconcileDatastoreInventory", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setVStorageObjectControlFlags(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     controlFlags?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    controlFlags?: string[]
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      controlFlags?: string[]
+    } & { _this: ObjectReference }, void>(
       "HostSetVStorageObjectControlFlags", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVStorageObjectMetadata(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     metadata?: KeyValue[];
     deleteKeys?: string[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    metadata?: KeyValue[];
-    deleteKeys?: string[]
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      metadata?: KeyValue[];
+      deleteKeys?: string[]
+    } & { _this: ObjectReference }, Task>(
       "HostUpdateVStorageObjectMetadata_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDiskFromSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID;
     name: string;
     profile?: VirtualMachineProfileSpec[];
     crypto?: CryptoSpec;
     path?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID;
-    name: string;
-    profile?: VirtualMachineProfileSpec[];
-    crypto?: CryptoSpec;
-    path?: string
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID;
+      name: string;
+      profile?: VirtualMachineProfileSpec[];
+      crypto?: CryptoSpec;
+      path?: string
+    } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectCreateDiskFromSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     description: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    description: string
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      description: string
+    } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectCreateSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID
+    } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectDeleteSnapshot_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveSnapshotInfo(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObjectSnapshotInfo> {
+  }): Promise<VStorageObjectSnapshotInfo> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
       "HostVStorageObjectRetrieveSnapshotInfo", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotInfo");
   }
   async RevertVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID
+    } & { _this: ObjectReference }, Task>(
       "HostVStorageObjectRevert_Task", { _this: { attributes: { type: "HostVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -25025,403 +25025,403 @@ export class VcenterVStorageObjectManager extends VStorageObjectManagerBase {
     }
   }
   async attachTagToVStorageObject(args: {
-  id: ID;
+    id: ID;
     category: string;
     tag: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    category: string;
-    tag: string
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      category: string;
+      tag: string
+    } & { _this: ObjectReference }, void>(
       "AttachTagToVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async clearVStorageObjectControlFlags(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     controlFlags?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    controlFlags?: string[]
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      controlFlags?: string[]
+    } & { _this: ObjectReference }, void>(
       "ClearVStorageObjectControlFlags", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async cloneVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     spec: VslmCloneSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    spec: VslmCloneSpec
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      spec: VslmCloneSpec
+    } & { _this: ObjectReference }, Task>(
       "CloneVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDiskFromSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID;
     name: string;
     profile?: VirtualMachineProfileSpec[];
     crypto?: CryptoSpec;
     path?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID;
-    name: string;
-    profile?: VirtualMachineProfileSpec[];
-    crypto?: CryptoSpec;
-    path?: string
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID;
+      name: string;
+      profile?: VirtualMachineProfileSpec[];
+      crypto?: CryptoSpec;
+      path?: string
+    } & { _this: ObjectReference }, Task>(
       "CreateDiskFromSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDisk(args: {
-  spec: VslmCreateSpec
-}): Promise<Task> {
+    spec: VslmCreateSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: VslmCreateSpec
-} & { _this: ObjectReference }, Task>(
+      spec: VslmCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID
+    } & { _this: ObjectReference }, Task>(
       "DeleteSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async deleteVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "DeleteVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async detachTagFromVStorageObject(args: {
-  id: ID;
+    id: ID;
     category: string;
     tag: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    category: string;
-    tag: string
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      category: string;
+      tag: string
+    } & { _this: ObjectReference }, void>(
       "DetachTagFromVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async extendDisk(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     newCapacityInMB: number
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    newCapacityInMB: number
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      newCapacityInMB: number
+    } & { _this: ObjectReference }, Task>(
       "ExtendDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async inflateDisk(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "InflateDisk_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async listTagsAttachedToVStorageObject(args: {
-  id: ID
-}): Promise<VslmTagEntry[] | undefined> {
+    id: ID
+  }): Promise<VslmTagEntry[] | undefined> {
     const result = await this.connection.exec<{
-  id: ID
-} & { _this: ObjectReference }, VslmTagEntry[] | undefined>(
+      id: ID
+    } & { _this: ObjectReference }, VslmTagEntry[] | undefined>(
       "ListTagsAttachedToVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VslmTagEntry[]");
   }
   async listVStorageObject(args: {
-  datastore: Datastore
-}): Promise<ID[] | undefined> {
+    datastore: Datastore
+  }): Promise<ID[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, ID[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, ID[] | undefined>(
       "ListVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ID[]");
   }
   async listVStorageObjectsAttachedToTag(args: {
-  category: string;
+    category: string;
     tag: string
-}): Promise<ID[] | undefined> {
+  }): Promise<ID[] | undefined> {
     const result = await this.connection.exec<{
-  category: string;
-    tag: string
-} & { _this: ObjectReference }, ID[] | undefined>(
+      category: string;
+      tag: string
+    } & { _this: ObjectReference }, ID[] | undefined>(
       "ListVStorageObjectsAttachedToTag", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ID[]");
   }
   async reconcileDatastoreInventory(args: {
-  datastore: Datastore
-}): Promise<Task> {
+    datastore: Datastore
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, Task>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, Task>(
       "ReconcileDatastoreInventory_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async registerDisk(args: {
-  path: string;
+    path: string;
     name?: string
-}): Promise<VStorageObject> {
+  }): Promise<VStorageObject> {
     const result = await this.connection.exec<{
-  path: string;
-    name?: string
-} & { _this: ObjectReference }, VStorageObject>(
+      path: string;
+      name?: string
+    } & { _this: ObjectReference }, VStorageObject>(
       "RegisterDisk", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async relocateVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     spec: VslmRelocateSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    spec: VslmRelocateSpec
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      spec: VslmRelocateSpec
+    } & { _this: ObjectReference }, Task>(
       "RelocateVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async renameVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     name: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    name: string
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      name: string
+    } & { _this: ObjectReference }, void>(
       "RenameVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async retrieveSnapshotDetails(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID
-}): Promise<VStorageObjectSnapshotDetails> {
+  }): Promise<VStorageObjectSnapshotDetails> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID
-} & { _this: ObjectReference }, VStorageObjectSnapshotDetails>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID
+    } & { _this: ObjectReference }, VStorageObjectSnapshotDetails>(
       "RetrieveSnapshotDetails", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotDetails");
   }
   async retrieveSnapshotInfo(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObjectSnapshotInfo> {
+  }): Promise<VStorageObjectSnapshotInfo> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObjectSnapshotInfo>(
       "RetrieveSnapshotInfo", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectSnapshotInfo");
   }
   async retrieveVStorageInfrastructureObjectPolicy(args: {
-  datastore: Datastore
-}): Promise<vslmInfrastructureObjectPolicy[] | undefined> {
+    datastore: Datastore
+  }): Promise<vslmInfrastructureObjectPolicy[] | undefined> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, vslmInfrastructureObjectPolicy[] | undefined>(
       "RetrieveVStorageInfrastructureObjectPolicy", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "vslmInfrastructureObjectPolicy[]");
   }
   async retrieveVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObject> {
+  }): Promise<VStorageObject> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObject>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObject>(
       "RetrieveVStorageObject", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObject");
   }
   async retrieveVStorageObjectAssociations(args: {
-  ids?: RetrieveVStorageObjSpec[]
-}): Promise<VStorageObjectAssociations[] | undefined> {
+    ids?: RetrieveVStorageObjSpec[]
+  }): Promise<VStorageObjectAssociations[] | undefined> {
     const result = await this.connection.exec<{
-  ids?: RetrieveVStorageObjSpec[]
-} & { _this: ObjectReference }, VStorageObjectAssociations[] | undefined>(
+      ids?: RetrieveVStorageObjSpec[]
+    } & { _this: ObjectReference }, VStorageObjectAssociations[] | undefined>(
       "RetrieveVStorageObjectAssociations", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectAssociations[]");
   }
   async retrieveVStorageObjectState(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore
-}): Promise<VStorageObjectStateInfo> {
+  }): Promise<VStorageObjectStateInfo> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore
-} & { _this: ObjectReference }, VStorageObjectStateInfo>(
+      id: ID;
+      datastore: Datastore
+    } & { _this: ObjectReference }, VStorageObjectStateInfo>(
       "RetrieveVStorageObjectState", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "VStorageObjectStateInfo");
   }
   async RevertVStorageObject(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID
+    } & { _this: ObjectReference }, Task>(
       "RevertVStorageObject_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async scheduleReconcileDatastoreInventory(args: {
-  datastore: Datastore
-}): Promise<void> {
+    datastore: Datastore
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  datastore: Datastore
-} & { _this: ObjectReference }, void>(
+      datastore: Datastore
+    } & { _this: ObjectReference }, void>(
       "ScheduleReconcileDatastoreInventory", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setVStorageObjectControlFlags(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     controlFlags?: string[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    controlFlags?: string[]
-} & { _this: ObjectReference }, void>(
+      id: ID;
+      datastore: Datastore;
+      controlFlags?: string[]
+    } & { _this: ObjectReference }, void>(
       "SetVStorageObjectControlFlags", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVStorageInfrastructureObjectPolicy(args: {
-  spec: vslmInfrastructureObjectPolicySpec
-}): Promise<Task> {
+    spec: vslmInfrastructureObjectPolicySpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: vslmInfrastructureObjectPolicySpec
-} & { _this: ObjectReference }, Task>(
+      spec: vslmInfrastructureObjectPolicySpec
+    } & { _this: ObjectReference }, Task>(
       "UpdateVStorageInfrastructureObjectPolicy_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVStorageObjectCrypto(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     profile?: VirtualMachineProfileSpec[];
     disksCrypto?: DiskCryptoSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    profile?: VirtualMachineProfileSpec[];
-    disksCrypto?: DiskCryptoSpec
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      profile?: VirtualMachineProfileSpec[];
+      disksCrypto?: DiskCryptoSpec
+    } & { _this: ObjectReference }, Task>(
       "UpdateVStorageObjectCrypto_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVStorageObjectPolicy(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     profile?: VirtualMachineProfileSpec[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    profile?: VirtualMachineProfileSpec[]
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      profile?: VirtualMachineProfileSpec[]
+    } & { _this: ObjectReference }, Task>(
       "UpdateVStorageObjectPolicy_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createSnapshot(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     description: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    description: string
-} & { _this: ObjectReference }, Task>(
+      id: ID;
+      datastore: Datastore;
+      description: string
+    } & { _this: ObjectReference }, Task>(
       "VStorageObjectCreateSnapshot_Task", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryChangedDiskAreas(args: {
-  id: ID;
+    id: ID;
     datastore: Datastore;
     snapshotId: ID;
     startOffset: number;
     changeId: string
-}): Promise<DiskChangeInfo> {
+  }): Promise<DiskChangeInfo> {
     const result = await this.connection.exec<{
-  id: ID;
-    datastore: Datastore;
-    snapshotId: ID;
-    startOffset: number;
-    changeId: string
-} & { _this: ObjectReference }, DiskChangeInfo>(
+      id: ID;
+      datastore: Datastore;
+      snapshotId: ID;
+      startOffset: number;
+      changeId: string
+    } & { _this: ObjectReference }, DiskChangeInfo>(
       "VstorageObjectVCenterQueryChangedDiskAreas", { _this: { attributes: { type: "VcenterVStorageObjectManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DiskChangeInfo");
@@ -25446,13 +25446,13 @@ export class ComputeResource extends ManagedEntity {
     }
   }
   async reconfigureEx(args: {
-  spec: ComputeResourceConfigSpec;
+    spec: ComputeResourceConfigSpec;
     modify: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: ComputeResourceConfigSpec;
-    modify: boolean
-} & { _this: ObjectReference }, Task>(
+      spec: ComputeResourceConfigSpec;
+      modify: boolean
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureComputeResource_Task", { _this: { attributes: { type: "ComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -25476,63 +25476,63 @@ export class Datacenter extends ManagedEntity {
     }
   }
   async batchQueryConnectInfo(args: {
-  hostSpecs?: HostConnectSpec[]
-}): Promise<DatacenterBasicConnectInfo[] | undefined> {
+    hostSpecs?: HostConnectSpec[]
+  }): Promise<DatacenterBasicConnectInfo[] | undefined> {
     const result = await this.connection.exec<{
-  hostSpecs?: HostConnectSpec[]
-} & { _this: ObjectReference }, DatacenterBasicConnectInfo[] | undefined>(
+      hostSpecs?: HostConnectSpec[]
+    } & { _this: ObjectReference }, DatacenterBasicConnectInfo[] | undefined>(
       "BatchQueryConnectInfo", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DatacenterBasicConnectInfo[]");
   }
   async powerOnVm(args: {
-  vm: VirtualMachine[];
+    vm: VirtualMachine[];
     option?: OptionValue[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine[];
-    option?: OptionValue[]
-} & { _this: ObjectReference }, Task>(
+      vm: VirtualMachine[];
+      option?: OptionValue[]
+    } & { _this: ObjectReference }, Task>(
       "PowerOnMultiVM_Task", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryConnectionInfo(args: {
-  hostname: string;
+    hostname: string;
     port: number;
     username: string;
     password: string;
     sslThumbprint?: string
-}): Promise<HostConnectInfo> {
+  }): Promise<HostConnectInfo> {
     const result = await this.connection.exec<{
-  hostname: string;
-    port: number;
-    username: string;
-    password: string;
-    sslThumbprint?: string
-} & { _this: ObjectReference }, HostConnectInfo>(
+      hostname: string;
+      port: number;
+      username: string;
+      password: string;
+      sslThumbprint?: string
+    } & { _this: ObjectReference }, HostConnectInfo>(
       "QueryConnectionInfo", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async queryConnectionInfoViaSpec(args: {
-  spec: HostConnectSpec
-}): Promise<HostConnectInfo> {
+    spec: HostConnectSpec
+  }): Promise<HostConnectInfo> {
     const result = await this.connection.exec<{
-  spec: HostConnectSpec
-} & { _this: ObjectReference }, HostConnectInfo>(
+      spec: HostConnectSpec
+    } & { _this: ObjectReference }, HostConnectInfo>(
       "QueryConnectionInfoViaSpec", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async reconfigure(args: {
-  spec: DatacenterConfigSpec;
+    spec: DatacenterConfigSpec;
     modify: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DatacenterConfigSpec;
-    modify: boolean
-} & { _this: ObjectReference }, Task>(
+      spec: DatacenterConfigSpec;
+      modify: boolean
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureDatacenter_Task", { _this: { attributes: { type: "Datacenter" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -25592,31 +25592,31 @@ export class Datastore extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async renameDatastore(args: {
-  newName: string
-}): Promise<void> {
+    newName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  newName: string
-} & { _this: ObjectReference }, void>(
+      newName: string
+    } & { _this: ObjectReference }, void>(
       "RenameDatastore", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVVolVirtualMachineFiles(args: {
-  failoverPair?: DatastoreVVolContainerFailoverPair[]
-}): Promise<Task> {
+    failoverPair?: DatastoreVVolContainerFailoverPair[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  failoverPair?: DatastoreVVolContainerFailoverPair[]
-} & { _this: ObjectReference }, Task>(
+      failoverPair?: DatastoreVVolContainerFailoverPair[]
+    } & { _this: ObjectReference }, Task>(
       "UpdateVVolVirtualMachineFiles_Task", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateVirtualMachineFiles(args: {
-  mountPathDatastoreMapping: DatastoreMountPathDatastorePair[]
-}): Promise<Task> {
+    mountPathDatastoreMapping: DatastoreMountPathDatastorePair[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  mountPathDatastoreMapping: DatastoreMountPathDatastorePair[]
-} & { _this: ObjectReference }, Task>(
+      mountPathDatastoreMapping: DatastoreMountPathDatastorePair[]
+    } & { _this: ObjectReference }, Task>(
       "UpdateVirtualMachineFiles_Task", { _this: { attributes: { type: "Datastore" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -25640,125 +25640,125 @@ export class DistributedVirtualSwitch extends ManagedEntity {
     }
   }
   async addPortgroups(args: {
-  spec: DVPortgroupConfigSpec[]
-}): Promise<Task> {
+    spec: DVPortgroupConfigSpec[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DVPortgroupConfigSpec[]
-} & { _this: ObjectReference }, Task>(
+      spec: DVPortgroupConfigSpec[]
+    } & { _this: ObjectReference }, Task>(
       "AddDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async addNetworkResourcePool(args: {
-  configSpec: DVSNetworkResourcePoolConfigSpec[]
-}): Promise<void> {
+    configSpec: DVSNetworkResourcePoolConfigSpec[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  configSpec: DVSNetworkResourcePoolConfigSpec[]
-} & { _this: ObjectReference }, void>(
+      configSpec: DVSNetworkResourcePoolConfigSpec[]
+    } & { _this: ObjectReference }, void>(
       "AddNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async addPortgroup(args: {
-  spec: DVPortgroupConfigSpec
-}): Promise<Task> {
+    spec: DVPortgroupConfigSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DVPortgroupConfigSpec
-} & { _this: ObjectReference }, Task>(
+      spec: DVPortgroupConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateDVPortgroup_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async rollback(args: {
-  entityBackup?: EntityBackupConfig
-}): Promise<Task | undefined> {
+    entityBackup?: EntityBackupConfig
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  entityBackup?: EntityBackupConfig
-} & { _this: ObjectReference }, Task | undefined>(
+      entityBackup?: EntityBackupConfig
+    } & { _this: ObjectReference }, Task | undefined>(
       "DVSRollback_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigureVmVnicNetworkResourcePool(args: {
-  configSpec: DvsVmVnicResourcePoolConfigSpec[]
-}): Promise<Task> {
+    configSpec: DvsVmVnicResourcePoolConfigSpec[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  configSpec: DvsVmVnicResourcePoolConfigSpec[]
-} & { _this: ObjectReference }, Task>(
+      configSpec: DvsVmVnicResourcePoolConfigSpec[]
+    } & { _this: ObjectReference }, Task>(
       "DvsReconfigureVmVnicNetworkResourcePool_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async enableNetworkResourceManagement(args: {
-  enable: boolean
-}): Promise<void> {
+    enable: boolean
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  enable: boolean
-} & { _this: ObjectReference }, void>(
+      enable: boolean
+    } & { _this: ObjectReference }, void>(
       "EnableNetworkResourceManagement", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async fetchPortKeys(args: {
-  criteria?: DistributedVirtualSwitchPortCriteria
-}): Promise<string[] | undefined> {
+    criteria?: DistributedVirtualSwitchPortCriteria
+  }): Promise<string[] | undefined> {
     const result = await this.connection.exec<{
-  criteria?: DistributedVirtualSwitchPortCriteria
-} & { _this: ObjectReference }, string[] | undefined>(
+      criteria?: DistributedVirtualSwitchPortCriteria
+    } & { _this: ObjectReference }, string[] | undefined>(
       "FetchDVPortKeys", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "string[]");
   }
   async fetchPorts(args: {
-  criteria?: DistributedVirtualSwitchPortCriteria
-}): Promise<DistributedVirtualPort[] | undefined> {
+    criteria?: DistributedVirtualSwitchPortCriteria
+  }): Promise<DistributedVirtualPort[] | undefined> {
     const result = await this.connection.exec<{
-  criteria?: DistributedVirtualSwitchPortCriteria
-} & { _this: ObjectReference }, DistributedVirtualPort[] | undefined>(
+      criteria?: DistributedVirtualSwitchPortCriteria
+    } & { _this: ObjectReference }, DistributedVirtualPort[] | undefined>(
       "FetchDVPorts", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualPort[]");
   }
   async lookupPortgroup(args: {
-  portgroupKey: string
-}): Promise<DistributedVirtualPortgroup | undefined> {
+    portgroupKey: string
+  }): Promise<DistributedVirtualPortgroup | undefined> {
     const result = await this.connection.exec<{
-  portgroupKey: string
-} & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
+      portgroupKey: string
+    } & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
       "LookupDvPortGroup", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualPortgroup");
   }
   async merge(args: {
-  dvs: DistributedVirtualSwitch
-}): Promise<Task> {
+    dvs: DistributedVirtualSwitch
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  dvs: DistributedVirtualSwitch
-} & { _this: ObjectReference }, Task>(
+      dvs: DistributedVirtualSwitch
+    } & { _this: ObjectReference }, Task>(
       "MergeDvs_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async movePort(args: {
-  portKey: string[];
+    portKey: string[];
     destinationPortgroupKey?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  portKey: string[];
-    destinationPortgroupKey?: string
-} & { _this: ObjectReference }, Task>(
+      portKey: string[];
+      destinationPortgroupKey?: string
+    } & { _this: ObjectReference }, Task>(
       "MoveDVPort_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async performProductSpecOperation(args: {
-  operation: string;
+    operation: string;
     productSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  operation: string;
-    productSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, Task>(
+      operation: string;
+      productSpec?: DistributedVirtualSwitchProductSpec
+    } & { _this: ObjectReference }, Task>(
       "PerformDvsProductSpecOperation_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -25770,81 +25770,81 @@ export class DistributedVirtualSwitch extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "number[]");
   }
   async reconfigurePort(args: {
-  port: DVPortConfigSpec[]
-}): Promise<Task> {
+    port: DVPortConfigSpec[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  port: DVPortConfigSpec[]
-} & { _this: ObjectReference }, Task>(
+      port: DVPortConfigSpec[]
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureDVPort_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async reconfigure(args: {
-  spec: DVSConfigSpec
-}): Promise<Task> {
+    spec: DVSConfigSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DVSConfigSpec
-} & { _this: ObjectReference }, Task>(
+      spec: DVSConfigSpec
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureDvs_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async rectifyHost(args: {
-  hosts?: HostSystem[]
-}): Promise<Task> {
+    hosts?: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  hosts?: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      hosts?: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "RectifyDvsHost_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async refreshPortState(args: {
-  portKeys?: string[]
-}): Promise<void> {
+    portKeys?: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  portKeys?: string[]
-} & { _this: ObjectReference }, void>(
+      portKeys?: string[]
+    } & { _this: ObjectReference }, void>(
       "RefreshDVPortState", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeNetworkResourcePool(args: {
-  key: string[]
-}): Promise<void> {
+    key: string[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string[]
-} & { _this: ObjectReference }, void>(
+      key: string[]
+    } & { _this: ObjectReference }, void>(
       "RemoveNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateHealthCheckConfig(args: {
-  healthCheckConfig: DVSHealthCheckConfig[]
-}): Promise<Task> {
+    healthCheckConfig: DVSHealthCheckConfig[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  healthCheckConfig: DVSHealthCheckConfig[]
-} & { _this: ObjectReference }, Task>(
+      healthCheckConfig: DVSHealthCheckConfig[]
+    } & { _this: ObjectReference }, Task>(
       "UpdateDVSHealthCheckConfig_Task", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateCapability(args: {
-  capability: DVSCapability
-}): Promise<void> {
+    capability: DVSCapability
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  capability: DVSCapability
-} & { _this: ObjectReference }, void>(
+      capability: DVSCapability
+    } & { _this: ObjectReference }, void>(
       "UpdateDvsCapability", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateNetworkResourcePool(args: {
-  configSpec: DVSNetworkResourcePoolConfigSpec[]
-}): Promise<void> {
+    configSpec: DVSNetworkResourcePoolConfigSpec[]
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  configSpec: DVSNetworkResourcePoolConfigSpec[]
-} & { _this: ObjectReference }, void>(
+      configSpec: DVSNetworkResourcePoolConfigSpec[]
+    } & { _this: ObjectReference }, void>(
       "UpdateNetworkResourcePool", { _this: { attributes: { type: "DistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -25864,155 +25864,155 @@ export class Folder extends ManagedEntity {
     }
   }
   async addStandaloneHost(args: {
-  spec: HostConnectSpec;
+    spec: HostConnectSpec;
     compResSpec?: ComputeResourceConfigSpec;
     addConnected: boolean;
     license?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: HostConnectSpec;
-    compResSpec?: ComputeResourceConfigSpec;
-    addConnected: boolean;
-    license?: string
-} & { _this: ObjectReference }, Task>(
+      spec: HostConnectSpec;
+      compResSpec?: ComputeResourceConfigSpec;
+      addConnected: boolean;
+      license?: string
+    } & { _this: ObjectReference }, Task>(
       "AddStandaloneHost_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async batchAddHostsToCluster(args: {
-  cluster: ClusterComputeResource;
+    cluster: ClusterComputeResource;
     newHosts?: FolderNewHostSpec[];
     existingHosts?: HostSystem[];
     compResSpec?: ComputeResourceConfigSpec;
     desiredState?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  cluster: ClusterComputeResource;
-    newHosts?: FolderNewHostSpec[];
-    existingHosts?: HostSystem[];
-    compResSpec?: ComputeResourceConfigSpec;
-    desiredState?: string
-} & { _this: ObjectReference }, Task>(
+      cluster: ClusterComputeResource;
+      newHosts?: FolderNewHostSpec[];
+      existingHosts?: HostSystem[];
+      compResSpec?: ComputeResourceConfigSpec;
+      desiredState?: string
+    } & { _this: ObjectReference }, Task>(
       "BatchAddHostsToCluster_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async batchAddStandaloneHosts(args: {
-  newHosts?: FolderNewHostSpec[];
+    newHosts?: FolderNewHostSpec[];
     compResSpec?: ComputeResourceConfigSpec;
     addConnected: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  newHosts?: FolderNewHostSpec[];
-    compResSpec?: ComputeResourceConfigSpec;
-    addConnected: boolean
-} & { _this: ObjectReference }, Task>(
+      newHosts?: FolderNewHostSpec[];
+      compResSpec?: ComputeResourceConfigSpec;
+      addConnected: boolean
+    } & { _this: ObjectReference }, Task>(
       "BatchAddStandaloneHosts_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createCluster(args: {
-  name: string;
+    name: string;
     spec: ClusterConfigSpec
-}): Promise<ClusterComputeResource> {
+  }): Promise<ClusterComputeResource> {
     const result = await this.connection.exec<{
-  name: string;
-    spec: ClusterConfigSpec
-} & { _this: ObjectReference }, ClusterComputeResource>(
+      name: string;
+      spec: ClusterConfigSpec
+    } & { _this: ObjectReference }, ClusterComputeResource>(
       "CreateCluster", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterComputeResource");
   }
   async createClusterEx(args: {
-  name: string;
+    name: string;
     spec: ClusterConfigSpecEx
-}): Promise<ClusterComputeResource> {
+  }): Promise<ClusterComputeResource> {
     const result = await this.connection.exec<{
-  name: string;
-    spec: ClusterConfigSpecEx
-} & { _this: ObjectReference }, ClusterComputeResource>(
+      name: string;
+      spec: ClusterConfigSpecEx
+    } & { _this: ObjectReference }, ClusterComputeResource>(
       "CreateClusterEx", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterComputeResource");
   }
   async createDistributedVirtualSwitch(args: {
-  spec: DVSCreateSpec
-}): Promise<Task> {
+    spec: DVSCreateSpec
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: DVSCreateSpec
-} & { _this: ObjectReference }, Task>(
+      spec: DVSCreateSpec
+    } & { _this: ObjectReference }, Task>(
       "CreateDVS_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async createDatacenter(args: {
-  name: string
-}): Promise<Datacenter> {
+    name: string
+  }): Promise<Datacenter> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, Datacenter>(
+      name: string
+    } & { _this: ObjectReference }, Datacenter>(
       "CreateDatacenter", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Datacenter");
   }
   async createFolder(args: {
-  name: string
-}): Promise<Folder> {
+    name: string
+  }): Promise<Folder> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, Folder>(
+      name: string
+    } & { _this: ObjectReference }, Folder>(
       "CreateFolder", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Folder");
   }
   async createStoragePod(args: {
-  name: string
-}): Promise<StoragePod> {
+    name: string
+  }): Promise<StoragePod> {
     const result = await this.connection.exec<{
-  name: string
-} & { _this: ObjectReference }, StoragePod>(
+      name: string
+    } & { _this: ObjectReference }, StoragePod>(
       "CreateStoragePod", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "StoragePod");
   }
   async createVm(args: {
-  config: VirtualMachineConfigSpec;
+    config: VirtualMachineConfigSpec;
     pool: ResourcePool;
     host?: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  config: VirtualMachineConfigSpec;
-    pool: ResourcePool;
-    host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      config: VirtualMachineConfigSpec;
+      pool: ResourcePool;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "CreateVM_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async moveInto(args: {
-  list: ManagedEntity[]
-}): Promise<Task> {
+    list: ManagedEntity[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  list: ManagedEntity[]
-} & { _this: ObjectReference }, Task>(
+      list: ManagedEntity[]
+    } & { _this: ObjectReference }, Task>(
       "MoveIntoFolder_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async registerVm(args: {
-  path: string;
+    path: string;
     name?: string;
     asTemplate: boolean;
     pool?: ResourcePool;
     host?: HostSystem
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  path: string;
-    name?: string;
-    asTemplate: boolean;
-    pool?: ResourcePool;
-    host?: HostSystem
-} & { _this: ObjectReference }, Task>(
+      path: string;
+      name?: string;
+      asTemplate: boolean;
+      pool?: ResourcePool;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Task>(
       "RegisterVM_Task", { _this: { attributes: { type: "Folder" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26060,11 +26060,11 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "HostServiceTicket");
   }
   async configureCryptoKey(args: {
-  keyId?: CryptoKeyId
-}): Promise<void> {
+    keyId?: CryptoKeyId
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  keyId?: CryptoKeyId
-} & { _this: ObjectReference }, void>(
+      keyId?: CryptoKeyId
+    } & { _this: ObjectReference }, void>(
       "ConfigureCryptoKey", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26076,11 +26076,11 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async enableCrypto(args: {
-  keyPlain: CryptoKeyPlain
-}): Promise<void> {
+    keyPlain: CryptoKeyPlain
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  keyPlain: CryptoKeyPlain
-} & { _this: ObjectReference }, void>(
+      keyPlain: CryptoKeyPlain
+    } & { _this: ObjectReference }, void>(
       "EnableCrypto", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26092,15 +26092,15 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async enterMaintenanceMode(args: {
-  timeout: number;
+    timeout: number;
     evacuatePoweredOffVms?: boolean;
     maintenanceSpec?: HostMaintenanceSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  timeout: number;
-    evacuatePoweredOffVms?: boolean;
-    maintenanceSpec?: HostMaintenanceSpec
-} & { _this: ObjectReference }, Task>(
+      timeout: number;
+      evacuatePoweredOffVms?: boolean;
+      maintenanceSpec?: HostMaintenanceSpec
+    } & { _this: ObjectReference }, Task>(
       "EnterMaintenanceMode_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26112,33 +26112,33 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "void");
   }
   async exitMaintenanceMode(args: {
-  timeout: number
-}): Promise<Task> {
+    timeout: number
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  timeout: number
-} & { _this: ObjectReference }, Task>(
+      timeout: number
+    } & { _this: ObjectReference }, Task>(
       "ExitMaintenanceMode_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async enterStandbyMode(args: {
-  timeoutSec: number;
+    timeoutSec: number;
     evacuatePoweredOffVms?: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  timeoutSec: number;
-    evacuatePoweredOffVms?: boolean
-} & { _this: ObjectReference }, Task>(
+      timeoutSec: number;
+      evacuatePoweredOffVms?: boolean
+    } & { _this: ObjectReference }, Task>(
       "PowerDownHostToStandBy_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async exitStandbyMode(args: {
-  timeoutSec: number
-}): Promise<Task> {
+    timeoutSec: number
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  timeoutSec: number
-} & { _this: ObjectReference }, Task>(
+      timeoutSec: number
+    } & { _this: ObjectReference }, Task>(
       "PowerUpHostFromStandBy_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26156,25 +26156,25 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "HostConnectInfo");
   }
   async queryOverhead(args: {
-  memorySize: number;
+    memorySize: number;
     videoRamSize?: number;
     numVcpus: number
-}): Promise<number> {
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  memorySize: number;
-    videoRamSize?: number;
-    numVcpus: number
-} & { _this: ObjectReference }, number>(
+      memorySize: number;
+      videoRamSize?: number;
+      numVcpus: number
+    } & { _this: ObjectReference }, number>(
       "QueryMemoryOverhead", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
   }
   async queryOverheadEx(args: {
-  vmConfigInfo: VirtualMachineConfigInfo
-}): Promise<number> {
+    vmConfigInfo: VirtualMachineConfigInfo
+  }): Promise<number> {
     const result = await this.connection.exec<{
-  vmConfigInfo: VirtualMachineConfigInfo
-} & { _this: ObjectReference }, number>(
+      vmConfigInfo: VirtualMachineConfigInfo
+    } & { _this: ObjectReference }, number>(
       "QueryMemoryOverheadEx", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "number");
@@ -26192,11 +26192,11 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "HostTpmAttestationReport");
   }
   async reboot(args: {
-  force: boolean
-}): Promise<Task> {
+    force: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  force: boolean
-} & { _this: ObjectReference }, Task>(
+      force: boolean
+    } & { _this: ObjectReference }, Task>(
       "RebootHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26208,13 +26208,13 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async reconnect(args: {
-  cnxSpec?: HostConnectSpec;
+    cnxSpec?: HostConnectSpec;
     reconnectSpec?: HostSystemReconnectSpec
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  cnxSpec?: HostConnectSpec;
-    reconnectSpec?: HostSystemReconnectSpec
-} & { _this: ObjectReference }, Task>(
+      cnxSpec?: HostConnectSpec;
+      reconnectSpec?: HostSystemReconnectSpec
+    } & { _this: ObjectReference }, Task>(
       "ReconnectHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26232,61 +26232,61 @@ export class HostSystem extends ManagedEntity {
     return constructHelperObjects(this.connection, result, "number");
   }
   async shutdown(args: {
-  force: boolean
-}): Promise<Task> {
+    force: boolean
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  force: boolean
-} & { _this: ObjectReference }, Task>(
+      force: boolean
+    } & { _this: ObjectReference }, Task>(
       "ShutdownHost_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateFlags(args: {
-  flagInfo: HostFlagInfo
-}): Promise<void> {
+    flagInfo: HostFlagInfo
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  flagInfo: HostFlagInfo
-} & { _this: ObjectReference }, void>(
+      flagInfo: HostFlagInfo
+    } & { _this: ObjectReference }, void>(
       "UpdateFlags", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateIpmi(args: {
-  ipmiInfo: HostIpmiInfo
-}): Promise<void> {
+    ipmiInfo: HostIpmiInfo
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  ipmiInfo: HostIpmiInfo
-} & { _this: ObjectReference }, void>(
+      ipmiInfo: HostIpmiInfo
+    } & { _this: ObjectReference }, void>(
       "UpdateIpmi", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateProductLockerLocation(args: {
-  path: string
-}): Promise<Task> {
+    path: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  path: string
-} & { _this: ObjectReference }, Task>(
+      path: string
+    } & { _this: ObjectReference }, Task>(
       "UpdateProductLockerLocation_Task", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateSystemResources(args: {
-  resourceInfo: HostSystemResourceInfo
-}): Promise<void> {
+    resourceInfo: HostSystemResourceInfo
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  resourceInfo: HostSystemResourceInfo
-} & { _this: ObjectReference }, void>(
+      resourceInfo: HostSystemResourceInfo
+    } & { _this: ObjectReference }, void>(
       "UpdateSystemResources", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateSystemSwapConfiguration(args: {
-  sysSwapConfig: HostSystemSwapConfiguration
-}): Promise<void> {
+    sysSwapConfig: HostSystemSwapConfiguration
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  sysSwapConfig: HostSystemSwapConfiguration
-} & { _this: ObjectReference }, void>(
+      sysSwapConfig: HostSystemSwapConfiguration
+    } & { _this: ObjectReference }, void>(
       "UpdateSystemSwapConfiguration", { _this: { attributes: { type: "HostSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26312,15 +26312,15 @@ export class ServiceInstance extends ManagedObject {
     return constructHelperObjects(this.connection, result, "Date");
   }
   async queryVMotionCompatibility(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     host: HostSystem[];
     compatibility?: string[]
-}): Promise<HostVMotionCompatibility[] | undefined> {
+  }): Promise<HostVMotionCompatibility[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    host: HostSystem[];
-    compatibility?: string[]
-} & { _this: ObjectReference }, HostVMotionCompatibility[] | undefined>(
+      vm: VirtualMachine;
+      host: HostSystem[];
+      compatibility?: string[]
+    } & { _this: ObjectReference }, HostVMotionCompatibility[] | undefined>(
       "QueryVMotionCompatibility", { _this: "ServiceInstance", ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVMotionCompatibility[]");
@@ -26338,19 +26338,19 @@ export class ServiceInstance extends ManagedObject {
     return constructHelperObjects(this.connection, result, "ServiceContent");
   }
   async validateMigration(args: {
-  vm: VirtualMachine[];
+    vm: VirtualMachine[];
     state?: VirtualMachinePowerState;
     testType?: string[];
     pool?: ResourcePool;
     host?: HostSystem
-}): Promise<Event[] | undefined> {
+  }): Promise<Event[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine[];
-    state?: VirtualMachinePowerState;
-    testType?: string[];
-    pool?: ResourcePool;
-    host?: HostSystem
-} & { _this: ObjectReference }, Event[] | undefined>(
+      vm: VirtualMachine[];
+      state?: VirtualMachinePowerState;
+      testType?: string[];
+      pool?: ResourcePool;
+      host?: HostSystem
+    } & { _this: ObjectReference }, Event[] | undefined>(
       "ValidateMigration", { _this: "ServiceInstance", ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Event[]");
@@ -26382,139 +26382,139 @@ export class DistributedVirtualSwitchManager extends ManagedObject {
     }
   }
   async exportEntity(args: {
-  selectionSet: SelectionSet[]
-}): Promise<Task | undefined> {
+    selectionSet: SelectionSet[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  selectionSet: SelectionSet[]
-} & { _this: ObjectReference }, Task | undefined>(
+      selectionSet: SelectionSet[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "DVSManagerExportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async importEntity(args: {
-  entityBackup: EntityBackupConfig[];
+    entityBackup: EntityBackupConfig[];
     importType: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  entityBackup: EntityBackupConfig[];
-    importType: string
-} & { _this: ObjectReference }, Task>(
+      entityBackup: EntityBackupConfig[];
+      importType: string
+    } & { _this: ObjectReference }, Task>(
       "DVSManagerImportEntity_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async lookupPortgroup(args: {
-  switchUuid: string;
+    switchUuid: string;
     portgroupKey: string
-}): Promise<DistributedVirtualPortgroup | undefined> {
+  }): Promise<DistributedVirtualPortgroup | undefined> {
     const result = await this.connection.exec<{
-  switchUuid: string;
-    portgroupKey: string
-} & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
+      switchUuid: string;
+      portgroupKey: string
+    } & { _this: ObjectReference }, DistributedVirtualPortgroup | undefined>(
       "DVSManagerLookupDvPortGroup", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualPortgroup");
   }
   async querySupportedSwitchSpec(args: {
-  recommended?: boolean
-}): Promise<DistributedVirtualSwitchProductSpec[] | undefined> {
+    recommended?: boolean
+  }): Promise<DistributedVirtualSwitchProductSpec[] | undefined> {
     const result = await this.connection.exec<{
-  recommended?: boolean
-} & { _this: ObjectReference }, DistributedVirtualSwitchProductSpec[] | undefined>(
+      recommended?: boolean
+    } & { _this: ObjectReference }, DistributedVirtualSwitchProductSpec[] | undefined>(
       "QueryAvailableDvsSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchProductSpec[]");
   }
   async queryCompatibleHostForExistingDvs(args: {
-  container: ManagedEntity;
+    container: ManagedEntity;
     recursive: boolean;
     dvs: DistributedVirtualSwitch
-}): Promise<HostSystem[] | undefined> {
+  }): Promise<HostSystem[] | undefined> {
     const result = await this.connection.exec<{
-  container: ManagedEntity;
-    recursive: boolean;
-    dvs: DistributedVirtualSwitch
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      container: ManagedEntity;
+      recursive: boolean;
+      dvs: DistributedVirtualSwitch
+    } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryCompatibleHostForExistingDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async queryCompatibleHostForNewDvs(args: {
-  container: ManagedEntity;
+    container: ManagedEntity;
     recursive: boolean;
     switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<HostSystem[] | undefined> {
+  }): Promise<HostSystem[] | undefined> {
     const result = await this.connection.exec<{
-  container: ManagedEntity;
-    recursive: boolean;
-    switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, HostSystem[] | undefined>(
+      container: ManagedEntity;
+      recursive: boolean;
+      switchProductSpec?: DistributedVirtualSwitchProductSpec
+    } & { _this: ObjectReference }, HostSystem[] | undefined>(
       "QueryCompatibleHostForNewDvs", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostSystem[]");
   }
   async querySwitchByUuid(args: {
-  uuid: string
-}): Promise<DistributedVirtualSwitch | undefined> {
+    uuid: string
+  }): Promise<DistributedVirtualSwitch | undefined> {
     const result = await this.connection.exec<{
-  uuid: string
-} & { _this: ObjectReference }, DistributedVirtualSwitch | undefined>(
+      uuid: string
+    } & { _this: ObjectReference }, DistributedVirtualSwitch | undefined>(
       "QueryDvsByUuid", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualSwitch");
   }
   async checkCompatibility(args: {
-  hostContainer: DistributedVirtualSwitchManagerHostContainer;
+    hostContainer: DistributedVirtualSwitchManagerHostContainer;
     dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
     hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
-}): Promise<DistributedVirtualSwitchManagerCompatibilityResult[] | undefined> {
+  }): Promise<DistributedVirtualSwitchManagerCompatibilityResult[] | undefined> {
     const result = await this.connection.exec<{
-  hostContainer: DistributedVirtualSwitchManagerHostContainer;
-    dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
-    hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
-} & { _this: ObjectReference }, DistributedVirtualSwitchManagerCompatibilityResult[] | undefined>(
+      hostContainer: DistributedVirtualSwitchManagerHostContainer;
+      dvsProductSpec?: DistributedVirtualSwitchManagerDvsProductSpec;
+      hostFilterSpec?: DistributedVirtualSwitchManagerHostDvsFilterSpec[]
+    } & { _this: ObjectReference }, DistributedVirtualSwitchManagerCompatibilityResult[] | undefined>(
       "QueryDvsCheckCompatibility", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchManagerCompatibilityResult[]");
   }
   async queryCompatibleHostSpec(args: {
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<DistributedVirtualSwitchHostProductSpec[] | undefined> {
+    switchProductSpec?: DistributedVirtualSwitchProductSpec
+  }): Promise<DistributedVirtualSwitchHostProductSpec[] | undefined> {
     const result = await this.connection.exec<{
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, DistributedVirtualSwitchHostProductSpec[] | undefined>(
+      switchProductSpec?: DistributedVirtualSwitchProductSpec
+    } & { _this: ObjectReference }, DistributedVirtualSwitchHostProductSpec[] | undefined>(
       "QueryDvsCompatibleHostSpec", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DistributedVirtualSwitchHostProductSpec[]");
   }
   async queryDvsConfigTarget(args: {
-  host?: HostSystem;
+    host?: HostSystem;
     dvs?: DistributedVirtualSwitch
-}): Promise<DVSManagerDvsConfigTarget> {
+  }): Promise<DVSManagerDvsConfigTarget> {
     const result = await this.connection.exec<{
-  host?: HostSystem;
-    dvs?: DistributedVirtualSwitch
-} & { _this: ObjectReference }, DVSManagerDvsConfigTarget>(
+      host?: HostSystem;
+      dvs?: DistributedVirtualSwitch
+    } & { _this: ObjectReference }, DVSManagerDvsConfigTarget>(
       "QueryDvsConfigTarget", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DVSManagerDvsConfigTarget");
   }
   async queryFeatureCapability(args: {
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-}): Promise<DVSFeatureCapability | undefined> {
+    switchProductSpec?: DistributedVirtualSwitchProductSpec
+  }): Promise<DVSFeatureCapability | undefined> {
     const result = await this.connection.exec<{
-  switchProductSpec?: DistributedVirtualSwitchProductSpec
-} & { _this: ObjectReference }, DVSFeatureCapability | undefined>(
+      switchProductSpec?: DistributedVirtualSwitchProductSpec
+    } & { _this: ObjectReference }, DVSFeatureCapability | undefined>(
       "QueryDvsFeatureCapability", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "DVSFeatureCapability");
   }
   async rectifyHost(args: {
-  hosts: HostSystem[]
-}): Promise<Task> {
+    hosts: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  hosts: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      hosts: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "RectifyDvsOnHost_Task", { _this: { attributes: { type: "DistributedVirtualSwitchManager" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26532,11 +26532,11 @@ export class VmwareDistributedVirtualSwitch extends DistributedVirtualSwitch {
     }
   }
   async updateLacpGroupConfig(args: {
-  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
-}): Promise<Task> {
+    lacpGroupSpec: VMwareDvsLacpGroupSpec[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  lacpGroupSpec: VMwareDvsLacpGroupSpec[]
-} & { _this: ObjectReference }, Task>(
+      lacpGroupSpec: VMwareDvsLacpGroupSpec[]
+    } & { _this: ObjectReference }, Task>(
       "UpdateDVSLacpGroupConfig_Task", { _this: { attributes: { type: "VmwareDistributedVirtualSwitch" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -26554,11 +26554,11 @@ export class HostDiagnosticSystem extends ManagedObject {
     }
   }
   async createDiagnosticPartition(args: {
-  spec: HostDiagnosticPartitionCreateSpec
-}): Promise<void> {
+    spec: HostDiagnosticPartitionCreateSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  spec: HostDiagnosticPartitionCreateSpec
-} & { _this: ObjectReference }, void>(
+      spec: HostDiagnosticPartitionCreateSpec
+    } & { _this: ObjectReference }, void>(
       "CreateDiagnosticPartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26570,35 +26570,35 @@ export class HostDiagnosticSystem extends ManagedObject {
     return constructHelperObjects(this.connection, result, "HostDiagnosticPartition[]");
   }
   async queryPartitionCreateDesc(args: {
-  diskUuid: string;
+    diskUuid: string;
     diagnosticType: string
-}): Promise<HostDiagnosticPartitionCreateDescription> {
+  }): Promise<HostDiagnosticPartitionCreateDescription> {
     const result = await this.connection.exec<{
-  diskUuid: string;
-    diagnosticType: string
-} & { _this: ObjectReference }, HostDiagnosticPartitionCreateDescription>(
+      diskUuid: string;
+      diagnosticType: string
+    } & { _this: ObjectReference }, HostDiagnosticPartitionCreateDescription>(
       "QueryPartitionCreateDesc", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiagnosticPartitionCreateDescription");
   }
   async queryPartitionCreateOptions(args: {
-  storageType: string;
+    storageType: string;
     diagnosticType: string
-}): Promise<HostDiagnosticPartitionCreateOption[] | undefined> {
+  }): Promise<HostDiagnosticPartitionCreateOption[] | undefined> {
     const result = await this.connection.exec<{
-  storageType: string;
-    diagnosticType: string
-} & { _this: ObjectReference }, HostDiagnosticPartitionCreateOption[] | undefined>(
+      storageType: string;
+      diagnosticType: string
+    } & { _this: ObjectReference }, HostDiagnosticPartitionCreateOption[] | undefined>(
       "QueryPartitionCreateOptions", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiagnosticPartitionCreateOption[]");
   }
   async selectActivePartition(args: {
-  partition?: HostScsiDiskPartition
-}): Promise<void> {
+    partition?: HostScsiDiskPartition
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  partition?: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
+      partition?: HostScsiDiskPartition
+    } & { _this: ObjectReference }, void>(
       "SelectActivePartition", { _this: { attributes: { type: "HostDiagnosticSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26619,67 +26619,67 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     }
   }
   async addInternetScsiSendTargets(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targets: HostInternetScsiHbaSendTarget[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[]
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targets: HostInternetScsiHbaSendTarget[]
+    } & { _this: ObjectReference }, void>(
       "AddInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async addInternetScsiStaticTargets(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targets: HostInternetScsiHbaStaticTarget[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targets: HostInternetScsiHbaStaticTarget[]
+    } & { _this: ObjectReference }, void>(
       "AddInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async attachScsiLun(args: {
-  lunUuid: string
-}): Promise<void> {
+    lunUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunUuid: string
-} & { _this: ObjectReference }, void>(
+      lunUuid: string
+    } & { _this: ObjectReference }, void>(
       "AttachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async attachScsiLunEx(args: {
-  lunUuid: string[]
-}): Promise<Task> {
+    lunUuid: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  lunUuid: string[]
-} & { _this: ObjectReference }, Task>(
+      lunUuid: string[]
+    } & { _this: ObjectReference }, Task>(
       "AttachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async attachVmfsExtent(args: {
-  vmfsPath: string;
+    vmfsPath: string;
     extent: HostScsiDiskPartition
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
+      vmfsPath: string;
+      extent: HostScsiDiskPartition
+    } & { _this: ObjectReference }, void>(
       "AttachVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async changeNFSUserPassword(args: {
-  password: string
-}): Promise<void> {
+    password: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  password: string
-} & { _this: ObjectReference }, void>(
+      password: string
+    } & { _this: ObjectReference }, void>(
       "ChangeNFSUserPassword", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -26691,321 +26691,321 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async computeDiskPartitionInfo(args: {
-  devicePath: string;
+    devicePath: string;
     layout: HostDiskPartitionLayout;
     partitionFormat?: string
-}): Promise<HostDiskPartitionInfo> {
+  }): Promise<HostDiskPartitionInfo> {
     const result = await this.connection.exec<{
-  devicePath: string;
-    layout: HostDiskPartitionLayout;
-    partitionFormat?: string
-} & { _this: ObjectReference }, HostDiskPartitionInfo>(
+      devicePath: string;
+      layout: HostDiskPartitionLayout;
+      partitionFormat?: string
+    } & { _this: ObjectReference }, HostDiskPartitionInfo>(
       "ComputeDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo");
   }
   async computeDiskPartitionInfoForResize(args: {
-  partition: HostScsiDiskPartition;
+    partition: HostScsiDiskPartition;
     blockRange: HostDiskPartitionBlockRange;
     partitionFormat?: string
-}): Promise<HostDiskPartitionInfo> {
+  }): Promise<HostDiskPartitionInfo> {
     const result = await this.connection.exec<{
-  partition: HostScsiDiskPartition;
-    blockRange: HostDiskPartitionBlockRange;
-    partitionFormat?: string
-} & { _this: ObjectReference }, HostDiskPartitionInfo>(
+      partition: HostScsiDiskPartition;
+      blockRange: HostDiskPartitionBlockRange;
+      partitionFormat?: string
+    } & { _this: ObjectReference }, HostDiskPartitionInfo>(
       "ComputeDiskPartitionInfoForResize", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo");
   }
   async connectNvmeController(args: {
-  connectSpec: HostNvmeConnectSpec
-}): Promise<void> {
+    connectSpec: HostNvmeConnectSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  connectSpec: HostNvmeConnectSpec
-} & { _this: ObjectReference }, void>(
+      connectSpec: HostNvmeConnectSpec
+    } & { _this: ObjectReference }, void>(
       "ConnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async createNvmeOverRdmaAdapter(args: {
-  rdmaDeviceName: string
-}): Promise<void> {
+    rdmaDeviceName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  rdmaDeviceName: string
-} & { _this: ObjectReference }, void>(
+      rdmaDeviceName: string
+    } & { _this: ObjectReference }, void>(
       "CreateNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteScsiLunState(args: {
-  lunCanonicalName: string
-}): Promise<void> {
+    lunCanonicalName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunCanonicalName: string
-} & { _this: ObjectReference }, void>(
+      lunCanonicalName: string
+    } & { _this: ObjectReference }, void>(
       "DeleteScsiLunState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteVffsVolumeState(args: {
-  vffsUuid: string
-}): Promise<void> {
+    vffsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
+      vffsUuid: string
+    } & { _this: ObjectReference }, void>(
       "DeleteVffsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async deleteVmfsVolumeState(args: {
-  vmfsUuid: string
-}): Promise<void> {
+    vmfsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string
+    } & { _this: ObjectReference }, void>(
       "DeleteVmfsVolumeState", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async destroyVffs(args: {
-  vffsPath: string
-}): Promise<void> {
+    vffsPath: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vffsPath: string
-} & { _this: ObjectReference }, void>(
+      vffsPath: string
+    } & { _this: ObjectReference }, void>(
       "DestroyVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async detachScsiLun(args: {
-  lunUuid: string
-}): Promise<void> {
+    lunUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunUuid: string
-} & { _this: ObjectReference }, void>(
+      lunUuid: string
+    } & { _this: ObjectReference }, void>(
       "DetachScsiLun", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async detachScsiLunEx(args: {
-  lunUuid: string[]
-}): Promise<Task> {
+    lunUuid: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  lunUuid: string[]
-} & { _this: ObjectReference }, Task>(
+      lunUuid: string[]
+    } & { _this: ObjectReference }, Task>(
       "DetachScsiLunEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async disableMultipathPath(args: {
-  pathName: string
-}): Promise<void> {
+    pathName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pathName: string
-} & { _this: ObjectReference }, void>(
+      pathName: string
+    } & { _this: ObjectReference }, void>(
       "DisableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async disconnectNvmeController(args: {
-  disconnectSpec: HostNvmeDisconnectSpec
-}): Promise<void> {
+    disconnectSpec: HostNvmeDisconnectSpec
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  disconnectSpec: HostNvmeDisconnectSpec
-} & { _this: ObjectReference }, void>(
+      disconnectSpec: HostNvmeDisconnectSpec
+    } & { _this: ObjectReference }, void>(
       "DisconnectNvmeController", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async discoverFcoeHbas(args: {
-  fcoeSpec: FcoeConfigFcoeSpecification
-}): Promise<void> {
+    fcoeSpec: FcoeConfigFcoeSpecification
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  fcoeSpec: FcoeConfigFcoeSpecification
-} & { _this: ObjectReference }, void>(
+      fcoeSpec: FcoeConfigFcoeSpecification
+    } & { _this: ObjectReference }, void>(
       "DiscoverFcoeHbas", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async discoverNvmeControllers(args: {
-  discoverSpec: HostNvmeDiscoverSpec
-}): Promise<HostNvmeDiscoveryLog> {
+    discoverSpec: HostNvmeDiscoverSpec
+  }): Promise<HostNvmeDiscoveryLog> {
     const result = await this.connection.exec<{
-  discoverSpec: HostNvmeDiscoverSpec
-} & { _this: ObjectReference }, HostNvmeDiscoveryLog>(
+      discoverSpec: HostNvmeDiscoverSpec
+    } & { _this: ObjectReference }, HostNvmeDiscoveryLog>(
       "DiscoverNvmeControllers", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostNvmeDiscoveryLog");
   }
   async enableMultipathPath(args: {
-  pathName: string
-}): Promise<void> {
+    pathName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  pathName: string
-} & { _this: ObjectReference }, void>(
+      pathName: string
+    } & { _this: ObjectReference }, void>(
       "EnableMultipathPath", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async expandVmfsExtent(args: {
-  vmfsPath: string;
+    vmfsPath: string;
     extent: HostScsiDiskPartition
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsPath: string;
-    extent: HostScsiDiskPartition
-} & { _this: ObjectReference }, void>(
+      vmfsPath: string;
+      extent: HostScsiDiskPartition
+    } & { _this: ObjectReference }, void>(
       "ExpandVmfsExtent", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async extendVffs(args: {
-  vffsPath: string;
+    vffsPath: string;
     devicePath: string;
     spec?: HostDiskPartitionSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vffsPath: string;
-    devicePath: string;
-    spec?: HostDiskPartitionSpec
-} & { _this: ObjectReference }, void>(
+      vffsPath: string;
+      devicePath: string;
+      spec?: HostDiskPartitionSpec
+    } & { _this: ObjectReference }, void>(
       "ExtendVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async formatVffs(args: {
-  createSpec: HostVffsSpec
-}): Promise<HostVffsVolume> {
+    createSpec: HostVffsSpec
+  }): Promise<HostVffsVolume> {
     const result = await this.connection.exec<{
-  createSpec: HostVffsSpec
-} & { _this: ObjectReference }, HostVffsVolume>(
+      createSpec: HostVffsSpec
+    } & { _this: ObjectReference }, HostVffsVolume>(
       "FormatVffs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVffsVolume");
   }
   async formatVmfs(args: {
-  createSpec: HostVmfsSpec
-}): Promise<HostVmfsVolume> {
+    createSpec: HostVmfsSpec
+  }): Promise<HostVmfsVolume> {
     const result = await this.connection.exec<{
-  createSpec: HostVmfsSpec
-} & { _this: ObjectReference }, HostVmfsVolume>(
+      createSpec: HostVmfsSpec
+    } & { _this: ObjectReference }, HostVmfsVolume>(
       "FormatVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostVmfsVolume");
   }
   async markAsLocal(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
+    scsiDiskUuid: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
+      scsiDiskUuid: string
+    } & { _this: ObjectReference }, Task>(
       "MarkAsLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async markAsNonLocal(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
+    scsiDiskUuid: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
+      scsiDiskUuid: string
+    } & { _this: ObjectReference }, Task>(
       "MarkAsNonLocal_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async markAsNonSsd(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
+    scsiDiskUuid: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
+      scsiDiskUuid: string
+    } & { _this: ObjectReference }, Task>(
       "MarkAsNonSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async markAsSsd(args: {
-  scsiDiskUuid: string
-}): Promise<Task> {
+    scsiDiskUuid: string
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  scsiDiskUuid: string
-} & { _this: ObjectReference }, Task>(
+      scsiDiskUuid: string
+    } & { _this: ObjectReference }, Task>(
       "MarkAsSsd_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async markForRemoval(args: {
-  hbaName: string;
+    hbaName: string;
     remove: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  hbaName: string;
-    remove: boolean
-} & { _this: ObjectReference }, void>(
+      hbaName: string;
+      remove: boolean
+    } & { _this: ObjectReference }, void>(
       "MarkForRemoval", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async markPerenniallyReserved(args: {
-  lunUuid: string;
+    lunUuid: string;
     state: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunUuid: string;
-    state: boolean
-} & { _this: ObjectReference }, void>(
+      lunUuid: string;
+      state: boolean
+    } & { _this: ObjectReference }, void>(
       "MarkPerenniallyReserved", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async markPerenniallyReservedEx(args: {
-  lunUuid?: string[];
+    lunUuid?: string[];
     state: boolean
-}): Promise<Task | undefined> {
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  lunUuid?: string[];
-    state: boolean
-} & { _this: ObjectReference }, Task | undefined>(
+      lunUuid?: string[];
+      state: boolean
+    } & { _this: ObjectReference }, Task | undefined>(
       "MarkPerenniallyReservedEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async mountVffsVolume(args: {
-  vffsUuid: string
-}): Promise<void> {
+    vffsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
+      vffsUuid: string
+    } & { _this: ObjectReference }, void>(
       "MountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async mountVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
+    vmfsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string
+    } & { _this: ObjectReference }, void>(
       "MountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async mountVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
+    vmfsUuid: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
+      vmfsUuid: string[]
+    } & { _this: ObjectReference }, Task>(
       "MountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async queryAvailableSsds(args: {
-  vffsPath?: string
-}): Promise<HostScsiDisk[] | undefined> {
+    vffsPath?: string
+  }): Promise<HostScsiDisk[] | undefined> {
     const result = await this.connection.exec<{
-  vffsPath?: string
-} & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
+      vffsPath?: string
+    } & { _this: ObjectReference }, HostScsiDisk[] | undefined>(
       "QueryAvailableSsds", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostScsiDisk[]");
@@ -27047,37 +27047,37 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeInternetScsiSendTargets(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targets: HostInternetScsiHbaSendTarget[];
     force?: boolean
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaSendTarget[];
-    force?: boolean
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targets: HostInternetScsiHbaSendTarget[];
+      force?: boolean
+    } & { _this: ObjectReference }, void>(
       "RemoveInternetScsiSendTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeInternetScsiStaticTargets(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targets: HostInternetScsiHbaStaticTarget[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targets: HostInternetScsiHbaStaticTarget[]
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targets: HostInternetScsiHbaStaticTarget[]
+    } & { _this: ObjectReference }, void>(
       "RemoveInternetScsiStaticTargets", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async removeNvmeOverRdmaAdapter(args: {
-  hbaDeviceName: string
-}): Promise<void> {
+    hbaDeviceName: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  hbaDeviceName: string
-} & { _this: ObjectReference }, void>(
+      hbaDeviceName: string
+    } & { _this: ObjectReference }, void>(
       "RemoveNvmeOverRdmaAdapter", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27089,11 +27089,11 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async rescanHba(args: {
-  hbaDevice: string
-}): Promise<void> {
+    hbaDevice: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  hbaDevice: string
-} & { _this: ObjectReference }, void>(
+      hbaDevice: string
+    } & { _this: ObjectReference }, void>(
       "RescanHba", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27111,285 +27111,285 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async resolveMultipleUnresolvedVmfsVolumes(args: {
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-}): Promise<HostUnresolvedVmfsResolutionResult[] | undefined> {
+    resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+  }): Promise<HostUnresolvedVmfsResolutionResult[] | undefined> {
     const result = await this.connection.exec<{
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-} & { _this: ObjectReference }, HostUnresolvedVmfsResolutionResult[] | undefined>(
+      resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+    } & { _this: ObjectReference }, HostUnresolvedVmfsResolutionResult[] | undefined>(
       "ResolveMultipleUnresolvedVmfsVolumes", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostUnresolvedVmfsResolutionResult[]");
   }
   async resolveMultipleUnresolvedVmfsVolumesEx(args: {
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-}): Promise<Task | undefined> {
+    resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
-} & { _this: ObjectReference }, Task | undefined>(
+      resolutionSpec: HostUnresolvedVmfsResolutionSpec[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "ResolveMultipleUnresolvedVmfsVolumesEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async retrieveDiskPartitionInfo(args: {
-  devicePath: string[]
-}): Promise<HostDiskPartitionInfo[] | undefined> {
+    devicePath: string[]
+  }): Promise<HostDiskPartitionInfo[] | undefined> {
     const result = await this.connection.exec<{
-  devicePath: string[]
-} & { _this: ObjectReference }, HostDiskPartitionInfo[] | undefined>(
+      devicePath: string[]
+    } & { _this: ObjectReference }, HostDiskPartitionInfo[] | undefined>(
       "RetrieveDiskPartitionInfo", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "HostDiskPartitionInfo[]");
   }
   async setMultipathLunPolicy(args: {
-  lunId: string;
+    lunId: string;
     policy: HostMultipathInfoLogicalUnitPolicy
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunId: string;
-    policy: HostMultipathInfoLogicalUnitPolicy
-} & { _this: ObjectReference }, void>(
+      lunId: string;
+      policy: HostMultipathInfoLogicalUnitPolicy
+    } & { _this: ObjectReference }, void>(
       "SetMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async setNFSUser(args: {
-  user: string;
+    user: string;
     password: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  user: string;
-    password: string
-} & { _this: ObjectReference }, void>(
+      user: string;
+      password: string
+    } & { _this: ObjectReference }, void>(
       "SetNFSUser", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async turnDiskLocatorLedOff(args: {
-  scsiDiskUuids: string[]
-}): Promise<Task | undefined> {
+    scsiDiskUuids: string[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  scsiDiskUuids: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      scsiDiskUuids: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "TurnDiskLocatorLedOff_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async turnDiskLocatorLedOn(args: {
-  scsiDiskUuids: string[]
-}): Promise<Task | undefined> {
+    scsiDiskUuids: string[]
+  }): Promise<Task | undefined> {
     const result = await this.connection.exec<{
-  scsiDiskUuids: string[]
-} & { _this: ObjectReference }, Task | undefined>(
+      scsiDiskUuids: string[]
+    } & { _this: ObjectReference }, Task | undefined>(
       "TurnDiskLocatorLedOn_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async unmapVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
+    vmfsUuid: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
+      vmfsUuid: string[]
+    } & { _this: ObjectReference }, Task>(
       "UnmapVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async unmountForceMountedVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
+    vmfsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string
+    } & { _this: ObjectReference }, void>(
       "UnmountForceMountedVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unmountVffsVolume(args: {
-  vffsUuid: string
-}): Promise<void> {
+    vffsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vffsUuid: string
-} & { _this: ObjectReference }, void>(
+      vffsUuid: string
+    } & { _this: ObjectReference }, void>(
       "UnmountVffsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unmountVmfsVolume(args: {
-  vmfsUuid: string
-}): Promise<void> {
+    vmfsUuid: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string
+    } & { _this: ObjectReference }, void>(
       "UnmountVmfsVolume", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async unmountVmfsVolumeEx(args: {
-  vmfsUuid: string[]
-}): Promise<Task> {
+    vmfsUuid: string[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  vmfsUuid: string[]
-} & { _this: ObjectReference }, Task>(
+      vmfsUuid: string[]
+    } & { _this: ObjectReference }, Task>(
       "UnmountVmfsVolumeEx_Task", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async updateDiskPartitions(args: {
-  devicePath: string;
+    devicePath: string;
     spec: HostDiskPartitionSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  devicePath: string;
-    spec: HostDiskPartitionSpec
-} & { _this: ObjectReference }, void>(
+      devicePath: string;
+      spec: HostDiskPartitionSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateDiskPartitions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateHppMultipathLunPolicy(args: {
-  lunId: string;
+    lunId: string;
     policy: HostMultipathInfoHppLogicalUnitPolicy
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunId: string;
-    policy: HostMultipathInfoHppLogicalUnitPolicy
-} & { _this: ObjectReference }, void>(
+      lunId: string;
+      policy: HostMultipathInfoHppLogicalUnitPolicy
+    } & { _this: ObjectReference }, void>(
       "UpdateHppMultipathLunPolicy", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiAdvancedOptions(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targetSet?: HostInternetScsiHbaTargetSet;
     options: HostInternetScsiHbaParamValue[]
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    options: HostInternetScsiHbaParamValue[]
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targetSet?: HostInternetScsiHbaTargetSet;
+      options: HostInternetScsiHbaParamValue[]
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiAdvancedOptions", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiAlias(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     iScsiAlias: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    iScsiAlias: string
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      iScsiAlias: string
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiAlias", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiAuthenticationProperties(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
     targetSet?: HostInternetScsiHbaTargetSet
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
-    targetSet?: HostInternetScsiHbaTargetSet
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      authenticationProperties: HostInternetScsiHbaAuthenticationProperties;
+      targetSet?: HostInternetScsiHbaTargetSet
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiAuthenticationProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiDigestProperties(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     targetSet?: HostInternetScsiHbaTargetSet;
     digestProperties: HostInternetScsiHbaDigestProperties
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    targetSet?: HostInternetScsiHbaTargetSet;
-    digestProperties: HostInternetScsiHbaDigestProperties
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      targetSet?: HostInternetScsiHbaTargetSet;
+      digestProperties: HostInternetScsiHbaDigestProperties
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiDigestProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiDiscoveryProperties(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     discoveryProperties: HostInternetScsiHbaDiscoveryProperties
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    discoveryProperties: HostInternetScsiHbaDiscoveryProperties
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      discoveryProperties: HostInternetScsiHbaDiscoveryProperties
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiDiscoveryProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiIPProperties(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     ipProperties: HostInternetScsiHbaIPProperties
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    ipProperties: HostInternetScsiHbaIPProperties
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      ipProperties: HostInternetScsiHbaIPProperties
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiIPProperties", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateInternetScsiName(args: {
-  iScsiHbaDevice: string;
+    iScsiHbaDevice: string;
     iScsiName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  iScsiHbaDevice: string;
-    iScsiName: string
-} & { _this: ObjectReference }, void>(
+      iScsiHbaDevice: string;
+      iScsiName: string
+    } & { _this: ObjectReference }, void>(
       "UpdateInternetScsiName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateScsiLunDisplayName(args: {
-  lunUuid: string;
+    lunUuid: string;
     displayName: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  lunUuid: string;
-    displayName: string
-} & { _this: ObjectReference }, void>(
+      lunUuid: string;
+      displayName: string
+    } & { _this: ObjectReference }, void>(
       "UpdateScsiLunDisplayName", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateSoftwareInternetScsiEnabled(args: {
-  enabled: boolean
-}): Promise<void> {
+    enabled: boolean
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  enabled: boolean
-} & { _this: ObjectReference }, void>(
+      enabled: boolean
+    } & { _this: ObjectReference }, void>(
       "UpdateSoftwareInternetScsiEnabled", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVmfsUnmapBandwidth(args: {
-  vmfsUuid: string;
+    vmfsUuid: string;
     unmapBandwidthSpec: VmfsUnmapBandwidthSpec
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string;
-    unmapBandwidthSpec: VmfsUnmapBandwidthSpec
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string;
+      unmapBandwidthSpec: VmfsUnmapBandwidthSpec
+    } & { _this: ObjectReference }, void>(
       "UpdateVmfsUnmapBandwidth", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async updateVmfsUnmapPriority(args: {
-  vmfsUuid: string;
+    vmfsUuid: string;
     unmapPriority: string
-}): Promise<void> {
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsUuid: string;
-    unmapPriority: string
-} & { _this: ObjectReference }, void>(
+      vmfsUuid: string;
+      unmapPriority: string
+    } & { _this: ObjectReference }, void>(
       "UpdateVmfsUnmapPriority", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27401,11 +27401,11 @@ export class HostStorageSystem extends ExtensibleManagedObject {
     return constructHelperObjects(this.connection, result, "void");
   }
   async upgradeVmfs(args: {
-  vmfsPath: string
-}): Promise<void> {
+    vmfsPath: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  vmfsPath: string
-} & { _this: ObjectReference }, void>(
+      vmfsPath: string
+    } & { _this: ObjectReference }, void>(
       "UpgradeVmfs", { _this: { attributes: { type: "HostStorageSystem" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27438,21 +27438,21 @@ export class InventoryView extends ManagedObjectView {
     }
   }
   async closeFolder(args: {
-  entity: ManagedEntity[]
-}): Promise<ManagedEntity[] | undefined> {
+    entity: ManagedEntity[]
+  }): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity[]
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      entity: ManagedEntity[]
+    } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "CloseInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
   }
   async openFolder(args: {
-  entity: ManagedEntity[]
-}): Promise<ManagedEntity[] | undefined> {
+    entity: ManagedEntity[]
+  }): Promise<ManagedEntity[] | undefined> {
     const result = await this.connection.exec<{
-  entity: ManagedEntity[]
-} & { _this: ObjectReference }, ManagedEntity[] | undefined>(
+      entity: ManagedEntity[]
+    } & { _this: ObjectReference }, ManagedEntity[] | undefined>(
       "OpenInventoryViewFolder", { _this: { attributes: { type: "InventoryView" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedEntity[]");
@@ -27470,33 +27470,33 @@ export class ListView extends ManagedObjectView {
     }
   }
   async modify(args: {
-  add?: ManagedObject[];
+    add?: ManagedObject[];
     remove?: ManagedObject[]
-}): Promise<ManagedObject[] | undefined> {
+  }): Promise<ManagedObject[] | undefined> {
     const result = await this.connection.exec<{
-  add?: ManagedObject[];
-    remove?: ManagedObject[]
-} & { _this: ObjectReference }, ManagedObject[] | undefined>(
+      add?: ManagedObject[];
+      remove?: ManagedObject[]
+    } & { _this: ObjectReference }, ManagedObject[] | undefined>(
       "ModifyListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedObject[]");
   }
   async reset(args: {
-  obj?: ManagedObject[]
-}): Promise<ManagedObject[] | undefined> {
+    obj?: ManagedObject[]
+  }): Promise<ManagedObject[] | undefined> {
     const result = await this.connection.exec<{
-  obj?: ManagedObject[]
-} & { _this: ObjectReference }, ManagedObject[] | undefined>(
+      obj?: ManagedObject[]
+    } & { _this: ObjectReference }, ManagedObject[] | undefined>(
       "ResetListView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ManagedObject[]");
   }
   async resetFromView(args: {
-  view: View
-}): Promise<void> {
+    view: View
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  view: View
-} & { _this: ObjectReference }, void>(
+      view: View
+    } & { _this: ObjectReference }, void>(
       "ResetListViewFromView", { _this: { attributes: { type: "ListView" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27526,61 +27526,61 @@ export class ClusterComputeResource extends ComputeResource {
     return constructHelperObjects(this.connection, result, "void");
   }
   async addHost(args: {
-  spec: HostConnectSpec;
+    spec: HostConnectSpec;
     asConnected: boolean;
     resourcePool?: ResourcePool;
     license?: string
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: HostConnectSpec;
-    asConnected: boolean;
-    resourcePool?: ResourcePool;
-    license?: string
-} & { _this: ObjectReference }, Task>(
+      spec: HostConnectSpec;
+      asConnected: boolean;
+      resourcePool?: ResourcePool;
+      license?: string
+    } & { _this: ObjectReference }, Task>(
       "AddHost_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async applyRecommendation(args: {
-  key: string
-}): Promise<void> {
+    key: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string
-} & { _this: ObjectReference }, void>(
+      key: string
+    } & { _this: ObjectReference }, void>(
       "ApplyRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async cancelRecommendation(args: {
-  key: string
-}): Promise<void> {
+    key: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  key: string
-} & { _this: ObjectReference }, void>(
+      key: string
+    } & { _this: ObjectReference }, void>(
       "CancelRecommendation", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
   }
   async enterMaintenanceMode(args: {
-  host: HostSystem[];
+    host: HostSystem[];
     option?: OptionValue[]
-}): Promise<ClusterEnterMaintenanceResult> {
+  }): Promise<ClusterEnterMaintenanceResult> {
     const result = await this.connection.exec<{
-  host: HostSystem[];
-    option?: OptionValue[]
-} & { _this: ObjectReference }, ClusterEnterMaintenanceResult>(
+      host: HostSystem[];
+      option?: OptionValue[]
+    } & { _this: ObjectReference }, ClusterEnterMaintenanceResult>(
       "ClusterEnterMaintenanceMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterEnterMaintenanceResult");
   }
   async configureHCI(args: {
-  clusterSpec: ClusterComputeResourceHCIConfigSpec;
+    clusterSpec: ClusterComputeResourceHCIConfigSpec;
     hostInputs?: ClusterComputeResourceHostConfigurationInput[]
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  clusterSpec: ClusterComputeResourceHCIConfigSpec;
-    hostInputs?: ClusterComputeResourceHostConfigurationInput[]
-} & { _this: ObjectReference }, Task>(
+      clusterSpec: ClusterComputeResourceHCIConfigSpec;
+      hostInputs?: ClusterComputeResourceHostConfigurationInput[]
+    } & { _this: ObjectReference }, Task>(
       "ConfigureHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -27592,23 +27592,23 @@ export class ClusterComputeResource extends ComputeResource {
     return constructHelperObjects(this.connection, result, "ClusterEVCManager");
   }
   async extendHCI(args: {
-  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
+    hostInputs?: ClusterComputeResourceHostConfigurationInput[];
     vSanConfigSpec?: SDDCBase
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  hostInputs?: ClusterComputeResourceHostConfigurationInput[];
-    vSanConfigSpec?: SDDCBase
-} & { _this: ObjectReference }, Task>(
+      hostInputs?: ClusterComputeResourceHostConfigurationInput[];
+      vSanConfigSpec?: SDDCBase
+    } & { _this: ObjectReference }, Task>(
       "ExtendHCI_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async findRulesForVm(args: {
-  vm: VirtualMachine
-}): Promise<ClusterRuleInfo[] | undefined> {
+    vm: VirtualMachine
+  }): Promise<ClusterRuleInfo[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine
-} & { _this: ObjectReference }, ClusterRuleInfo[] | undefined>(
+      vm: VirtualMachine
+    } & { _this: ObjectReference }, ClusterRuleInfo[] | undefined>(
       "FindRulesForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterRuleInfo[]");
@@ -27620,57 +27620,57 @@ export class ClusterComputeResource extends ComputeResource {
     return constructHelperObjects(this.connection, result, "ClusterResourceUsageSummary");
   }
   async moveHostInto(args: {
-  host: HostSystem;
+    host: HostSystem;
     resourcePool?: ResourcePool
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem;
-    resourcePool?: ResourcePool
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem;
+      resourcePool?: ResourcePool
+    } & { _this: ObjectReference }, Task>(
       "MoveHostInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async moveInto(args: {
-  host: HostSystem[]
-}): Promise<Task> {
+    host: HostSystem[]
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  host: HostSystem[]
-} & { _this: ObjectReference }, Task>(
+      host: HostSystem[]
+    } & { _this: ObjectReference }, Task>(
       "MoveInto_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
   }
   async placeVm(args: {
-  placementSpec: PlacementSpec
-}): Promise<PlacementResult> {
+    placementSpec: PlacementSpec
+  }): Promise<PlacementResult> {
     const result = await this.connection.exec<{
-  placementSpec: PlacementSpec
-} & { _this: ObjectReference }, PlacementResult>(
+      placementSpec: PlacementSpec
+    } & { _this: ObjectReference }, PlacementResult>(
       "PlaceVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "PlacementResult");
   }
   async recommendHostsForVm(args: {
-  vm: VirtualMachine;
+    vm: VirtualMachine;
     pool?: ResourcePool
-}): Promise<ClusterHostRecommendation[] | undefined> {
+  }): Promise<ClusterHostRecommendation[] | undefined> {
     const result = await this.connection.exec<{
-  vm: VirtualMachine;
-    pool?: ResourcePool
-} & { _this: ObjectReference }, ClusterHostRecommendation[] | undefined>(
+      vm: VirtualMachine;
+      pool?: ResourcePool
+    } & { _this: ObjectReference }, ClusterHostRecommendation[] | undefined>(
       "RecommendHostsForVm", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterHostRecommendation[]");
   }
   async reconfigure(args: {
-  spec: ClusterConfigSpec;
+    spec: ClusterConfigSpec;
     modify: boolean
-}): Promise<Task> {
+  }): Promise<Task> {
     const result = await this.connection.exec<{
-  spec: ClusterConfigSpec;
-    modify: boolean
-} & { _this: ObjectReference }, Task>(
+      spec: ClusterConfigSpec;
+      modify: boolean
+    } & { _this: ObjectReference }, Task>(
       "ReconfigureCluster_Task", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "Task");
@@ -27688,11 +27688,11 @@ export class ClusterComputeResource extends ComputeResource {
     return constructHelperObjects(this.connection, result, "ClusterDasAdvancedRuntimeInfo");
   }
   async setCryptoMode(args: {
-  cryptoMode: string
-}): Promise<void> {
+    cryptoMode: string
+  }): Promise<void> {
     const result = await this.connection.exec<{
-  cryptoMode: string
-} & { _this: ObjectReference }, void>(
+      cryptoMode: string
+    } & { _this: ObjectReference }, void>(
       "SetCryptoMode", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "void");
@@ -27704,13 +27704,13 @@ export class ClusterComputeResource extends ComputeResource {
     return constructHelperObjects(this.connection, result, "Task");
   }
   async validateHCIConfiguration(args: {
-  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
+    hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
     hosts?: HostSystem[]
-}): Promise<ClusterComputeResourceValidationResultBase[] | undefined> {
+  }): Promise<ClusterComputeResourceValidationResultBase[] | undefined> {
     const result = await this.connection.exec<{
-  hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
-    hosts?: HostSystem[]
-} & { _this: ObjectReference }, ClusterComputeResourceValidationResultBase[] | undefined>(
+      hciConfigSpec?: ClusterComputeResourceHCIConfigSpec;
+      hosts?: HostSystem[]
+    } & { _this: ObjectReference }, ClusterComputeResourceValidationResultBase[] | undefined>(
       "ValidateHCIConfiguration", { _this: { attributes: { type: "ClusterComputeResource" }, $value: this.$value }, ...args }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "ClusterComputeResourceValidationResultBase[]");

@@ -81,13 +81,13 @@ export class ${type.wsdlName}${type.parent ? ` extends ${this.typeMap[type.paren
 
   private createMethod(className: string, [name, soapName, , parameters, [resultFlags, resultType]]: PyMethod): string {
     const paramsType = parameters.length > 0 ? `{
-  ${this.createProps(parameters, ";\n    ")}
-}` : "unknown";
+    ${this.createProps(parameters, ";\n    ")}
+  }` : "unknown";
     const rawReturnType = this.getTypescriptType(resultType).name;
     const returnType = `${rawReturnType}${resultFlags & PyPropFlags.optional ? " | undefined" : ""}`;
     const returnDefinition = resultType in this.typeMap ? this.typeMap[resultType] : undefined;
     return `async ${name}(${parameters.length === 0 ? "" : `args: ${paramsType}`}): Promise<${returnType}> {
-    const result = await this.connection.exec<${paramsType} & { _this: ObjectReference }, ${returnType}>(
+    const result = await this.connection.exec<${paramsType.split("\n").join("\n  ")} & { _this: ObjectReference }, ${returnType}>(
       "${soapName}", { ${this.getThisArgument(className)}, ${parameters.length > 0 ? "...args" : ""} }
     ).then(r => r.result);
     return constructHelperObjects(this.connection, result, "${returnDefinition?.wsdlName ?? rawReturnType}");

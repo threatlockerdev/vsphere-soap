@@ -1,6 +1,6 @@
 {
   "name": "@hyperqube/vsphere-soap",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "Typescript client for vSphere's SOAP API",
   "license": "UNLICENSED",
   "repository": "https://github.com/hyperqube-io/vsphere-soap",

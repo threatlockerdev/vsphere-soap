@@ -24,7 +24,7 @@ export class Connection {
 
   constructor(
     private readonly url: string,
-    private readonly options: soap.IOptions
+    readonly options: soap.IOptions & { debug?: boolean }
   ) { }
 
   get hostname(): string {

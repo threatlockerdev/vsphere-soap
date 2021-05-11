@@ -34,7 +34,10 @@ const constructHelperObjects = (connection: Connection, data: any, thisName: str
   }
   const fieldMap = typeNames.classes[thisName] ?? typeNames.interfaces[thisName];
   if (connection.options.debug) {
-    console.log("vsphere-soap.constructHelperObjects", { thisName, fieldMap, data });
+    console.log("vsphere-soap.constructHelperObjects", { thisName, fieldMap, data, fromConstructor });
+  }
+  if (typeof data === "string") {
+    data = { $value: data };
   }
   if (fieldMap !== undefined && "_this" in fieldMap && typeof fieldMap._this === "function" && !fromConstructor) {
     return new fieldMap._this(connection, data);
